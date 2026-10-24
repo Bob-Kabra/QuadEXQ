@@ -129,7 +129,12 @@ zlib1.dll
 #ifndef _MSC_VER // About everything else needs this header
     #ifdef PLATFORM_WINDOWS
         // MinGW doesn't have alloca.h so we will define it ourselves.
-        void *alloca(size_t size);
+        // QuadEXQ: MinGW-w64 already #defines alloca as __builtin_alloca
+        // (via malloc.h), and redeclaring it breaks the build.
+        #include <malloc.h>
+        #ifndef alloca
+            void *alloca(size_t size);
+        #endif
     #else
         #include <alloca.h>
     #endif
