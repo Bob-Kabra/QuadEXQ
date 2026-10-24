@@ -303,6 +303,11 @@ Quake's 11 kHz sounds.
 */
 static float snd_qx_curpitch = 1.0f;
 
+// Per-channel pitch state lives here, NOT in channel_t, so the struct layout
+// (shared by snd_dma.c and friends) is exactly the stock Mark V one.
+static int				qx_posfrac[MAX_CHANNELS];	// 16.16 fraction of ch->pos
+static unsigned char	qx_pitched[MAX_CHANNELS];	// last mixed pitched: end must be re-derived
+
 static float SND_QX_TargetPitch (void)
 {
 	float ts = host_timescale.value;
@@ -317,15 +322,17 @@ static float SND_QX_TargetPitch (void)
 
 // paints up to count output samples; returns how many it painted before the
 // source ran out (pos >= length)
-static int SND_PaintChannelPitched (channel_t *ch, sfxcache_t *sc, int count, int step, portable_samplepair_t *pb)
+static int SND_PaintChannelPitched (channel_t *ch, int chnum, sfxcache_t *sc, int count, int step, portable_samplepair_t *pb)
 {
 	int		i, data, pos = ch->pos;
-	unsigned int frac = (unsigned int)ch->posfrac;
+	unsigned int frac = (unsigned int)qx_posfrac[chnum];
 	int		leftvol = ch->leftvol, rightvol = ch->rightvol;
 
 	if (leftvol > 255)	leftvol = 255;
 	if (rightvol > 255)	rightvol = 255;
 
+	if (pos < 0)
+		pos = 0;
 	if (sc->width == 1)
 	{
 		int *lscale = snd_scaletable[leftvol >> 3];
@@ -358,7 +365,7 @@ static int SND_PaintChannelPitched (channel_t *ch, sfxcache_t *sc, int count, in
 	}
 
 	ch->pos = pos;
-	ch->posfrac = (int)frac;
+	qx_posfrac[chnum] = (int)frac;
 	return i;
 }
 
@@ -408,18 +415,18 @@ void S_PaintChannels(int endtime)
 
 			if (step != 65536)
 			{
-				ch->pitched = 1;
+				qx_pitched[i] = 1;
 				guard = 0;
 				while (ltime < end && guard++ < 64)
 				{
-					n = SND_PaintChannelPitched (ch, sc, end - ltime, step, paintbuffer + (ltime - paintedtime));
+					n = SND_PaintChannelPitched (ch, i, sc, end - ltime, step, paintbuffer + (ltime - paintedtime));
 					ltime += n;
 					if (ch->pos >= sc->length)
 					{
 						if (sc->loopstart >= 0 && sc->loopstart < sc->length)
 						{
 							ch->pos = sc->loopstart;
-							ch->posfrac = 0;
+							qx_posfrac[i] = 0;
 						}
 						else
 						{	// channel just stopped
@@ -434,10 +441,10 @@ void S_PaintChannels(int endtime)
 				continue;
 			}
 
-			if (ch->pitched)
+			if (qx_pitched[i])
 			{	// back to normal speed: re-derive end from the source position
-				ch->pitched = 0;
-				ch->posfrac = 0;
+				qx_pitched[i] = 0;
+				qx_posfrac[i] = 0;
 				ch->end = paintedtime + sc->length - ch->pos;
 			}
 
