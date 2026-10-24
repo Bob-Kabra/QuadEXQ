@@ -289,12 +289,91 @@ CHANNEL MIXING
 static void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int endtime);
 static void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int endtime);
 
+/*
+==============================================================================
+QuadEXQ: slow-motion pitch
+
+When the world is slowed (host_timescale < 1, the QuadEXQ bullet time), game
+sounds are resampled on the fly so they drop in pitch and last longer.
+  snd_qxpitch       strength (0 off .. 1 full: x0.5 time = one octave down)
+  snd_qxpitch_self  also pitch the player's own sounds (default off)
+The source position advances in 16.16 fixed point; nearest-sample, which suits
+Quake's 11 kHz sounds.
+==============================================================================
+*/
+static float snd_qx_curpitch = 1.0f;
+
+static float SND_QX_TargetPitch (void)
+{
+	float ts = host_timescale.value;
+	float strength = CLAMP (0.0f, snd_qxpitch.value, 1.0f);
+
+	if (ts <= 0 || ts >= 1 || strength <= 0)
+		return 1.0f;
+	if (cls.state != ca_connected || cls.signon != SIGNONS || cl.paused)
+		return 1.0f;
+	return 1.0f - (1.0f - CLAMP (0.1f, ts, 1.0f)) * strength;
+}
+
+// paints up to count output samples; returns how many it painted before the
+// source ran out (pos >= length)
+static int SND_PaintChannelPitched (channel_t *ch, sfxcache_t *sc, int count, int step, portable_samplepair_t *pb)
+{
+	int		i, data, pos = ch->pos;
+	unsigned int frac = (unsigned int)ch->posfrac;
+	int		leftvol = ch->leftvol, rightvol = ch->rightvol;
+
+	if (leftvol > 255)	leftvol = 255;
+	if (rightvol > 255)	rightvol = 255;
+
+	if (sc->width == 1)
+	{
+		int *lscale = snd_scaletable[leftvol >> 3];
+		int *rscale = snd_scaletable[rightvol >> 3];
+		unsigned char *sfx = (unsigned char *)sc->data;
+
+		for (i = 0; i < count && pos < sc->length; i++)
+		{
+			data = sfx[pos];
+			pb[i].left += lscale[data];
+			pb[i].right += rscale[data];
+			frac += step;
+			pos += frac >> 16;
+			frac &= 0xFFFF;
+		}
+	}
+	else
+	{
+		signed short *sfx = (signed short *)sc->data;
+
+		for (i = 0; i < count && pos < sc->length; i++)
+		{
+			data = sfx[pos];
+			pb[i].left += (data * leftvol) >> 8;
+			pb[i].right += (data * rightvol) >> 8;
+			frac += step;
+			pos += frac >> 16;
+			frac &= 0xFFFF;
+		}
+	}
+
+	ch->pos = pos;
+	ch->posfrac = (int)frac;
+	return i;
+}
+
 void S_PaintChannels(int endtime)
 {
 	int 	i;
 	int		end, ltime, count;
 	channel_t *ch;
 	sfxcache_t	*sc;
+	int		step, n, guard;
+
+	// QuadEXQ: glide toward the slow-motion pitch instead of jumping
+	snd_qx_curpitch += (SND_QX_TargetPitch () - snd_qx_curpitch) * 0.15f;
+	if (fabs (snd_qx_curpitch - 1.0f) < 0.005f)
+		snd_qx_curpitch = 1.0f;
 
 
 	while (paintedtime < endtime)
@@ -320,6 +399,47 @@ void S_PaintChannels(int endtime)
 				continue;
 
 			ltime = paintedtime;
+
+			// QuadEXQ: pitched mixing for this channel?
+			step = 65536;
+			if (snd_qx_curpitch < 1.0f)
+			if (snd_qxpitch_self.value || ch->entnum != cl.viewentity_player)
+				step = (int)(snd_qx_curpitch * 65536.0f);
+
+			if (step != 65536)
+			{
+				ch->pitched = 1;
+				guard = 0;
+				while (ltime < end && guard++ < 64)
+				{
+					n = SND_PaintChannelPitched (ch, sc, end - ltime, step, paintbuffer + (ltime - paintedtime));
+					ltime += n;
+					if (ch->pos >= sc->length)
+					{
+						if (sc->loopstart >= 0 && sc->loopstart < sc->length)
+						{
+							ch->pos = sc->loopstart;
+							ch->posfrac = 0;
+						}
+						else
+						{	// channel just stopped
+							ch->sfx = NULL;
+							break;
+						}
+					}
+				}
+				// keep end meaningful for channel stealing / the plain path
+				if (ch->sfx)
+					ch->end = ltime + (int)((double)(sc->length - ch->pos) * 65536.0 / step);
+				continue;
+			}
+
+			if (ch->pitched)
+			{	// back to normal speed: re-derive end from the source position
+				ch->pitched = 0;
+				ch->posfrac = 0;
+				ch->end = paintedtime + sc->length - ch->pos;
+			}
 
 			while (ltime < end)
 			{	// paint up to end

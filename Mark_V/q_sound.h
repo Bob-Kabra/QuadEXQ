@@ -77,6 +77,8 @@ typedef struct
 	vec3_t			origin;				// origin of sound effect
 	vec_t			dist_mult;			// distance multiplier (attenuation/clipK)
 	int				master_vol;			// 0-255 master volume
+	int				posfrac;			// QuadEXQ: 16.16 fraction of pos (pitch shifting)
+	int				pitched;			// QuadEXQ: last mixed with a pitch != 1 (end must be re-derived)
 } channel_t;
 
 #define WAV_FORMAT_PCM	1
