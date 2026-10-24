@@ -58,6 +58,17 @@ a whole.
 #include <objbase.h>
 
 #define COBJMACROS
+
+// QuadEXQ build fix: the project puts the bundled DirectX 3 headers first, and on
+// Windows (case-insensitive) MinGW-w64's strmif.h then picks up that old ddraw.h,
+// which predates DirectDraw 7. DirectShow only needs the pointer types, so
+// declare them opaque when the old header is the one we got.
+#include <ddraw.h>
+#ifndef DDSCAPS2_CUBEMAP			// only DX6+ ddraw.h has this
+	typedef struct IDirectDraw7			*LPDIRECTDRAW7;
+	typedef struct IDirectDrawSurface7	*LPDIRECTDRAWSURFACE7;
+#endif
+
 #include <dshow.h>
 
 #pragma comment (lib, "ole32.lib") // CoInitialize and friends
