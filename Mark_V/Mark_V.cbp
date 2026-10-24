@@ -1200,6 +1200,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="in_win_directinput_overhead.h" />
+		<Unit filename="in_win_events.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="in_win_joy.c">
 			<Option compilerVar="CC" />
 		</Unit>
