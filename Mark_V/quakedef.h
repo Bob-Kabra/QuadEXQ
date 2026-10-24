@@ -652,7 +652,7 @@ extern cbool isDedicated;
 
 #define AUTO_SAVE_INTERVAL 90
 #define AUTO_SAVE_COUNT 3
-#define AUTO_SAVE_MINIMUM_TIME 120
+#define AUTO_SAVE_MINIMUM_TIME 10	// QuadEXQ: was 120 -- autosave soon after a map starts
 #define AUTO_DEMO_NAME "automatic_demo"
 
 

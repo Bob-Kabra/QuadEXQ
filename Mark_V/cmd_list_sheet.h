@@ -160,6 +160,7 @@ CMD_DEF (M_Init      , DEP_CLIENT  , "menu_video"                , Mnu_Video_Ent
 CMD_DEF (M_Init      , DEP_CLIENT  , "togglemenu"                , M_ToggleMenu_f				, "Display or close the main menu."			)
 CMD_DEF (M_Init      , DEP_NONE    , "help"                      , _Help_f						, "Display the help screen."			)
 
+CMD_DEF (SV_Init     , DEP_HOST__  , "autosave"                  , SV_Autosave_Now_f		, "QuadEXQ: autosave right now (the progs calls this after a boss dies)."			)
 CMD_DEF (SV_Init     , DEP_HOST__  , "sv_hints"                  , SV_Hints_List_f			, "List server hints."			) //johnfitz
 CMD_DEF (SV_Init     , DEP_HOST__  , "sv_protocol"               , SV_Protocol_f			, "Sets the network protocol used by the server. Default is 666 (FitzQuake). Possible values are 15 (Quake) and 666 (FitzQuake)."			) //johnfitz
 

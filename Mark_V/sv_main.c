@@ -1327,10 +1327,24 @@ void SV_Autosave_Think (void)
 	}
 
 	Host_Savegame (AUTOSAVE_BASENAME "0", false);
+
+	// QuadEXQ: also drop it into a normal menu slot so it can be loaded from the menu
+	if (sv_autosave_slot.value >= 1 && sv_autosave_slot.value <= 20)
+		Host_Savegame (va("s%d", (int)sv_autosave_slot.value - 1), false);
+
 	Con_DPrintLinef ("Autosaved %d:%02d", Time_Minutes((int)sv.time), Time_Seconds((int)sv.time) );
 
 	// Set the next auto save time
 	sv.auto_save_time = sv.time + AUTO_SAVE_INTERVAL;
+}
+
+// QuadEXQ: "autosave" command -- save now (same rules as the timed autosave)
+void SV_Autosave_Now_f (lparse_t *line)
+{
+	if (!sv.active)
+		return;
+	sv.auto_save_time = 0;
+	SV_Autosave_Think ();
 }
 
 /*
