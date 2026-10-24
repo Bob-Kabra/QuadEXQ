@@ -1619,6 +1619,7 @@ void SCR_UpdateScreen (void)
 		SCR_CheckDrawCenterString (); // CENTER STRING LOCATION.
 		SCR_DrawCrosshair ();  // Baker:moved
 		Sbar_Draw ();
+		Sbar_DrawQuadEXQ (); // QuadEXQ HUD
 		SCR_DrawDevStats (); //johnfitz
 		SCR_DrawFPS (); // johnfitz
 		SCR_DrawConsole ();

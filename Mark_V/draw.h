@@ -74,6 +74,7 @@ typedef enum { ENUM_FORCE_INT_GCC_ (canvastype)
 	CANVAS_BOTTOMRIGHT,
 	CANVAS_TOPRIGHT,
 	CANVAS_TOPLEFT,
+	CANVAS_QXHUD,				// QuadEXQ: 320x200, bottom-centred, sbar scale
 	CANVAS_INVALID = -1
 } canvastype;
 //johnfitz

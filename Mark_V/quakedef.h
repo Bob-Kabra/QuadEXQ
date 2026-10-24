@@ -418,6 +418,20 @@ typedef enum { ENUM_FORCE_INT_GCC_ (MAX_MARK_V)
 #define	STAT_SECRETS		13		// bumped on client side by svc_foundsecret
 #define	STAT_MONSTERS		14		// bumped by svc_killedmonster
 
+// QuadEXQ: stats sent by the QuadEXQ progs (svc_updatestat) for the HUD
+#define STAT_QX_FLAGS		20		// QX_F_* bits, 0 = progs is not QuadEXQ
+#define STAT_QX_ADREN		21		// adrenaline 0..100
+#define STAT_QX_SKILL		22		// PlayerSkill x10 (0..1000)
+#define STAT_QX_TIME		23		// world timescale x100 (100 = normal)
+#define STAT_QX_JETS		24		// jet bursts left
+#define STAT_QX_BOSSYAW		25		// absolute yaw from player to boss (degrees)
+#define STAT_QX_BOSSDIST	26		// distance to boss (units)
+#define QX_F_ACTIVE		1
+#define QX_F_HASJET		2
+#define QX_F_BOSS		4
+#define QX_F_QUAD		8
+#define QX_F_SKILLMAX	16
+
 // stock defines
 
 #define	IT_SHOTGUN				1

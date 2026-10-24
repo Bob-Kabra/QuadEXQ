@@ -45,5 +45,8 @@ void Sbar_IntermissionOverlay (void);
 
 void Sbar_FinaleOverlay (void);
 
+void Sbar_DrawQuadEXQ (void);
+// QuadEXQ: adrenaline / PlayerSkill / jet / boss HUD, called every frame by screen
+
 #endif // ! __SBAR_H__
 

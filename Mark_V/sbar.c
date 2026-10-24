@@ -1613,3 +1613,138 @@ void Sbar_FinaleOverlay (void)
 }
 
 
+
+
+/*
+==============================================================================
+
+QuadEXQ HUD
+
+Values come from the QuadEXQ progs as client stats STAT_QX_* (svc_updatestat).
+Nothing is drawn unless the progs set QX_F_ACTIVE, so other mods are unaffected.
+Layout is a 320x200 canvas (CANVAS_QXHUD) sitting just above the status bar.
+
+  [ADR]  ####################--------  250%  TIME x0.7
+  [SKL]  ##########-------------------   47           JET ##-
+                       BOSS ^ 850
+==============================================================================
+*/
+
+#define QXC_BAR_BG		0		// palette indices
+#define QXC_ADREN		60		// green
+#define QXC_ADREN_SLOW	228		// orange (bullet time)
+#define QXC_ADREN_MAX	251		// red-hot
+#define QXC_QUAD		215		// gold
+#define QXC_SKILL		200		// blue
+#define QXC_SKILL_MAX	251
+#define QXC_JET			111		// yellow
+
+static void QX_Bar (int x, int y, int w, int h, float frac, int color)
+{
+	int fw;
+
+	frac = CLAMP (0.0f, frac, 1.0f);
+	fw = (int)(w * frac);
+	Draw_Fill (x - 1, y - 1, w + 2, h + 2, QXC_BAR_BG, 0.55f);
+	if (fw > 0)
+		Draw_Fill (x, y, fw, h, color, 1.0f);
+}
+
+// brown / gold console text (chars + 128)
+static void QX_StringAlt (int x, int y, const char *s)
+{
+	for ( ; *s; s++, x += 8)
+		Draw_Character (x, y, ((unsigned char)*s) | 128);
+}
+
+void Sbar_DrawQuadEXQ (void)
+{
+	int		flags = cl.stats[STAT_QX_FLAGS];
+	int		adren, skill10, timescale, jets, i;
+	int		bottom, x, y;
+	float	pct;
+	char	str[64];
+
+	if (!scr_qxhud.value || !(flags & QX_F_ACTIVE))
+		return;
+	if (cls.signon != SIGNONS || cl.intermission || console1.visible_pct == 1)
+		return;
+	if (cl.stats[STAT_HEALTH] <= 0)
+		return;
+
+	adren		= cl.stats[STAT_QX_ADREN];
+	skill10		= cl.stats[STAT_QX_SKILL];
+	timescale	= cl.stats[STAT_QX_TIME];
+	jets		= cl.stats[STAT_QX_JETS];
+
+	Draw_SetCanvas (CANVAS_QXHUD);
+
+	// sit right on top of whatever part of the status bar is visible
+	if (scr_viewsize.value < 110)		bottom = 200 - 48;
+	else if (scr_viewsize.value < 120)	bottom = 200 - 24;
+	else								bottom = 200;
+
+	// ---- adrenaline: 100% .. 300% (Quad = 400%)
+	y = bottom - 22;
+	x = 40;
+	QX_StringAlt (4, y - 1, "ADR");
+	if (flags & QX_F_QUAD)
+	{
+		QX_Bar (x, y, 160, 6, 1.0f, QXC_QUAD);
+		Draw_String (x + 166, y - 1, "400%");
+	}
+	else
+	{
+		int color = QXC_ADREN;
+		pct = 100.0f + 2.0f * adren;
+		if (adren >= 100)		color = QXC_ADREN_MAX;
+		else if (pct > 150.0f)	color = QXC_ADREN_SLOW;
+		QX_Bar (x, y, 160, 6, adren / 100.0f, color);
+		// tick at 150% = where time starts to slow
+		Draw_Fill (x + 40, y - 2, 1, 10, 15, 1.0f);
+		c_snprintf1 (str, "%d%%", (int)pct);
+		Draw_String (x + 166, y - 1, str);
+	}
+	if (timescale > 0 && timescale < 100)
+	{
+		c_snprintf2 (str, "TIME x%d.%d", timescale / 100, (timescale % 100) / 10);
+		QX_StringAlt (x + 206, y - 1, str);
+	}
+
+	// ---- PlayerSkill 0..100
+	y = bottom - 11;
+	QX_StringAlt (4, y - 1, "SKL");
+	QX_Bar (x, y, 160, 4, skill10 / 1000.0f, (flags & QX_F_SKILLMAX) ? QXC_SKILL_MAX : QXC_SKILL);
+	if (flags & QX_F_SKILLMAX)
+		QX_StringAlt (x + 166, y - 2, "MAX");
+	else
+	{
+		c_snprintf1 (str, "%d", skill10 / 10);
+		Draw_String (x + 166, y - 2, str);
+	}
+
+	// ---- jetpack bursts
+	if (flags & QX_F_HASJET)
+	{
+		QX_StringAlt (x + 206, y - 2, "JET");
+		for (i = 0; i < 3; i++)
+			Draw_Fill (x + 238 + i * 8, y - 1, 6, 6, i < jets ? QXC_JET : QXC_BAR_BG, 1.0f);
+	}
+
+	// ---- boss compass
+	if (flags & QX_F_BOSS)
+	{
+		float rel = cl.stats[STAT_QX_BOSSYAW] - cl.viewangles[YAW];
+		const char *arrow;
+
+		while (rel > 180)	rel -= 360;
+		while (rel < -180)	rel += 360;
+		if (rel > -30 && rel < 30)			arrow = "^";
+		else if (rel >= 30 && rel < 150)	arrow = "<";	// yaw grows to the left
+		else if (rel <= -30 && rel > -150)	arrow = ">";
+		else								arrow = "v";
+
+		c_snprintf2 (str, "BOSS %s %d", arrow, cl.stats[STAT_QX_BOSSDIST]);
+		QX_StringAlt (160 - (int)strlen (str) * 4, bottom - 34, str);
+	}
+}

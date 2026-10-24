@@ -911,6 +911,12 @@ void Draw_SetCanvas (canvastype newcanvas)
 		canvas.scale_x = 1, canvas.scale_y = 1;
 		break;
 
+	case CANVAS_QXHUD: // QuadEXQ HUD: 320x200 bottom-centre
+		canvas.x = (clwidth - 320) / 2, canvas.y = clheight - 200;
+		canvas.width = 320, canvas.height = 200;
+		canvas.scale_x = 1, canvas.scale_y = 1;
+		break;
+
 	default:
 		System_Error ("Draw_SetCanvas: bad canvas type");
 	}
