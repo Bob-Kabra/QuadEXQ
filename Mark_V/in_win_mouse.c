@@ -33,6 +33,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <dinput.h>
 
+// QuadEXQ build fix: the bundled DirectX 3 dinput.h only knows 4 mouse buttons.
+// Mark V's own data format (MYDATA) puts buttons right after BUTTON0, so the
+// DX7+ offsets are simply BUTTON0 + n.
+#ifndef DIMOFS_BUTTON4
+	#define DIMOFS_BUTTON4 (DIMOFS_BUTTON0 + 4)
+	#define DIMOFS_BUTTON5 (DIMOFS_BUTTON0 + 5)
+	#define DIMOFS_BUTTON6 (DIMOFS_BUTTON0 + 6)
+	#define DIMOFS_BUTTON7 (DIMOFS_BUTTON0 + 7)
+#endif
+
 #ifdef DIRECT3D9_WRAPPER
 #pragma comment (lib, "dinput8.lib")
 #else
