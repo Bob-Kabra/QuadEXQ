@@ -281,8 +281,13 @@ extern cbool in_load_game;
 // there is no reason to expect these features to ever be able to work with
 // CodeBlocks/MinGW32.
 	#ifdef SUPPORTS_MP3_MUSIC
-		#undef SUPPORTS_MP3_MUSIC
-		#define WANTED_MP3_MUSIC // But ... can't have it.
+		#ifdef __MINGW64_VERSION_MAJOR
+			// QuadEXQ: MinGW-w64 ships complete DirectShow headers + libstrmiids,
+			// so MP3 music works (link strmiids, ole32, oleaut32, uuid).
+		#else
+			#undef SUPPORTS_MP3_MUSIC
+			#define WANTED_MP3_MUSIC // But ... can't have it.
+		#endif
 		#undef SUPPORTS_IPV6
 	#endif
 	#ifdef SUPPORTS_AVI_CAPTURE

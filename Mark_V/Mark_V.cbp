@@ -36,6 +36,10 @@
 					<Add library="shlwapi" />
 					<Add library="dxguid" />
 					<Add library="winmm" />
+					<Add library="strmiids" />
+					<Add library="ole32" />
+					<Add library="oleaut32" />
+					<Add library="uuid" />
 					<Add library="libpthreadGC2.a" />
 					<Add directory="../SDK/pthreads-w32-2-9-1-release/lib/x86" />
 				</Linker>
@@ -69,6 +73,10 @@
 					<Add library="shlwapi" />
 					<Add library="dxguid" />
 					<Add library="winmm" />
+					<Add library="strmiids" />
+					<Add library="ole32" />
+					<Add library="oleaut32" />
+					<Add library="uuid" />
 					<Add library="libpthreadGC2.a" />
 					<Add directory="../SDK/pthread-static-msvc2010/lib" />
 				</Linker>
@@ -106,6 +114,10 @@
 					<Add library="shlwapi" />
 					<Add library="dxguid" />
 					<Add library="winmm" />
+					<Add library="strmiids" />
+					<Add library="ole32" />
+					<Add library="oleaut32" />
+					<Add library="uuid" />
 					<Add library="libpthreadGC2.a" />
 					<Add directory="../SDK/pthreads-w32-2-9-1-release/lib/x86" />
 				</Linker>
@@ -142,6 +154,10 @@
 					<Add library="shlwapi" />
 					<Add library="dxguid" />
 					<Add library="winmm" />
+					<Add library="strmiids" />
+					<Add library="ole32" />
+					<Add library="oleaut32" />
+					<Add library="uuid" />
 					<Add library="libpthreadGC2.a" />
 					<Add directory="../SDK/pthread-static-msvc2010/lib" />
 				</Linker>
@@ -179,6 +195,10 @@
 					<Add library="shlwapi" />
 					<Add library="dxguid" />
 					<Add library="winmm" />
+					<Add library="strmiids" />
+					<Add library="ole32" />
+					<Add library="oleaut32" />
+					<Add library="uuid" />
 					<Add library="libpthreadGC2.a" />
 					<Add directory="../SDK/pthreads-w32-2-9-1-release/lib/x86" />
 				</Linker>
@@ -215,6 +235,10 @@
 					<Add library="shlwapi" />
 					<Add library="dxguid" />
 					<Add library="winmm" />
+					<Add library="strmiids" />
+					<Add library="ole32" />
+					<Add library="oleaut32" />
+					<Add library="uuid" />
 					<Add library="libpthreadGC2.a" />
 					<Add directory="../SDK/pthread-static-msvc2010/lib" />
 				</Linker>
