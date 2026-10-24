@@ -54,7 +54,7 @@
             };
             ULONG Value;
         };
-    } SCOPE_ID, *PSCOPE_ID;
+    } SCOPE_ID_HAX, *PSCOPE_ID_HAX; // QuadEXQ: renamed, MinGW-w64 already defines SCOPE_ID
 
 //  // This is what comes with mingw for CodeBlocks 13.12
 //	struct sockaddr_in6_mingw {
@@ -81,7 +81,7 @@
         IN6_ADDR_EX sin6_addr;         // IPv6 address.
         union {
             ULONG sin6_scope_id;     // Set of interfaces for a scope.
-            SCOPE_ID sin6_scope_struct;
+            SCOPE_ID_HAX sin6_scope_struct;
         };
     }; // SOCKADDR_IN6_LH, *PSOCKADDR_IN6_LH, FAR *LPSOCKADDR_IN6_LH;
 
