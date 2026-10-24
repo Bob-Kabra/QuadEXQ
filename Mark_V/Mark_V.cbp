@@ -58,6 +58,8 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add option="-static-libgcc" />
+					<Add option="-static" />
 					<Add library="msvcrt" />
 					<Add library="kernel32" />
 					<Add library="user32" />
@@ -127,6 +129,8 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add option="-static-libgcc" />
+					<Add option="-static" />
 					<Add library="msvcrt" />
 					<Add library="kernel32" />
 					<Add library="user32" />
@@ -198,6 +202,8 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add option="-static-libgcc" />
+					<Add option="-static" />
 					<Add library="msvcrt" />
 					<Add library="kernel32" />
 					<Add library="user32" />
