@@ -253,6 +253,7 @@ void Host_Version_Print (printline_fn_t my_printline)
 {
 	//my_printline ("Quake Version %1.2f", QUAKE_VERSION); // Who cares?  Seriously ... like that hasn't been that number for 20 years+
 	my_printline ("%s %s (Build: %d)", ENGINE_NAME, PLATFORM_SHORTNAME, (int)ENGINE_BUILD);
+	my_printline ("QuadEXQ engine - based on Mark V %1.2f by Baker", (float)ENGINE_VERSION);
 	my_printline ("Exe: %s (%d kb)", File_URL_SkipPath(File_Binary_URL()), (int)Math_KiloBytesDouble(File_Length(File_Binary_URL()))  );
 	my_printline ("Exe: "__TIME__" "__DATE__);
 #ifndef SERVER_ONLY

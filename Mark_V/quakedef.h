@@ -42,7 +42,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //#define	QUAKE_GAME			// as opposed to utilities .. Baker: Moved to project level define
 
 #define	QUAKE_VERSION					1.09
-#define ENGINE_FAMILY_NAME				"Mark V"		// Config.cfg stamp
+#define ENGINE_FAMILY_NAME				"Mark V"		// Config.cfg stamp (kept: QuadEXQ reads Mark V configs)
+#define QUADEXQ_NAME					"QuadEXQ"		// QuadEXQ: shown in the title bar, console and version
 #define ENGINE_VERSION					1.99
 #define	ENGINE_BUILD					1099			// null.mdl carrying and effect in Nehahra NEH2M1 fire near Ogre + Fiend.  Does not render.
 
@@ -113,15 +114,15 @@ extern fn_set_t qfunction_set;
 	#define TEMP_BASE_NAME "DirectX 8 " ENGINE_FAMILY_NAME
 	#define ENGINE_SHOT_PREFIX "mark_v_"
 #elif defined(GLQUAKE)
-	#define TEMP_BASE_NAME ENGINE_FAMILY_NAME
-	#define ENGINE_SHOT_PREFIX "mark_v_"
+	#define TEMP_BASE_NAME QUADEXQ_NAME		// QuadEXQ: window title / version string
+	#define ENGINE_SHOT_PREFIX "quadexq_"
 #else
 	#if defined(CORE_GL) && !defined(PLATFORM_LINUX) // Let's not confuse the Linux users, as this may be the only WinQuake build ever made for Linux (i.e. no Non-GL build)
-		#define TEMP_BASE_NAME "WinQuake-GL " ENGINE_FAMILY_NAME  // Prefix it WinQuake
+		#define TEMP_BASE_NAME QUADEXQ_NAME " WinQuake-GL"
 	#else
-		#define TEMP_BASE_NAME "WinQuake " ENGINE_FAMILY_NAME  // Prefix it WinQuake
+		#define TEMP_BASE_NAME QUADEXQ_NAME " WinQuake"
 	#endif
-	#define ENGINE_SHOT_PREFIX "winquake_mark_v_"
+	#define ENGINE_SHOT_PREFIX "quadexq_winquake_"
 #endif
 
 // ENGINE_NAME:

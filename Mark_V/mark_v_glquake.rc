@@ -56,7 +56,7 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 
-IDI_ICON1               ICON    DISCARDABLE     "mark_v_glquake2.ico"
+IDI_ICON1               ICON    DISCARDABLE     "QuadEXQ_icon.ico"
 IDI_BUNDLE2 			RCDATA 	DISCARDABLE 	"bundle.pak"
 
 /////////////////////////////////////////////////////////////////////////////
