@@ -154,6 +154,16 @@ qpic_t	*Draw_CachePic (const char *path)
 		dat = (qpic_t *)demos_lmp;
 	}
 	else
+	if (!strcmp ("gfx/qx_continue.lmp", path))
+	{
+		dat = (qpic_t *)qx_continue_lmp;
+	}
+	else
+	if (!strcmp ("gfx/qx_newgame.lmp", path))
+	{
+		dat = (qpic_t *)qx_newgame_lmp;
+	}
+	else
 #endif // SUPPORTS_LEVELS_MENU_HACK
 	{
 		COM_LoadCacheFile (path, &pic->cache);

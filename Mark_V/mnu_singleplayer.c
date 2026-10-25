@@ -85,7 +85,7 @@ LOCAL_EVENT (Draw) (void)
 
 }
 
-static void Mnu_SinglePlayer_Do_NewGame_ (void)
+void Mnu_SinglePlayer_Do_NewGame_ (void)
 {
 	if (sv.active)
 		CL_Disconnect ();

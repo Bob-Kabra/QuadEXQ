@@ -1338,6 +1338,32 @@ void SV_Autosave_Think (void)
 	sv.auto_save_time = sv.time + AUTO_SAVE_INTERVAL;
 }
 
+// QuadEXQ: "qx_statlog <text>" -- the progs appends one line of its play report
+// to <gamedir>/quadexq_stats.txt (a session header is written before the first line)
+void SV_QX_StatLog_f (lparse_t *line)
+{
+	static cbool session_header_done = false;
+	char path[MAX_OSPATH];
+	FILE *f;
+
+	FS_FullPath_From_QPath (path, "quadexq_stats.txt");
+	f = FS_fopen_write (path, "a");
+	if (!f) {
+		Con_DPrintLinef ("qx_statlog: can't open %s", path);
+		return;
+	}
+	if (!session_header_done) {
+		time_t now = time (NULL);
+		struct tm *lt = localtime (&now);
+		char stamp[64] = "?";
+		if (lt) strftime (stamp, sizeof(stamp), "%Y-%m-%d %H:%M", lt);
+		fprintf (f, "\n########## QuadEXQ session %s ##########\n", stamp);
+		session_header_done = true;
+	}
+	fprintf (f, "%s\n", line->count >= 2 ? line->args[1] : "");
+	FS_fclose (f);
+}
+
 // QuadEXQ: "autosave" command -- save now (same rules as the timed autosave)
 void SV_Autosave_Now_f (lparse_t *line)
 {
@@ -1701,6 +1727,15 @@ void SV_SpawnServer (const char *server)
 
 // Baker: Clear level information prior to loading world.
 	memset (&level, 0, sizeof(level));
+
+	// QuadEXQ: deaths on this map survive "restart" but reset on a different map
+	{
+		static char qx_last_map[MAX_QPATH_64];
+		if (strcmp (qx_last_map, server)) {
+			Cvar_SetValueQuick (&qx_mapdeaths, 0);
+			c_strlcpy (qx_last_map, server);
+		}
+	}
 
 	// Baker: These have to be done after Host_ClearMemory because sv gets cleared
 	c_strlcpy (sv.name, server);

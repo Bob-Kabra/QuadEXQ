@@ -409,6 +409,16 @@ qpic_t *Draw_CachePic (const char *path)
 		dat = (qpic_t *)demos_lmp;
 	}
 	else
+	if (!strcmp ("gfx/qx_continue.lmp", path))
+	{
+		dat = (qpic_t *)qx_continue_lmp;
+	}
+	else
+	if (!strcmp ("gfx/qx_newgame.lmp", path))
+	{
+		dat = (qpic_t *)qx_newgame_lmp;
+	}
+	else
 #endif // SUPPORTS_LEVELS_MENU_HACK
 		dat = (qpic_t *)COM_LoadTempFile (path);
 
@@ -487,6 +497,12 @@ qpic_t *Draw_CachePic (const char *path)
 		{
 			gl.gltexture = TexMgr_LoadImage (NULL, -1 /*not bsp texture*/, path, dat->width, dat->height, SRC_INDEXED, dat->data, "",
 										  (src_offset_t)demos_lmp + sizeof(int) * 2, TEXPREF_ALPHA | /* Baker: Crisp -> */ TEXPREF_NEAREST | TEXPREF_PAD | TEXPREF_NOPICMIP); //johnfitz -- TexMgr
+		}
+		else if (!strcmp ("gfx/qx_continue.lmp", path) || !strcmp ("gfx/qx_newgame.lmp", path))
+		{
+			const byte *qxsrc = !strcmp ("gfx/qx_continue.lmp", path) ? qx_continue_lmp : qx_newgame_lmp;
+			gl.gltexture = TexMgr_LoadImage (NULL, -1 /*not bsp texture*/, path, dat->width, dat->height, SRC_INDEXED, dat->data, "",
+										  (src_offset_t)qxsrc + sizeof(int) * 2, TEXPREF_ALPHA | TEXPREF_NEAREST | TEXPREF_PAD | TEXPREF_NOPICMIP);
 		}
 		else
 #endif // SUPPORTS_LEVELS_MENU_HACK

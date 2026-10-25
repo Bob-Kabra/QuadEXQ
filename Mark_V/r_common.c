@@ -58,6 +58,8 @@ level_info_t level; // Baker: Likewise, doesn't really belong here.
 
 const byte *demos_lmp;
 const byte *levels_lmp;
+const byte *qx_continue_lmp;
+const byte *qx_newgame_lmp;
 
 void R_Init (void)
 {
@@ -75,6 +77,8 @@ void R_Init (void)
 		const char *sname; const void *mem;
 		demos_lmp  = mem = Bundle_File_Memory_Pointer ( (sname = "demos.lmp"),  NULL); if (!mem) System_Error ("Couldn't load %s", sname);
 		levels_lmp = mem = Bundle_File_Memory_Pointer ( (sname = "levels.lmp"), NULL); if (!mem) System_Error ("Couldn't load %s", sname);
+		qx_continue_lmp = mem = Bundle_File_Memory_Pointer ( (sname = "qx_continue.lmp"), NULL); if (!mem) System_Error ("Couldn't load %s", sname);
+		qx_newgame_lmp  = mem = Bundle_File_Memory_Pointer ( (sname = "qx_newgame.lmp"),  NULL); if (!mem) System_Error ("Couldn't load %s", sname);
 	}
 }
 

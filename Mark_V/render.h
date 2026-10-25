@@ -167,6 +167,8 @@ typedef struct
 
 extern const byte *demos_lmp;
 extern const byte *levels_lmp;
+extern const byte *qx_continue_lmp;	// QuadEXQ main menu rows
+extern const byte *qx_newgame_lmp;
 
 void R_Init (void);
 void R_InitEfrags (void);
