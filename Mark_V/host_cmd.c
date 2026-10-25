@@ -1345,6 +1345,51 @@ void Host_Savegame_f (lparse_t *line)
 
 /*
 ===============
+QuadEXQ: qx_respawn
+
+Called by the progs instead of "restart" when the player dies in single player.
+If the autosave slot (sv_autosave_slot, s19.sav by default) holds a save of the
+map we are on, load it; otherwise restart the map as Quake always did.
+===============
+*/
+void Host_QX_Respawn_f (lparse_t *line)
+{
+	int slot = (int)sv_autosave_slot.value - 1;
+	char path[MAX_OSPATH];
+	char buf[MAX_OSPATH];
+	FILE *f;
+	int version, i, ok = false;
+
+	if (sv.active && slot >= 0 && slot < 20 && svs.maxclients_internal == 1) {
+		FS_FullPath_From_QPath (path, va("s%d.sav", slot));
+		f = FS_fopen_read (path, "rb");
+		if (f) {
+			if (fscanf (f, "%d\n", &version) == 1) {
+				fgets (buf, sizeof(buf), f);					// comment
+				if (version == SAVEGAME_VERSION_6)
+					fgets (buf, sizeof(buf), f);				// cvar settings
+				for (i = 0; i < NUM_SPAWN_PARMS; i++)
+					fgets (buf, sizeof(buf), f);				// spawn parms (1 player)
+				fgets (buf, sizeof(buf), f);					// skill
+				if (fgets (buf, sizeof(buf), f)) {				// map name
+					buf[strcspn (buf, "\r\n")] = 0;
+					ok = !strcmp (buf, sv.name);
+				}
+			}
+			FS_fclose (f);
+		}
+	}
+
+	if (ok) {
+		Con_PrintLinef ("Back to the last checkpoint (s%d)", slot);
+		SCR_BeginLoadingPlaque ();
+		Cbuf_AddTextLinef ("load s%d", slot);
+	}
+	else Cbuf_AddTextLine ("restart");
+}
+
+/*
+===============
 Host_Loadgame_f
 ===============
 */

@@ -1294,6 +1294,12 @@ void SV_Autosave_Think (void)
 	if (svs.clients[0].edict->v.health <= 0)
 		return;
 
+	// QuadEXQ: the progs says now is a bad moment (low health, enemies hunting
+	// you, in the air or in liquid...). The save waits until it is calm, so a
+	// death never sends you back into a hopeless spot.
+	if (!qx_autosave_ok.value)
+		return;
+
 
 /*
 	// Baker: What if map is so hard you have to godmode it.
@@ -1731,6 +1737,7 @@ void SV_SpawnServer (const char *server)
 	// QuadEXQ: deaths on this map survive "restart" but reset on a different map
 	{
 		static char qx_last_map[MAX_QPATH_64];
+		Cvar_SetValueQuick (&qx_autosave_ok, 1);	// a mod that doesn't know it never blocks autosaves
 		if (strcmp (qx_last_map, server)) {
 			void Sbar_QX_CardClear (void);
 			Cvar_SetValueQuick (&qx_mapdeaths, 0);
