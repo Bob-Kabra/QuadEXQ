@@ -1,6 +1,6 @@
 
 
-#define DINPUT_BUFFERSIZE	16
+#define DINPUT_BUFFERSIZE	1024	// QuadEXQ: was 16 -- a 1000 Hz mouse filled that in a few ms and button-up events were lost
 
 typedef struct MYDATA
 {

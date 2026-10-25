@@ -181,6 +181,21 @@ void Input_DirectInput_Mouse_Move (int oldstate)
 		} // end switch
 	} // End while
 
+	// QuadEXQ: stuck fire fix. If the event buffer overflowed (fast high-rate
+	// mice), a button release could be dropped and +attack stayed on. Take the
+	// buttons from the device's real current state instead, every frame.
+	{
+		MYDATA st;
+		if (SUCCEEDED (IDirectInputDevice_GetDeviceState (mdi7.g_pMouse, sizeof(MYDATA), &st))) {
+			const BYTE b[5] = { st.bButtonA, st.bButtonB, st.bButtonC, st.bButtonD, st.bButtonE };
+			int n;
+			for (n = 0; n < 5; n++) {
+				if (b[n] & 0x80)	newstate |= (1 << n);
+				else				newstate &= ~(1 << n);
+			}
+		}
+	}
+
 	if (newstate != oldstate)
 		Input_Mouse_Button_Event (newstate, false /*not mouse move*/, /*xy*/ -1, -1);
 	// End loop
