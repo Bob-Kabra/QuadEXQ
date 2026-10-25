@@ -1545,6 +1545,8 @@ void Sbar_MiniDeathmatchOverlay (void)
 Sbar_IntermissionOverlay
 ==================
 */
+cbool Sbar_QX_DrawCard (void); // QuadEXQ map report card (below)
+
 void Sbar_IntermissionOverlay (void)
 {
 	qpic_t	*pic;
@@ -1569,6 +1571,9 @@ void Sbar_IntermissionOverlay (void)
 	}
 
 	Draw_SetCanvas (CANVAS_MENU); //johnfitz
+
+	if (Sbar_QX_DrawCard ())	// QuadEXQ: score + weapon table instead of kills x/y
+		return;
 
 	pic = Draw_CachePic ("gfx/complete.lmp");
 	Draw_Pic (64, 24, pic);
@@ -1655,6 +1660,103 @@ static void QX_StringAlt (int x, int y, const char *s)
 {
 	for ( ; *s; s++, x += 8)
 		Draw_Character (x, y, ((unsigned char)*s) | 128);
+}
+
+/*
+==================
+QuadEXQ map report card
+
+The progs fills it with "qx_statcard" commands when the player reaches the exit
+(single player: the server and the client are the same program), and the
+intermission screen shows it instead of the stock kills x/total.
+
+  qx_statcard clear                 empty the card (map start)
+  qx_statcard score <n>
+  qx_statcard text "<line>"         a line of plain text (up to 4)
+  qx_statcard row "<a|b|c|d|e>"     a table row, fields split by |
+                                    (the first row is the header)
+==================
+*/
+#define QX_CARD_TEXT	4
+#define QX_CARD_ROWS	14
+#define QX_CARD_LEN		64
+static int	qx_card_score = -1;
+static int	qx_card_ntext, qx_card_nrows;
+static char	qx_card_text[QX_CARD_TEXT][QX_CARD_LEN];
+static char	qx_card_rows[QX_CARD_ROWS][QX_CARD_LEN];
+
+void Sbar_QX_CardClear (void)
+{
+	qx_card_score = -1;
+	qx_card_ntext = qx_card_nrows = 0;
+}
+
+void Sbar_QX_StatCard_f (lparse_t *line)
+{
+	const char *what = line->count >= 2 ? line->args[1] : "";
+	const char *arg  = line->count >= 3 ? line->args[2] : "";
+
+	if (!strcmp (what, "clear"))
+		Sbar_QX_CardClear ();
+	else if (!strcmp (what, "score"))
+		qx_card_score = atoi (arg);
+	else if (!strcmp (what, "text") && qx_card_ntext < QX_CARD_TEXT)
+		c_strlcpy (qx_card_text[qx_card_ntext++], arg);
+	else if (!strcmp (what, "row") && qx_card_nrows < QX_CARD_ROWS)
+		c_strlcpy (qx_card_rows[qx_card_nrows++], arg);
+}
+
+// right-aligned field ending at x_end
+static void QX_CardField (int x_end, int y, const char *s, int len, cbool alt)
+{
+	char buf[QX_CARD_LEN];
+	int n = c_min (len, QX_CARD_LEN - 1);
+	memcpy (buf, s, n); buf[n] = 0;
+	if (alt)	QX_StringAlt (x_end - n * 8, y, buf);
+	else		Draw_String (x_end - n * 8, y, buf);
+}
+
+cbool Sbar_QX_DrawCard (void)
+{
+	// column right edges: name is left-aligned at 16
+	static const int col_end[] = { 0, 152, 208, 256, 304 };
+	int i, y;
+
+	if (qx_card_score < 0 || !(cl.stats[STAT_QX_FLAGS] & QX_F_ACTIVE))
+		return false;
+
+	Draw_Pic (64, 24, Draw_CachePic ("gfx/complete.lmp"));
+
+	// SCORE  1840   (big numbers)
+	y = 56;
+	QX_StringAlt (48, y + 8, "SCORE");
+	Sbar_IntermissionNumber (104, y, qx_card_score, 7, 0);
+
+	y = 88;
+	for (i = 0; i < qx_card_ntext; i++, y += 10)
+		Draw_String (160 - (int)strlen (qx_card_text[i]) * 4, y, qx_card_text[i]);
+
+	y += 6;
+	for (i = 0; i < qx_card_nrows && y <= 192; i++, y += 9) {
+		const char *s = qx_card_rows[i];
+		int field = 0;
+		while (*s && field < 5) {
+			const char *bar = strchr (s, '|');
+			int len = bar ? (int)(bar - s) : (int)strlen (s);
+			if (field == 0) {
+				char buf[QX_CARD_LEN];
+				int n = c_min (len, QX_CARD_LEN - 1);
+				memcpy (buf, s, n); buf[n] = 0;
+				if (i == 0)	QX_StringAlt (16, y, buf);
+				else		Draw_String (16, y, buf);
+			}
+			else QX_CardField (col_end[field], y, s, len, i == 0);
+			field ++;
+			if (!bar) break;
+			s = bar + 1;
+		}
+	}
+	return true;
 }
 
 void Sbar_DrawQuadEXQ (void)

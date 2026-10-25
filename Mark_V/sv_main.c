@@ -1732,7 +1732,9 @@ void SV_SpawnServer (const char *server)
 	{
 		static char qx_last_map[MAX_QPATH_64];
 		if (strcmp (qx_last_map, server)) {
+			void Sbar_QX_CardClear (void);
 			Cvar_SetValueQuick (&qx_mapdeaths, 0);
+			Sbar_QX_CardClear ();
 			c_strlcpy (qx_last_map, server);
 		}
 	}

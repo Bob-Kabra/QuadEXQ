@@ -74,6 +74,7 @@ CMD_DEF (Nehahra_Init, DEP_CL_NEH  , "r_oldsky"					 , Cmd_No_Command			, "Nehah
 CMD_DEF (Nehahra_Init, DEP_CL_NEH  , "loadsky"					 , Cmd_No_Command			, "Nehahra archaic command."			) /* Sky_SkyCommand_f? */
 CMD_DEF (Nehahra_Init, DEP_CL_NEH  , "r_nospr32"				 , Cmd_No_Command			, "Nehahra archaic command."			)
 
+CMD_DEF (Sbar_Init   , DEP_CLIENT  , "qx_statcard"               , Sbar_QX_StatCard_f		, "QuadEXQ: fill the map report card shown on the intermission screen (used by the progs)."			)
 CMD_DEF (Sbar_Init   , DEP_CLIENT  , "+showscores"               , Sbar_ShowScores			, "When used the score screen will appear."			)
 CMD_DEF (Sbar_Init   , DEP_CLIENT  , "-showscores"               , Sbar_DontShowScores		, "When used the score screen will disappear."			)
 
