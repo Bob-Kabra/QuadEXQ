@@ -83,6 +83,7 @@ cbool List_Filelist_Rebuild (clist_t** list, const char *slash_subfolder, const 
 
 
 extern char game_startmap[MAX_QPATH_64];
+const char *Game_NewGameMap (void); // QuadEXQ: newgame_map cvar, else game_startmap
 extern cbool game_map_tiers;
 
 #endif // ! __Q_LISTS_H__

@@ -99,7 +99,7 @@ void Mnu_SinglePlayer_Do_NewGame_ (void)
 	Cbuf_AddTextLine ("coop 0"); //johnfitz
 	Cbuf_AddTextLine ("resetcvar sv_progs"); //johnfitz
 
-	Cbuf_AddTextLinef ("map %s", game_startmap);
+	Cbuf_AddTextLinef ("map %s", Game_NewGameMap ());
 }
 
 //

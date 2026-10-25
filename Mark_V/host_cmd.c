@@ -404,7 +404,9 @@ void Host_Game_f (lparse_t *line)
 					va(" %s", gametypename) : "" );
 		if (hd_folder.string[0])
 			Con_PrintLinef ("HD Folder = " QUOTED_S, hd_folder.string);
-		Con_PrintLinef ("Start map is %s", game_startmap);
+		Con_PrintLinef ("Start map is %s", Game_NewGameMap ());
+		if (newgame_map.string[0])
+			Con_PrintLinef ("  (set by newgame_map; the folder's own guess is %s)", game_startmap);
 		break;
 	}
 

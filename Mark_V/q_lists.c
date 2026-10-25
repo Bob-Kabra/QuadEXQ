@@ -285,6 +285,13 @@ void Lists_Update_Maps (void)
 
 }
 
+// QuadEXQ: the map New Game uses -- the newgame_map cvar wins over the guess above
+// (a mod folder with e.g. bbstart.bsp in it would otherwise never start on id1's start.bsp)
+const char *Game_NewGameMap (void)
+{
+	return newgame_map.string[0] ? newgame_map.string : game_startmap;
+}
+
 void Lists_Update_Levels_Menu (void)
 {
 	List_Filelist_Rebuild (&list_info[list_type_levels_menu].plist, "/maps", list_info[list_type_levels_menu].extension, 32*1024, SPECIAL_GAMEDIR_PREFERENCE);
