@@ -88,6 +88,120 @@ static void QX_Do_Continue_ (void)
 }
 
 //=============================================================================
+// QuadEXQ: NEW GAME start-map picker
+// Candidates: start.bsp (anywhere, id1 included) + every map in the game folder
+// with "start" in its name. With one candidate New Game starts at once; with
+// more, the main menu shows a list (Esc goes back). The default choice is
+// newgame_map if set, otherwise start.
+
+#define QX_PICK_MAX		16
+static int	qx_pick_active;			// the main menu is showing the list
+static int	qx_pick_count;
+static char	qx_pick[QX_PICK_MAX][MAX_QPATH_64];
+static char	qx_pick_chosen[MAX_QPATH_64];
+static int	qx_pick_saved_cursor;	// main menu row to come back to
+
+static void QX_Pick_Add (const char *name)
+{
+	int i;
+	if (qx_pick_count >= QX_PICK_MAX)
+		return;
+	for (i = 0; i < qx_pick_count; i++)
+		if (!strcmp (qx_pick[i], name))
+			return;
+	c_strlcpy (qx_pick[qx_pick_count++], name);
+}
+
+static int QX_Pick_Build (void)
+{
+	clist_t *cursor;
+	const char *want = Game_NewGameMap ();
+	int i, def = 0;
+
+	qx_pick_count = 0;
+	if (COM_FindFile_Obsolete ("maps/start.bsp"))
+		QX_Pick_Add ("start");
+	if (newgame_map.string[0] && COM_FindFile_Obsolete (va("maps/%s.bsp", newgame_map.string)))
+		QX_Pick_Add (newgame_map.string);
+	for (cursor = list_info[list_type_map].plist; cursor; cursor = cursor->next)
+		if (strstr (cursor->name, "start"))
+			QX_Pick_Add (cursor->name);
+
+	for (i = 0; i < qx_pick_count; i++)
+		if (!strcmp (qx_pick[i], want)) { def = i; break; }
+	return def;
+}
+
+static void QX_Do_NewGame_Picked_ (void)
+{
+	if (sv.active)
+		CL_Disconnect ();
+
+	SCR_BeginLoadingPlaque_Force_NoTransition ();
+	Key_SetDest (key_game);
+	console1.visible_pct = 0;
+
+	Cbuf_AddTextLine ("maxplayers 1");
+	Cbuf_AddTextLine ("deathmatch 0");
+	Cbuf_AddTextLine ("coop 0");
+	Cbuf_AddTextLine ("resetcvar sv_progs");
+	Cbuf_AddTextLinef ("map %s", qx_pick_chosen);
+}
+
+static void QX_Pick_Start (int which)
+{
+	c_strlcpy (qx_pick_chosen, qx_pick[which]);
+	qx_pick_active = false;
+	if (sv.active)	Mnu_Dialog_Modal_YesNo (QX_Do_NewGame_Picked_, NULL, "Are you sure you want to" NEWLINE "start a new game?" NEWLINE "(%s)", qx_pick_chosen);
+	else			QX_Do_NewGame_Picked_ ();
+}
+
+static void QX_Pick_Leave (void)
+{
+	qx_pick_active = false;
+	QX_Continue_Scan ();					// restores the row count
+	local_menu->cursor = qx_pick_saved_cursor;
+	if (local_menu->cursor >= local_menu->cursor_solid_count)
+		local_menu->cursor = 0;
+}
+
+static void QX_NewGame_Selected (void)
+{
+	int def = QX_Pick_Build ();
+
+	if (qx_pick_count <= 1) {			// nothing to choose: go
+		if (qx_pick_count == 1)
+			QX_Pick_Start (0);
+		else if (sv.active)
+			Mnu_Dialog_Modal_YesNo (Mnu_SinglePlayer_Do_NewGame_, NULL, "Are you sure you want to" NEWLINE "start a new game?");
+		else
+			Mnu_SinglePlayer_Do_NewGame_ ();
+		return;
+	}
+	qx_pick_saved_cursor = local_menu->cursor;
+	qx_pick_active = true;
+	local_menu->cursor_solid_count = qx_pick_count;
+	local_menu->cursor = def;
+}
+
+static void QX_Pick_Draw (void)
+{
+	int i, y = 48;
+	const char *def = Game_NewGameMap ();
+
+	M_PrintWhite (72, 36, "Choose where to start:");
+	Hotspots_Add (72, y, 24 * 8, qx_pick_count * 8, qx_pick_count, hotspottype_button);
+	for (i = 0; i < qx_pick_count; i++, y += 8) {
+		const char *s = va("%s%s", qx_pick[i], !strcmp (qx_pick[i], def) ? "  (default)" : "");
+		if (i == local_menu->cursor)	M_PrintWhite (80, y, s);
+		else							M_Print (80, y, s);
+	}
+	// blinking cursor like the other text menus
+	M_DrawCharacter (68, 48 + local_menu->cursor * 8, 12 + ((int)(realtime * 4) & 1));
+	M_Print (72, y + 8, "Enter: start   Esc: back");
+}
+
+//=============================================================================
 /* MAIN MENU */
 
 
@@ -102,6 +216,11 @@ LOCAL_EVENT (Draw) (void)
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp"), NO_HOTSPOTS_0, USE_IMAGE_SIZE_NEG1, USE_IMAGE_SIZE_NEG1);
 	p = Draw_CachePic ("gfx/ttl_main.lmp");
 		M_DrawPicCentered (4, p);
+
+	if (qx_pick_active) {
+		QX_Pick_Draw ();
+		return;
+	}
 
 	// Hotspots are numbered in draw order, so the added rows come first
 	if (qx_has_continue) {
@@ -135,6 +254,17 @@ LOCAL_EVENT (Draw) (void)
 // Since key can be upper or lower case it isn't quite a scancode
 LOCAL_EVENT (KeyPress) (key_scancode_e key, int hotspot)
 {
+	if (qx_pick_active) {
+		switch (key) {
+		default:				// Nothing
+		case_break K_ESCAPE:	MENU_ROW_CHANGE_HARD_SOUND (); QX_Pick_Leave ();
+		case_break K_DOWNARROW:	MENU_ROW_CHANGE_HARD_SOUND (); if (++local_menu->cursor >= qx_pick_count) local_menu->cursor = 0;
+		case_break K_UPARROW:	MENU_ROW_CHANGE_HARD_SOUND (); if (--local_menu->cursor < 0) local_menu->cursor = qx_pick_count - 1;
+		case_break K_ENTER:		QX_Pick_Start (local_menu->cursor);
+		}
+		return;
+	}
+
 	switch (key) {
 	default:				// Nothing
 	case_break K_ESCAPE:		Key_SetDest (key_game);
@@ -146,8 +276,7 @@ LOCAL_EVENT (KeyPress) (key_scancode_e key, int hotspot)
 		default:							// Nothing
 		case_break opt_continue_0:			if (sv.active)	Mnu_Dialog_Modal_YesNo (QX_Do_Continue_, NULL, "Load the last autosave?" NEWLINE "Unsaved progress will be lost.");
 											else			QX_Do_Continue_ ();
-		case_break opt_new_game_1:			if (sv.active)	Mnu_Dialog_Modal_YesNo (Mnu_SinglePlayer_Do_NewGame_, NULL, "Are you sure you want to" NEWLINE "start a new game?");
-											else			Mnu_SinglePlayer_Do_NewGame_ ();
+		case_break opt_new_game_1:			QX_NewGame_Selected ();
 		case_break opt_single_player_2:		Mnu_SinglePlayer_Enter_f (NULL);
 		case_break opt_multiplayer_game_3:	Mnu_MultiPlayer_Enter_f (NULL);
 		case_break opt_options_4:			Mnu_Options_Enter_f (NULL);
@@ -164,6 +293,7 @@ LOCAL_EVENT (KeyPress) (key_scancode_e key, int hotspot)
 
 LOCAL_EVENT (Enter_f) (lparse_t *unused)
 {
+	qx_pick_active = false;
 	QX_Continue_Scan ();	// a new autosave may exist since last time
 	if (key_dest != key_menu)
 		local_menu->cursor = 0;	// opened from the game / console: Continue (or New Game) first
