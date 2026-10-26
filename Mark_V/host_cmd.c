@@ -1642,6 +1642,11 @@ void Host_Loadgame_f (lparse_t *line)
 	sv.time = time;
 	sv.auto_save_time = sv.time + AUTO_SAVE_MINIMUM_TIME;
 
+	// QuadEXQ: the savegame's runes (the serverflags global) become the server's
+	// runes right away. Stock Quake only copied them at the next changelevel, so
+	// a "restart" after loading could bring back the runes of an older game.
+	svs.serverflags = (int)pr_global_struct->serverflags;
+
 	FS_fclose (f);
 
 	if (!multiplayer_load)
