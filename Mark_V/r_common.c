@@ -65,11 +65,11 @@ const byte *qx_newgame_lmp;
 QuadEXQ: the main menu's CONTINUE and NEW GAME rows in the real Quake menu
 font. They are put together from the player's own id1 menu art at startup
 (nothing of id's is shipped): NEW GAME is the top row of gfx/sp_menu.lmp,
-CONTINUE is cut letter by letter from gfx/sp_menu.lmp and gfx/mp_menu.lmp
-(the C is the front of the big G of "Game"). If those files are missing,
+CONTINUE is cut letter by letter from gfx/mp_menu.lmp, and its C is the big
+O of "Options" (gfx/mainmenu.lmp) opened on the right, about 270 degrees. If those files are missing,
 not id1's, or not the expected size, the bundled pictures stay.
 */
-#define QX_ROW_W	147
+#define QX_ROW_W	160
 static byte qx_cont_buf[8 + QX_ROW_W * 20];
 static byte qx_newg_buf[8 + QX_ROW_W * 24];
 
@@ -100,7 +100,7 @@ static void QX_BuildMenuRows (void)
 {
 	// letters of "Continue": source picture (0 sp, 1 mp), x from, x to, top row
 	static const int glyphs[8][4] = {
-		{0, 71, 83, 0},		// C  (front of the G in New Game)
+		{2, 0, 22, 40},		// C  (the O of Options, opened up below)
 		{1, 14, 36, 0},		// o  (Join)
 		{1, 46, 65, 0},		// n  (Join)
 		{1, 40, 59, 40},	// t  (Setup)
@@ -111,16 +111,27 @@ static void QX_BuildMenuRows (void)
 	};
 	const byte *sp = QX_LoadId1Pic ("gfx/sp_menu.lmp", 232, 64);
 	const byte *mp = QX_LoadId1Pic ("gfx/mp_menu.lmp", 232, 64);
+	const byte *mm = QX_LoadId1Pic ("gfx/mainmenu.lmp", 240, 112);
 	int i, x, y;
 
-	if (sp && mp) {
+	if (sp && mp && mm) {
 		((int *)qx_cont_buf)[0] = LittleLong (QX_ROW_W);
 		((int *)qx_cont_buf)[1] = LittleLong (20);
 		memset (qx_cont_buf + 8, 255, QX_ROW_W * 20);
 		for (i = 0, x = 1; i < 8; i++) {
 			const int *g = glyphs[i];
-			QX_Blit (qx_cont_buf, QX_ROW_W, x, g[0] ? mp : sp, 232, g[1], g[2], g[3], 20);
+			if (g[0] == 2)	QX_Blit (qx_cont_buf, QX_ROW_W, x, mm, 240, g[1], g[2], g[3], 20);
+			else			QX_Blit (qx_cont_buf, QX_ROW_W, x, g[0] ? mp : sp, 232, g[1], g[2], g[3], 20);
 			x += g[2] - g[1] + 1;
+		}
+		// O -> C: drop the middle of the right half (rows 6-12, columns 12-21 of
+		// the glyph) and close the two cut ends with the outline color
+		for (y = 5; y <= 13; y++) {
+			for (i = 1 + 12; i <= 1 + 21; i++) {
+				byte *px = &qx_cont_buf[8 + y * QX_ROW_W + i];
+				if (y == 5 || y == 13)	{ if (*px != 255) *px = 96; }
+				else					*px = 255;
+			}
 		}
 
 		((int *)qx_newg_buf)[0] = LittleLong (QX_ROW_W);
@@ -128,13 +139,13 @@ static void QX_BuildMenuRows (void)
 		memset (qx_newg_buf + 8, 255, QX_ROW_W * 24);
 		QX_Blit (qx_newg_buf, QX_ROW_W, 0, sp, 232, 0, QX_ROW_W, 0, 20);
 		QX_Blit (qx_newg_buf + QX_ROW_W * 20, QX_ROW_W, 78, sp, 232, 78, 93, 20, 4);	// the G's tail only
-		(void)y;
 
 		qx_continue_lmp = qx_cont_buf;
 		qx_newgame_lmp = qx_newg_buf;
 	}
 	if (sp) free ((void *)sp);
 	if (mp) free ((void *)mp);
+	if (mm) free ((void *)mm);
 }
 
 void R_Init (void)
