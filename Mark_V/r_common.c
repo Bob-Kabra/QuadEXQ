@@ -61,6 +61,82 @@ const byte *levels_lmp;
 const byte *qx_continue_lmp;
 const byte *qx_newgame_lmp;
 
+/*
+QuadEXQ: the main menu's CONTINUE and NEW GAME rows in the real Quake menu
+font. They are put together from the player's own id1 menu art at startup
+(nothing of id's is shipped): NEW GAME is the top row of gfx/sp_menu.lmp,
+CONTINUE is cut letter by letter from gfx/sp_menu.lmp and gfx/mp_menu.lmp
+(the C is the front of the big G of "Game"). If those files are missing,
+not id1's, or not the expected size, the bundled pictures stay.
+*/
+#define QX_ROW_W	147
+static byte qx_cont_buf[8 + QX_ROW_W * 20];
+static byte qx_newg_buf[8 + QX_ROW_W * 24];
+
+static const byte *QX_LoadId1Pic (const char *path, int w, int h)
+{
+	byte *f = COM_LoadMallocFile (path);
+	if (!f)
+		return NULL;
+	if (!strstr (com_filepath, "/id1/") || LittleLong (((int *)f)[0]) != w || LittleLong (((int *)f)[1]) != h) {
+		free (f);
+		return NULL;
+	}
+	return f;
+}
+
+static void QX_Blit (byte *dst, int dw, int dx, const byte *src, int sw, int sx0, int sx1, int sy, int rows)
+{
+	int x, y;
+	for (y = 0; y < rows; y++)
+		for (x = sx0; x < sx1; x++) {
+			byte c = src[8 + (sy + y) * sw + x];
+			if (c != 255)
+				dst[8 + y * dw + dx + x - sx0] = c;
+		}
+}
+
+static void QX_BuildMenuRows (void)
+{
+	// letters of "Continue": source picture (0 sp, 1 mp), x from, x to, top row
+	static const int glyphs[8][4] = {
+		{0, 71, 83, 0},		// C  (front of the G in New Game)
+		{1, 14, 36, 0},		// o  (Join)
+		{1, 46, 65, 0},		// n  (Join)
+		{1, 40, 59, 40},	// t  (Setup)
+		{1, 36, 45, 0},		// i  (Join)
+		{1, 46, 65, 0},		// n
+		{1, 59, 79, 40},	// u  (Setup)
+		{1, 22, 40, 40},	// e  (Setup)
+	};
+	const byte *sp = QX_LoadId1Pic ("gfx/sp_menu.lmp", 232, 64);
+	const byte *mp = QX_LoadId1Pic ("gfx/mp_menu.lmp", 232, 64);
+	int i, x, y;
+
+	if (sp && mp) {
+		((int *)qx_cont_buf)[0] = LittleLong (QX_ROW_W);
+		((int *)qx_cont_buf)[1] = LittleLong (20);
+		memset (qx_cont_buf + 8, 255, QX_ROW_W * 20);
+		for (i = 0, x = 1; i < 8; i++) {
+			const int *g = glyphs[i];
+			QX_Blit (qx_cont_buf, QX_ROW_W, x, g[0] ? mp : sp, 232, g[1], g[2], g[3], 20);
+			x += g[2] - g[1] + 1;
+		}
+
+		((int *)qx_newg_buf)[0] = LittleLong (QX_ROW_W);
+		((int *)qx_newg_buf)[1] = LittleLong (24);
+		memset (qx_newg_buf + 8, 255, QX_ROW_W * 24);
+		QX_Blit (qx_newg_buf, QX_ROW_W, 0, sp, 232, 0, QX_ROW_W, 0, 20);
+		QX_Blit (qx_newg_buf + QX_ROW_W * 20, QX_ROW_W, 78, sp, 232, 78, 93, 20, 4);	// the G's tail only
+		(void)y;
+
+		qx_continue_lmp = qx_cont_buf;
+		qx_newgame_lmp = qx_newg_buf;
+	}
+	if (sp) free ((void *)sp);
+	if (mp) free ((void *)mp);
+}
+
 void R_Init (void)
 {
 	Cmd_AddCommands (R_Init);
@@ -80,6 +156,7 @@ void R_Init (void)
 		qx_continue_lmp = mem = Bundle_File_Memory_Pointer ( (sname = "qx_continue.lmp"), NULL); if (!mem) System_Error ("Couldn't load %s", sname);
 		qx_newgame_lmp  = mem = Bundle_File_Memory_Pointer ( (sname = "qx_newgame.lmp"),  NULL); if (!mem) System_Error ("Couldn't load %s", sname);
 	}
+	QX_BuildMenuRows ();	// the real Quake font, from your own id1 data
 }
 
 
