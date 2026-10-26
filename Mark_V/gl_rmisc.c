@@ -357,6 +357,24 @@ deleted on a new map.
 ===============
 */
 
+// QuadEXQ: colormap values from QX_COLORMAP_BASE on are fixed shirt/pants
+// colors for non-player models (the Rune Hunter): base + shirt * 14 + pants.
+// 1..maxclients are still the players' colors.
+static cbool QX_Colormap_Colors (int colormap, int *shirt, int *pants)
+{
+	if (colormap >= 1 && colormap <= cl.maxclients) {
+		*shirt = (cl.scores[colormap - 1].colors & 0xf0) >> 4;
+		*pants = cl.scores[colormap - 1].colors & 15;
+		return true;
+	}
+	if (colormap >= QX_COLORMAP_BASE && colormap < QX_COLORMAP_BASE + 14 * 14) {
+		*shirt = (colormap - QX_COLORMAP_BASE) / 14;
+		*pants = (colormap - QX_COLORMAP_BASE) % 14;
+		return true;
+	}
+	return false;
+}
+
 // This is for an entity WITH an existing skin texture
 // So we know it is an alias model (or at least was until now!)
 cbool R_SkinTextureChanged (entity_t *cur_ent)
@@ -374,9 +392,10 @@ cbool R_SkinTextureChanged (entity_t *cur_ent)
 
 	do
 	{
-		int playerslot				= cur_ent->colormap - 1;
-		int shirt_color				= (cl.scores[playerslot].colors & 0xf0) >> 4;
-		int pants_color				= cl.scores[playerslot].colors & 15;
+		int shirt_color, pants_color;
+
+		if (!QX_Colormap_Colors (cur_ent->colormap, &shirt_color, &pants_color))
+			return true;
 
 		if (skintexture->pants != pants_color)
 		{
@@ -423,7 +442,7 @@ gltexture_t *R_TranslateNewModelSkinColormap (entity_t *cur_ent)
 			return NULL;
 
 		// No color map or it is invalid
-		if (cur_ent->colormap <= 0 || cur_ent->colormap > cl.maxclients)
+		if (!QX_Colormap_Colors (cur_ent->colormap, &shirt_color, &pants_color))
 			return NULL;
 
 		// Certain models just aren't worth trying to colormap
@@ -445,10 +464,7 @@ gltexture_t *R_TranslateNewModelSkinColormap (entity_t *cur_ent)
 
 	do // SEE IF WE HAVE SKIN + MODEL + COLOR ALREADY PHASE
 	{
-		int playerslot = cur_ent->colormap - 1;
-
-		shirt_color = (cl.scores[playerslot].colors & 0xf0) /16; //>> 4; // Divide by 16
-		pants_color = cl.scores[playerslot].colors & 15;
+		// shirt_color / pants_color: set by QX_Colormap_Colors above
 
 		// Con_PrintLinef ("Seeking shirt %d, pants %d, skin %d, model %x", shirt_color, pants_color, skinnum, cur_ent->model);
 

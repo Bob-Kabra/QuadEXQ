@@ -762,13 +762,14 @@ void CL_ParseUpdate (int bits)
 #if 0
 		Con_PrintLinef ("ent: num %d colormap %d frame %d", num, i, ent->frame);
 #endif
-		if (i > cl.maxclients)
+		// QuadEXQ: QX_COLORMAP_BASE and up = fixed colors (see gl_rmisc.c)
+		if (i > cl.maxclients && !(i >= QX_COLORMAP_BASE && i < QX_COLORMAP_BASE + 14 * 14))
 			Host_Error ("i >= cl.maxclients");
 #ifdef GLQUAKE_COLORMAP_TEXTURES
 		ent->colormap = i;
 #endif // GLQUAKE_COLORMAP_TEXTURES
 #ifdef WINQUAKE_COLORMAP_TRANSLATION
-		ent->colormap = cl.scores[i-1].translations;
+		ent->colormap = (i <= cl.maxclients) ? cl.scores[i-1].translations : vid.colormap;
 #endif // WINQUAKE_COLORMAP_TRANSLATION
 	}
 

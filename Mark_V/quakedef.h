@@ -713,5 +713,9 @@ extern build_t build;
 	#define alert FIXME_NO_ALERTS_ALLOWED_IN_RELEASE
 #endif // _DEBUG
 
+// QuadEXQ: entity colormap values from here on are fixed shirt/pants colors
+// (QX_COLORMAP_BASE + shirt * 14 + pants), for monsters that use player.mdl
+#define QX_COLORMAP_BASE 32
+
 #endif // ! __QUAKEDEF_H__
 
