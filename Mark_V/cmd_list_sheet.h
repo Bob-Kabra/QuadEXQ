@@ -163,6 +163,7 @@ CMD_DEF (M_Init      , DEP_NONE    , "help"                      , _Help_f						
 
 CMD_DEF (SV_Init     , DEP_HOST__  , "qx_statlog"                , SV_QX_StatLog_f		, "QuadEXQ: append one line to quadexq_stats.txt (used by the progs for the map report)."			)
 CMD_DEF (Host_Init   , DEP_HOST__  , "qx_respawn"                , Host_QX_Respawn_f		, "QuadEXQ: after a death, load this map's latest autosave (or restart the map if there is none)."			)
+CMD_DEF (Host_Init   , DEP_HOST__  , "qx_arena"                  , Host_QX_Arena_f		, "QuadEXQ: Rune Hunter duel: changelevel to a random arena (maps with dm in the name, q1edge, towersp)."			)
 CMD_DEF (SV_Init     , DEP_HOST__  , "autosave"                  , SV_Autosave_Now_f		, "QuadEXQ: autosave right now (the progs calls this after a boss dies)."			)
 CMD_DEF (SV_Init     , DEP_HOST__  , "sv_hints"                  , SV_Hints_List_f			, "List server hints."			) //johnfitz
 CMD_DEF (SV_Init     , DEP_HOST__  , "sv_protocol"               , SV_Protocol_f			, "Sets the network protocol used by the server. Default is 666 (FitzQuake). Possible values are 15 (Quake) and 666 (FitzQuake)."			) //johnfitz

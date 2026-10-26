@@ -1390,6 +1390,67 @@ void Host_QX_Respawn_f (lparse_t *line)
 
 /*
 ===============
+QuadEXQ: qx_arena
+
+Called by the progs when the Rune Hunter calls you out: go to a random duel
+arena. Candidates are every map you have with "dm" in its name (dm1-dm6 from
+registered Quake, custom DM maps in the game folder...) plus q1edge and
+towersp. Maps you don't have are simply not candidates.
+===============
+*/
+#define QX_ARENA_MAX 64
+static char qx_arena_list[QX_ARENA_MAX][MAX_QPATH_64];
+static int qx_arena_count;
+
+static void QX_Arena_Add (const char *name)
+{
+	int i;
+	if (qx_arena_count >= QX_ARENA_MAX || !name[0])
+		return;
+	for (i = 0; i < qx_arena_count; i++)
+		if (!strcasecmp (qx_arena_list[i], name))
+			return;
+	if (!COM_FindFile_Obsolete (va("maps/%s.bsp", name)))
+		return;
+	c_strlcpy (qx_arena_list[qx_arena_count], name);
+	qx_arena_count++;
+}
+
+static void QX_Arena_Scan (clist_t *cursor)
+{
+	for ( ; cursor; cursor = cursor->next)
+		if (strcasestr (cursor->name, "dm"))
+			QX_Arena_Add (cursor->name);
+}
+
+void Host_QX_Arena_f (lparse_t *line)
+{
+	int i;
+	const char *pick;
+
+	if (!sv.active || svs.maxclients_internal != 1)
+		return;
+
+	qx_arena_count = 0;
+	for (i = 1; i <= 6; i++)
+		QX_Arena_Add (va("dm%d", i));
+	QX_Arena_Add ("q1edge");
+	QX_Arena_Add ("towersp");
+	QX_Arena_Scan (list_info[list_type_map].plist);
+	QX_Arena_Scan (list_info[list_type_map2].plist);
+
+	if (!qx_arena_count) {
+		Con_PrintLinef ("qx_arena: no arena maps found");
+		Cvar_SetQuick (&pr_scratch1, "0");		// the duel call is off
+		return;
+	}
+	pick = qx_arena_list[rand () % qx_arena_count];
+	Con_PrintLinef ("Rune Hunter arena: %s (%d to choose from)", pick, qx_arena_count);
+	Cbuf_AddTextLinef ("changelevel %s", pick);
+}
+
+/*
+===============
 Host_Loadgame_f
 ===============
 */
