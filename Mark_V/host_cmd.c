@@ -1430,12 +1430,52 @@ QuadEXQ: qx_arena
 Called by the progs when the Rune Hunter calls you out: go to a random duel
 arena. Candidates are every map you have with "dm" in its name (dm1-dm6 from
 registered Quake, custom DM maps in the game folder...) plus q1edge and
-towersp. Maps you don't have are simply not candidates.
+towersp. Maps you don't have, and maps with fewer than two deathmatch spawn
+spots, are not candidates.
 ===============
 */
 #define QX_ARENA_MAX 64
 static char qx_arena_list[QX_ARENA_MAX][MAX_QPATH_64];
 static int qx_arena_count;
+
+// how many info_player_deathmatch spots the map has (read from its entity
+// lump, remembered per map name: maps don't change while the game runs)
+#define QX_SPOTS_CACHE 128
+static char qx_spots_name[QX_SPOTS_CACHE][MAX_QPATH_64];
+static int qx_spots_count[QX_SPOTS_CACHE];
+static int qx_spots_cached;
+
+static int QX_Arena_DMSpots (const char *name)
+{
+	const char *key = "\"info_player_deathmatch\"";
+	int keylen = (int)strlen (key);
+	byte *f;
+	int i, ofs, len, n = 0;
+
+	for (i = 0; i < qx_spots_cached; i++)
+		if (!strcasecmp (qx_spots_name[i], name))
+			return qx_spots_count[i];
+
+	f = COM_LoadMallocFile (va("maps/%s.bsp", name));
+	if (f) {
+		// every BSP flavour (29, BSP2, HL 30) starts: int version, then lump 0 = entities
+		ofs = LittleLong (((int *)f)[1]);
+		len = LittleLong (((int *)f)[2]);
+		if (ofs > 0 && len > 0 && ofs + len <= com_filesize) {
+			const char *t = (const char *)f + ofs;
+			for (i = 0; i + keylen <= len; i++)
+				if (t[i] == '"' && !strncmp (t + i, key, keylen))
+					n++;
+		}
+		free (f);
+	}
+	if (qx_spots_cached < QX_SPOTS_CACHE) {
+		c_strlcpy (qx_spots_name[qx_spots_cached], name);
+		qx_spots_count[qx_spots_cached] = n;
+		qx_spots_cached++;
+	}
+	return n;
+}
 
 static void QX_Arena_Add (const char *name)
 {
@@ -1446,6 +1486,8 @@ static void QX_Arena_Add (const char *name)
 		if (!strcasecmp (qx_arena_list[i], name))
 			return;
 	if (!COM_FindFile_Obsolete (va("maps/%s.bsp", name)))
+		return;
+	if (QX_Arena_DMSpots (name) < 2)		// one spawn spot is no deathmatch
 		return;
 	c_strlcpy (qx_arena_list[qx_arena_count], name);
 	qx_arena_count++;
