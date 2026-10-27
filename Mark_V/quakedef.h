@@ -432,11 +432,13 @@ typedef enum { ENUM_FORCE_INT_GCC_ (MAX_MARK_V)
 #define STAT_QX_JETS		24		// jet bursts left
 #define STAT_QX_BOSSYAW		25		// absolute yaw from player to boss (degrees)
 #define STAT_QX_BOSSDIST	26		// distance to boss (units)
+#define STAT_QX_DUEL		27		// Rune Hunter duel: 4096 | yours | theirs << 4 | hunter << 8, 0 = none
 #define QX_F_ACTIVE		1
 #define QX_F_HASJET		2
 #define QX_F_BOSS		4
 #define QX_F_QUAD		8
 #define QX_F_SKILLMAX	16
+#define QX_F_HUNTER		32		// the compass points at the Rune Hunter, not a boss
 
 // stock defines
 

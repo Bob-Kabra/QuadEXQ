@@ -709,8 +709,54 @@ void Sbar_SoloScoreboard (void)
 Sbar_DrawScoreboard
 ===============
 */
+// QuadEXQ: Tab during a Rune Hunter duel shows the duel like a deathmatch
+// scoreboard: you and the hunter, frags, the arena. (The hunter is a monster,
+// not a client, so the progs sends the score as STAT_QX_DUEL.)
+static void QX_DuelOverlay (int duel)
+{
+	static const char *names[4] = {"GuroFighter", "G", "K4B", "Tres"};
+	static const int colors[4] = {8 * 16 + 8, 0, 13 * 16 + 13, 4 * 16 + 4};	// shirt << 4 | pants
+	int mine = duel & 15, theirs = (duel >> 4) & 15, who = (duel >> 8) & 3;
+	int row, x = 76, y = 40;
+	char num[12];
+
+	if (scr_originalquake2d.value)	Draw_SetCanvas (CANVAS_SCOREBOARD2);
+	else							Draw_SetCanvas (CANVAS_MENU);
+
+	M_DrawPicCentered (4, Draw_CachePic ("gfx/ranking.lmp"));
+	M_PrintWhite (160 - 9 * 4, 28, "EXQ ARENA");
+
+	for (row = 0; row < 2; row++, y += 10) {
+		cbool me = (row == 0) == (mine >= theirs);
+		int c = me ? cl.scores[0].colors : colors[who];
+		int f = me ? mine : theirs;
+
+		Draw_Fill (x, y, 40, 4, Sbar_ColorForMap (c & 240), 1);
+		Draw_Fill (x, y + 4, 40, 4, Sbar_ColorForMap ((c & 15) * 16), 1);
+		c_snprintf1 (num, "%3d", f);
+		Draw_Character (x + 8, y, num[0]);
+		Draw_Character (x + 16, y, num[1]);
+		Draw_Character (x + 24, y, num[2]);
+		if (me) {
+			Draw_Character (x - 2, y, 16);
+			Draw_Character (x + 32, y, 17);
+		}
+		Draw_String (x + 64, y, me ? cl.scores[0].name : names[who]);
+	}
+
+	y += 10;
+	M_Print (160 - 16 * 4, y, "first to 10 frags");
+	y += 16;
+	if (strlen (cl.levelname) <= 38)
+		M_Print (160 - (int)strlen (cl.levelname) * 4, y, cl.levelname);
+
+	Draw_SetCanvas (CANVAS_SBAR);
+}
+
 void Sbar_DrawScoreboard (void)
 {
+	if (sb_showscores && (cl.stats[STAT_QX_DUEL] & 4096))
+		QX_DuelOverlay (cl.stats[STAT_QX_DUEL]);
 	Sbar_SoloScoreboard ();
 	if (cl.gametype == GAME_DEATHMATCH || cl.maxclients > 1)
 		Sbar_DeathmatchOverlay ();
@@ -1846,7 +1892,7 @@ void Sbar_DrawQuadEXQ (void)
 		else if (rel <= -30 && rel > -150)	arrow = ">";
 		else								arrow = "v";
 
-		c_snprintf2 (str, "BOSS %s %d", arrow, cl.stats[STAT_QX_BOSSDIST]);
+		c_snprintf3 (str, "%s %s %d", (flags & QX_F_HUNTER) ? "HUNTER" : "BOSS", arrow, cl.stats[STAT_QX_BOSSDIST]);
 		QX_StringAlt (160 - (int)strlen (str) * 4, bottom - 34, str);
 	}
 }

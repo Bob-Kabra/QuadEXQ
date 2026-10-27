@@ -2056,7 +2056,7 @@ void CL_ParseServerMessage (cbool *found_server_command)
 				Host_Error ("svc_updatestat: %d is invalid", i);
 
 			cl.stats[i] = MSG_ReadLong ();
-			if (i >= STAT_QX_FLAGS && i <= STAT_QX_BOSSDIST)
+			if (i >= STAT_QX_FLAGS && i <= STAT_QX_DUEL)
 				Sbar_Changed (); // QuadEXQ HUD
 			break;
 
