@@ -1352,7 +1352,8 @@ If the autosave slot (sv_autosave_slot, s19.sav by default) holds a save of the
 map we are on, load it; otherwise restart the map as Quake always did.
 ===============
 */
-void Host_QX_Respawn_f (lparse_t *line)
+// QuadEXQ: is the autosave slot a save of map 'mapname'?
+static cbool QX_Autosave_Is_For (const char *mapname, int *slot_out)
 {
 	int slot = (int)sv_autosave_slot.value - 1;
 	char path[MAX_OSPATH];
@@ -1360,32 +1361,66 @@ void Host_QX_Respawn_f (lparse_t *line)
 	FILE *f;
 	int version, i, ok = false;
 
-	if (sv.active && slot >= 0 && slot < 20 && svs.maxclients_internal == 1) {
-		FS_FullPath_From_QPath (path, va("s%d.sav", slot));
-		f = FS_fopen_read (path, "rb");
-		if (f) {
-			if (fscanf (f, "%d\n", &version) == 1) {
-				fgets (buf, sizeof(buf), f);					// comment
-				if (version == SAVEGAME_VERSION_6)
-					fgets (buf, sizeof(buf), f);				// cvar settings
-				for (i = 0; i < NUM_SPAWN_PARMS; i++)
-					fgets (buf, sizeof(buf), f);				// spawn parms (1 player)
-				fgets (buf, sizeof(buf), f);					// skill
-				if (fgets (buf, sizeof(buf), f)) {				// map name
-					buf[strcspn (buf, "\r\n")] = 0;
-					ok = !strcmp (buf, sv.name);
-				}
-			}
-			FS_fclose (f);
+	*slot_out = slot;
+	if (slot < 0 || slot >= 20 || svs.maxclients_internal != 1)
+		return false;
+	FS_FullPath_From_QPath (path, va("s%d.sav", slot));
+	f = FS_fopen_read (path, "rb");
+	if (!f)
+		return false;
+	if (fscanf (f, "%d\n", &version) == 1) {
+		fgets (buf, sizeof(buf), f);					// comment
+		if (version == SAVEGAME_VERSION_6)
+			fgets (buf, sizeof(buf), f);				// cvar settings
+		for (i = 0; i < NUM_SPAWN_PARMS; i++)
+			fgets (buf, sizeof(buf), f);				// spawn parms (1 player)
+		fgets (buf, sizeof(buf), f);					// skill
+		if (fgets (buf, sizeof(buf), f)) {				// map name
+			buf[strcspn (buf, "\r\n")] = 0;
+			ok = !strcmp (buf, mapname);
 		}
 	}
+	FS_fclose (f);
+	return ok;
+}
 
-	if (ok) {
+void Host_QX_Respawn_f (lparse_t *line)
+{
+	int slot;
+
+	if (sv.active && QX_Autosave_Is_For (sv.name, &slot)) {
 		Con_PrintLinef ("Back to the last checkpoint (s%d)", slot);
 		SCR_BeginLoadingPlaque ();
 		Cbuf_AddTextLinef ("load s%d", slot);
 	}
 	else Cbuf_AddTextLine ("restart");
+}
+
+/*
+===============
+QuadEXQ: qx_return <map>
+
+After a revenge match: go back to <map> at its checkpoint (the autosave slot,
+if it is a save of that map), otherwise to the start of <map>. One command,
+so the client never sees two level changes in a row.
+===============
+*/
+void Host_QX_Return_f (lparse_t *line)
+{
+	int slot;
+	const char *map;
+
+	if (line->count != 2) {
+		Con_PrintLinef ("qx_return <map> : back to that map's checkpoint");
+		return;
+	}
+	map = line->args[1];
+	if (QX_Autosave_Is_For (map, &slot)) {
+		Con_PrintLinef ("Back to the checkpoint of %s (s%d)", map, slot);
+		SCR_BeginLoadingPlaque ();
+		Cbuf_AddTextLinef ("load s%d", slot);
+	}
+	else Cbuf_AddTextLinef ("changelevel %s", map);
 }
 
 /*
