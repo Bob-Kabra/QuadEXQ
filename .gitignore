@@ -1,0 +1,10 @@
+# Build output
+obj/
+bin/
+
+# Visual Studio / CodeBlocks
+*.pdb
+*.obj
+*.exe
+*.dll
+
