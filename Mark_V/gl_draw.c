@@ -999,6 +999,57 @@ void Draw_Triangle_Corner (int x, int y, int wh, int _wh, int c)
 	eglEnable (GL_TEXTURE_2D);
 }
 
+/*
+=============
+QuadEXQ: crosshair 3 -- a dot with two translucent arcs, left and right
+(drawn on CANVAS_CROSSHAIR, 0,0 = centre; scr_crosshairscale sizes it)
+=============
+*/
+static void QX_Crosshair_Arc (float a0, float a1, float r0, float r1)
+{
+	const int steps = 12;
+	int i;
+
+	eglBegin (GL_TRIANGLE_STRIP);
+	for (i = 0; i <= steps; i++) {
+		float a = (a0 + (a1 - a0) * i / steps) * (float)M_PI / 180.0f;
+		float c = (float)cos (a), s = (float)sin (a);
+		eglVertex2f (c * r0, s * r0);
+		eglVertex2f (c * r1, s * r1);
+	}
+	eglEnd ();
+}
+
+void Draw_QX_Crosshair (void)
+{
+	// sized to the screen: at 1080 lines the arcs run 18-32 pixels from the
+	// centre and the dot is 4 pixels (scr_crosshairscale still scales it)
+	float k = scr_vrect.height / 1080.0f;
+	float r0 = 18 * k, r1 = 32 * k, d = 2 * k;
+
+	if (d < 1)	d = 1;
+	eglDisable (GL_TEXTURE_2D);
+	eglEnable (GL_BLEND);
+	eglDisable (GL_ALPHA_TEST);
+
+	eglColor4f (0.75f, 0.75f, 0.75f, 0.35f);			// the arcs: faint
+	QX_Crosshair_Arc (180 - 55, 180 + 55, r0, r1);		// left
+	QX_Crosshair_Arc (-55, 55, r0, r1);					// right
+
+	eglColor4f (1, 1, 1, 0.9f);							// the dot
+	eglBegin (GL_QUADS);
+	eglVertex2f (-d, -d);
+	eglVertex2f (d, -d);
+	eglVertex2f (d, d);
+	eglVertex2f (-d, d);
+	eglEnd ();
+
+	eglColor3f (1, 1, 1);
+	eglDisable (GL_BLEND);
+	eglEnable (GL_ALPHA_TEST);
+	eglEnable (GL_TEXTURE_2D);
+}
+
 void Draw_Alpha_Spot (int x, int y, int w, int h, int c)
 {
 	float alpha = 0.50;

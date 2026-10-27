@@ -861,6 +861,13 @@ missing_weapon_crosshair:
 
 #endif // GLQUAKE_TEXTURE_MANAGER
 
+#ifdef GLQUAKE_RENDERER_SUPPORT
+	if (scr_crosshair.value >= 3) { // QuadEXQ: dot + two translucent arcs
+		Draw_QX_Crosshair ();
+		return;
+	}
+#endif // GLQUAKE_RENDERER_SUPPORT
+
 	if (scr_crosshair.value > 1) { // Dot crosshair
 		Draw_Character (-4, -4, 15); //0,0 is center of viewport
 		return;

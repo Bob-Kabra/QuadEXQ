@@ -34,6 +34,7 @@ void Draw_Character (int x, int y, int num);
 void Draw_Pic (int x, int y, qpic_t *pic);
 void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_Fill (int x, int y, int w, int h, int c, float alpha);
+void Draw_QX_Crosshair (void);	// QuadEXQ: crosshair 3 (GL only)
 void Draw_Triangle_Corner (int x, int y, int wh, int _wh, int c);
 void Draw_Alpha_Spot (int x, int y, int w, int h, int c);
 void Draw_TileClear (int x, int y, int w, int h);
