@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v0.6 beta
+  QuadEXQ  v0.6.1 beta
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -513,6 +513,22 @@ fork), which adds the HUD, music switching, checkpoints and more.
  13. Version history
 ==============================================================================
 
+  v0.6.1 beta
+    Game:
+    - After a revenge match or an arena challenge you come back to where
+      you died (your last safe footing), not to the checkpoint, with 3
+      seconds of safety.
+    - Map report: auto melee swings count as the Axe.
+    - The Enforcer laser uses Quake's own model again.
+    QuadEXQ engine:
+    - Opening the menu or quitting autosaves too, when it is safe, so
+      stopping right after a map change keeps the new map.
+    - Plain Quake and other mods get the safe autosave and CONTINUE too:
+      the engine itself checks that it is calm before it saves.
+    - ...and death checkpoints: when their progs restarts the map after a
+      death, the engine loads the map's autosave instead
+      (qx_checkpoints 0 turns this off).
+
   v0.6 beta
     Game:
     - The Rune Hunter: come back to start with 2+ runes and a rival calls
@@ -523,8 +539,6 @@ fork), which adds the HUD, music switching, checkpoints and more.
       DM spawns, are skipped). Health, armor and weapons laid out as in DM.
     - Revenge match: while the hunter holds your rune, each death has a 30%
       chance to call a rematch. Win it back.
-    - After a revenge match or an arena challenge you come back to where
-      you died, not to the checkpoint.
     - Arena challenge: with no rune at stake, each death has a 30% chance
       to call a challenge. Win and keep the arena weapons and the score.
       10-0 is a PERFECT (10000 points).
@@ -543,12 +557,6 @@ fork), which adds the HUD, music switching, checkpoints and more.
       the real Quake menu font.
     - crosshair 3: a dot with two translucent arcs (scr_crosshairscale 2
       is a good size).
-    - Opening the menu or quitting autosaves too, when it is safe.
-    - Other mods and plain Quake get the safe autosave and CONTINUE too:
-      the engine itself checks that it is calm before it saves.
-    - ...and death checkpoints: when their progs restarts the map after a
-      death, the engine loads the map's autosave instead
-      (qx_checkpoints 0 turns this off).
 
   v0.5.1 beta
     - Runes are back to stock Quake rules: kept in savegames (CONTINUE),
