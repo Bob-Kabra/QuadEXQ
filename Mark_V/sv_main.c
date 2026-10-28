@@ -1258,6 +1258,54 @@ static void SV_Host_Frame_UpdateServer_SendClientMessages (void)
 }
 
 
+// QuadEXQ: the same "is it calm?" test as the QuadEXQ progs (QX_SafeToSave),
+// done by the engine for any other progs (stock Quake, other mods), so their
+// autosaves (and CONTINUE) never land in a hopeless spot either.
+static double qx_eng_hurt_time;		// sv.time the player last lost health
+static float qx_eng_last_hp;
+
+static void SV_QX_TrackHurt (edict_t *pl)
+{
+	if (sv.time < qx_eng_hurt_time)	// new map or a load: time started over
+		qx_eng_hurt_time = -100;
+	if (pl->v.health < qx_eng_last_hp)
+		qx_eng_hurt_time = sv.time;
+	qx_eng_last_hp = pl->v.health;
+}
+
+static cbool SV_QX_EngineSafe (edict_t *pl)
+{
+	vec3_t a, b, d;
+	edict_t *e;
+	int i;
+
+	if (pl->v.health < 50)
+		return false;
+	if (!((int)pl->v.flags & FL_ONGROUND))
+		return false;
+	if (pl->v.waterlevel >= 2 || (pl->v.waterlevel && pl->v.watertype != CONTENTS_WATER))
+		return false;				// swimming, or standing in slime / lava
+	if (sv.time - qx_eng_hurt_time < 4)
+		return false;				// hurt a moment ago
+	VectorAdd (pl->v.origin, pl->v.view_ofs, b);
+	for (i = 1; i < sv.num_edicts; i++) {
+		trace_t tr;
+		e = EDICT_NUM(i);
+		if (e->free || !((int)e->v.flags & FL_MONSTER) || e->v.health <= 0)
+			continue;
+		if (PROG_TO_EDICT(e->v.enemy) != pl)
+			continue;
+		VectorAdd (e->v.origin, e->v.view_ofs, a);
+		VectorSubtract (b, a, d);
+		if (VectorLength (d) > 1000)
+			continue;
+		tr = SV_Move (a, vec3_origin, vec3_origin, b, MOVE_NOMONSTERS, e);
+		if (tr.fraction == 1)
+			return false;			// something can see you and wants you dead
+	}
+	return true;
+}
+
 void SV_Autosave_Think (void)
 {
 	if (!sv_autosave.value)
@@ -1280,6 +1328,8 @@ void SV_Autosave_Think (void)
 	if (cls.state != ca_connected)
 		return;
 
+	SV_QX_TrackHurt (svs.clients[0].edict);	// QuadEXQ (for SV_QX_EngineSafe)
+
 	// Don't rush to auto-save on starting a map.
 	if (sv.time < sv.auto_save_time)
 		return;
@@ -1299,6 +1349,8 @@ void SV_Autosave_Think (void)
 	// death never sends you back into a hopeless spot.
 	if (!qx_autosave_ok.value)
 		return;
+	if (!(cl.stats[STAT_QX_FLAGS] & QX_F_ACTIVE) && !SV_QX_EngineSafe (svs.clients[0].edict))
+		return;						// another progs: the engine judges it
 
 
 /*
@@ -1371,15 +1423,15 @@ void SV_QX_StatLog_f (lparse_t *line)
 }
 
 // QuadEXQ: save on the way out. Opening the menu from the game, or quitting,
-// autosaves right away if the QuadEXQ progs says now is safe (the same rules
-// as the timed autosave: alive, calm, not in an arena...). So stopping after
-// a map change doesn't lose the map you just reached.
+// autosaves right away if now is safe (the same rules as the timed autosave:
+// the QuadEXQ progs judges it, or the engine for any other mod). So stopping
+// after a map change doesn't lose the map you just reached.
 void SV_QX_Autosave_Leaving (void)
 {
 	double next;
 
-	if (!sv.active || !(cl.stats[STAT_QX_FLAGS] & QX_F_ACTIVE))
-		return;						// another mod: Mark V as it was
+	if (!sv.active)
+		return;
 	next = sv.auto_save_time;
 	sv.auto_save_time = 0;
 	SV_Autosave_Think ();

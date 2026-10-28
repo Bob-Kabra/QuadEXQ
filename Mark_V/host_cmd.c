@@ -1018,15 +1018,30 @@ Host_Restart_f
 Restarts the current server for a dead player
 ==================
 */
+static cbool QX_Autosave_Is_For (const char *mapname, int *slot_out);
+
 void Host_Restart_f (lparse_t *unnused)
 {
 	char	mapname[MAX_QPATH_64];
+	int		slot;
 
 	if (cls.demoplayback || !sv.active)
 		return;
 
 	if (cmd_source != src_command)
 		return;
+
+	// QuadEXQ: a "restart" while the single player is dead is the progs'
+	// respawn (stock Quake: respawn() -> localcmd "restart"). Go back to this
+	// map's checkpoint (its autosave) instead, as the QuadEXQ progs does. No
+	// autosave of this map yet: restart as always.
+	if (qx_checkpoints.value && svs.maxclients_internal == 1 && svs.clients[0].active
+		&& svs.clients[0].edict->v.health <= 0 && QX_Autosave_Is_For (sv.name, &slot)) {
+		Con_PrintLinef ("Back to the last checkpoint (s%d)", slot);
+		SCR_BeginLoadingPlaque ();
+		Cbuf_AddTextLinef ("load s%d", slot);
+		return;
+	}
 	c_strlcpy (mapname, sv.name);	// mapname gets cleared in spawnserver
 	SV_SpawnServer (mapname);
 }
