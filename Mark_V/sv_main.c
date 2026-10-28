@@ -1370,6 +1370,23 @@ void SV_QX_StatLog_f (lparse_t *line)
 	FS_fclose (f);
 }
 
+// QuadEXQ: save on the way out. Opening the menu from the game, or quitting,
+// autosaves right away if the QuadEXQ progs says now is safe (the same rules
+// as the timed autosave: alive, calm, not in an arena...). So stopping after
+// a map change doesn't lose the map you just reached.
+void SV_QX_Autosave_Leaving (void)
+{
+	double next;
+
+	if (!sv.active || !(cl.stats[STAT_QX_FLAGS] & QX_F_ACTIVE))
+		return;						// another mod: Mark V as it was
+	next = sv.auto_save_time;
+	sv.auto_save_time = 0;
+	SV_Autosave_Think ();
+	if (sv.auto_save_time == 0)		// not saved: keep the timed autosave's schedule
+		sv.auto_save_time = next;
+}
+
 // QuadEXQ: "autosave" command -- save now (same rules as the timed autosave)
 void SV_Autosave_Now_f (lparse_t *line)
 {

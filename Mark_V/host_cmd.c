@@ -31,6 +31,8 @@ Host_Quit_f
 
 void Host_Quit (void)
 {
+	void SV_QX_Autosave_Leaving (void);
+	SV_QX_Autosave_Leaving ();	// QuadEXQ: save on the way out, if it is safe
 	CL_Disconnect ();
 	Host_ShutdownServer(false);
 

@@ -91,6 +91,10 @@ void M_ToggleMenu_f (lparse_t *unused)
 	}
 	else
 	{
+		if (key_dest == key_game) {	// QuadEXQ: menu from the game: save now, if it is safe
+			void SV_QX_Autosave_Leaving (void);
+			SV_QX_Autosave_Leaving ();
+		}
 		if (sMenu.menu_state_reenter) {
 			Key_SetDest (key_menu);
 			Menu_SetDest (sMenu.menu_state_reenter); // sMenu.menu_state = ;
