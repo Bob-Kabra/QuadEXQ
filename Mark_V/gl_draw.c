@@ -1268,4 +1268,204 @@ void Draw_Set2D (void)
 	eglColor4f (1,1,1,1);
 }
 
+/*
+================
+QuadEXQ: adrenaline retro (qx_retro)
+
+As bullet time kicks in, the picture (3D view and HUD) slides back to 1996:
+fewer pixels, fewer colours, and the old "+" crosshair. At the slowest (Quad,
+x0.4) it is 640x480 in the Quake palette, shaded the way the software
+renderer did it (colormap.lmp: 64 light levels along each colour ramp), and
+blown up with big square pixels. The level follows the world timescale the
+QuadEXQ progs sends (STAT_QX_TIME), so it starts exactly where the slow
+motion starts. Console and menus stay sharp.
+================
+*/
+extern int currenttexture;
+extern byte gamma_pal_768[];				// the palette the textures were built with
+static GLuint	qx_rt_src, qx_rt_dst;			// full-screen copy, low-res result
+static int		qx_rt_src_w, qx_rt_src_h, qx_rt_dst_w, qx_rt_dst_h;	// their (power of two) sizes
+static byte		*qx_rt_buf;
+static int		qx_rt_buf_size;
+static byte		qx_rt_lut[32768 * 3];			// 15-bit colour -> what software Quake would draw
+static int		qx_rt_lut_mode;				// qx_retro value the table was built for (0 = none)
+#define QX_RETRO_HEIGHT	480					// lines at the slowest (640x480 on 4:3)
+
+static int QX_Retro_Pow2 (int n)
+{
+	int p = 1;
+	while (p < n)
+		p <<= 1;
+	return p;
+}
+
+// 0 = off .. 1 = full 1996 (normal speed .. x0.4)
+float QX_Retro_Level (void)
+{
+	float t;
+
+	if (!qx_retro.value || cls.signon != SIGNONS || cl.intermission)
+		return 0;
+	if (!(cl.stats[STAT_QX_FLAGS] & QX_F_ACTIVE))
+		return 0;
+	t = (100 - cl.stats[STAT_QX_TIME]) / 60.0f;
+	return CLAMP (0, t, 1);
+}
+
+// the crosshair in bullet time: Quake's own "+", at its 320x240 size
+void QX_Retro_Plus (void)
+{
+	float sc = c_max (1.0f, clheight / 240.0f);
+
+	Draw_SetCanvas (CANVAS_CROSSHAIR);	// viewport on the 3D view, 0,0 = its centre
+	eglMatrixMode (GL_PROJECTION);
+	eglLoadIdentity ();
+	eglOrtho (scr_vrect.width/-2.0f/sc, scr_vrect.width/2.0f/sc, scr_vrect.height/2.0f/sc, scr_vrect.height/-2.0f/sc, -99999, 99999);
+	eglMatrixMode (GL_MODELVIEW);
+	eglLoadIdentity ();
+	Draw_Character (-4, -4, '+');
+	currentcanvas = CANVAS_INVALID;		// we changed the crosshair canvas
+}
+
+// A GL pixel is about texel colour x light (0..2, overbright). For each 15-bit
+// colour find the texel colour j and light m that make it, then look up what
+// the software renderer drew for that texel at that light: colormap row
+// (255 - 128 m) / 4 (r_surf.c: 64 grades, row 32 = normal light).
+// qx_retro 2: plain nearest palette colour instead (no colormap guessing:
+// smoother, without the coloured speckles in dark grey areas)
+static void QX_Retro_BuildLUT (int mode)
+{
+	const byte *pal = gamma_pal_768;
+	byte *cmap = mode == 2 ? NULL : COM_LoadMallocFile ("gfx/colormap.lmp");
+	int i, j, best, row, bestrow;
+	float r, g, b, m, e, beste, pr, pg, pb, pp;
+
+	for (i = 0; i < 32768; i++) {
+		r = ((i >> 10) & 31) * (255.0f / 31);
+		g = ((i >> 5) & 31) * (255.0f / 31);
+		b = (i & 31) * (255.0f / 31);
+		best = 0; bestrow = 32; beste = 1e30f;
+		for (j = 0; j < 256; j++) {
+			pr = pal[j*3]; pg = pal[j*3+1]; pb = pal[j*3+2];
+			pp = pr*pr + pg*pg + pb*pb;
+			if (j >= 224 || !cmap)			// fullbrights (or no colormap): as they are
+				m = 1;
+			else
+				m = pp > 0 ? (r*pr + g*pg + b*pb) / pp : 0;
+			m = CLAMP (0, m, 2);
+			e = (pr*m - r)*(pr*m - r)*3 + (pg*m - g)*(pg*m - g)*4 + (pb*m - b)*(pb*m - b)*2;
+			if (e < beste) {
+				beste = e; best = j;
+				bestrow = CLAMP (0, (int)((255 - 128 * m) / 4 + 0.5f), 63);
+			}
+		}
+		row = cmap ? cmap[bestrow * 256 + best] : best;
+		qx_rt_lut[i*3] = pal[row*3]; qx_rt_lut[i*3+1] = pal[row*3+1]; qx_rt_lut[i*3+2] = pal[row*3+2];
+	}
+	if (cmap)
+		free (cmap);
+	qx_rt_lut_mode = mode;
+}
+
+static void QX_Retro_Texture (GLuint *tex, int *tw, int *th, int w, int h, GLint filter)
+{
+	int pw = QX_Retro_Pow2 (w), ph = QX_Retro_Pow2 (h);
+
+	if (!*tex)
+		eglGenTextures (1, tex);
+	eglBindTexture (GL_TEXTURE_2D, *tex);
+	if (pw > *tw || ph > *th) {
+		*tw = c_max (pw, *tw);
+		*th = c_max (ph, *th);
+		eglTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, *tw, *th, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	}
+	eglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+	eglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+	eglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	eglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+}
+
+static void QX_Retro_Quad (float s, float t)
+{
+	eglBegin (GL_QUADS);
+	eglTexCoord2f (0, 0);	eglVertex2f (0, 0);
+	eglTexCoord2f (s, 0);	eglVertex2f (1, 0);
+	eglTexCoord2f (s, t);	eglVertex2f (1, 1);
+	eglTexCoord2f (0, t);	eglVertex2f (0, 1);
+	eglEnd ();
+}
+
+void QX_Retro_Apply (float t)
+{
+	float p;
+	int w, h, i, n, bits, palette;
+	byte *px;
+
+	if (clwidth < 64 || clheight < 64)
+		return;
+	palette = (t >= 0.99f);
+	p = palette ? clheight / (float)QX_RETRO_HEIGHT : 1 + t * (clheight / (float)QX_RETRO_HEIGHT - 1);
+	if (p < 1)
+		p = 1;
+	w = c_max (1, (int)(clwidth / p + 0.5f));
+	h = c_max (1, (int)(clheight / p + 0.5f));
+	bits = 8 - (int)(t * 5 + 0.5f);			// 8 .. 3 bits per channel, then the palette
+	if (palette && qx_rt_lut_mode != (qx_retro.value == 2 ? 2 : 1))
+		QX_Retro_BuildLUT (qx_retro.value == 2 ? 2 : 1);
+
+	eglMatrixMode (GL_PROJECTION);
+	eglLoadIdentity ();
+	eglOrtho (0, 1, 0, 1, -99999, 99999);
+	eglMatrixMode (GL_MODELVIEW);
+	eglLoadIdentity ();
+	eglDisable (GL_BLEND);
+	eglDisable (GL_ALPHA_TEST);
+	eglDisable (GL_DEPTH_TEST);
+	eglColor4f (1, 1, 1, 1);
+	eglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+	// 1. the whole frame -> texture, 2. drawn small (point sampled, like a low-res render)
+	QX_Retro_Texture (&qx_rt_src, &qx_rt_src_w, &qx_rt_src_h, clwidth, clheight, GL_NEAREST);
+	eglCopyTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, clx, cly, clwidth, clheight);
+	eglViewport (clx, cly, w, h);
+	QX_Retro_Quad ((float)clwidth / qx_rt_src_w, (float)clheight / qx_rt_src_h);
+
+	// 3. fewer colours (on the CPU: it is only w x h pixels)
+	n = w * h * 4;
+	if (n > qx_rt_buf_size) {
+		qx_rt_buf = (byte *) realloc (qx_rt_buf, n);
+		qx_rt_buf_size = qx_rt_buf ? n : 0;
+	}
+	if (qx_rt_buf && (bits < 8 || palette)) {
+		eglReadPixels (clx, cly, w, h, GL_RGBA, GL_UNSIGNED_BYTE, qx_rt_buf);
+		if (palette && qx_rt_lut_mode) {
+			for (i = 0, px = qx_rt_buf; i < w * h; i++, px += 4) {
+				const byte *c = &qx_rt_lut[(((px[0] >> 3) << 10) | ((px[1] >> 3) << 5) | (px[2] >> 3)) * 3];
+				px[0] = c[0]; px[1] = c[1]; px[2] = c[2];
+			}
+		} else {
+			int levels = (1 << bits) - 1, shift = 8 - bits;
+			for (i = 0, px = qx_rt_buf; i < w * h; i++, px += 4) {
+				px[0] = (px[0] >> shift) * 255 / levels;
+				px[1] = (px[1] >> shift) * 255 / levels;
+				px[2] = (px[2] >> shift) * 255 / levels;
+			}
+		}
+		QX_Retro_Texture (&qx_rt_dst, &qx_rt_dst_w, &qx_rt_dst_h, w, h, GL_NEAREST);
+		eglTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, qx_rt_buf);
+	} else {
+		QX_Retro_Texture (&qx_rt_dst, &qx_rt_dst_w, &qx_rt_dst_h, w, h, GL_NEAREST);
+		eglCopyTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, clx, cly, w, h);
+	}
+
+	// 4. blown back up to the full screen with big square pixels
+	eglViewport (clx, cly, clwidth, clheight);
+	QX_Retro_Quad ((float)w / qx_rt_dst_w, (float)h / qx_rt_dst_h);
+
+	eglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	currenttexture = -1;		// GL_Bind's cache: we bound our own textures
+	Draw_Set2D ();
+}
+
 #endif // GLQUAKE specific
+

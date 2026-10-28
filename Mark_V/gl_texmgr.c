@@ -155,6 +155,31 @@ static void TexMgr_SetFilterModes (gltexture_t *glt)
 
 /*
 ===============
+QuadEXQ: TexMgr_QX_Retro_Filter -- bullet time = 1996 (qx_retro): textures
+are point sampled like the software renderer (nearest texel, nearest mip),
+without touching gl_texturemode. Only acts when the state changes.
+===============
+*/
+void TexMgr_QX_Retro_Filter (cbool on)
+{
+	static cbool active;
+	static int saved_idx;
+	gltexture_t	*glt;
+
+	if (on == active)
+		return;
+	active = on;
+	if (on) {
+		saved_idx = glmode_idx;
+		glmode_idx = 1;					// GL_NEAREST_MIPMAP_NEAREST
+	}
+	else glmode_idx = saved_idx;
+	for (glt = active_gltextures; glt; glt = glt->next)
+		TexMgr_SetFilterModes (glt);
+}
+
+/*
+===============
 TexMgr_TextureMode_f -- called when gl_texturemode changes
 ===============
 */

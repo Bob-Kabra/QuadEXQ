@@ -836,6 +836,17 @@ void SCR_DrawCrosshair (void)
 	if (cls.titledemo)
 		return;
 
+#ifdef GLQUAKE_RENDERER_SUPPORT
+	{	// QuadEXQ: bullet time = 1996: the old "+" crosshair, at its 320x240 size
+		float QX_Retro_Level (void);
+		void QX_Retro_Plus (void);
+		if (QX_Retro_Level () > 0) {
+			QX_Retro_Plus ();
+			return;
+		}
+	}
+#endif // GLQUAKE_RENDERER_SUPPORT
+
 	Draw_SetCanvas (CANVAS_CROSSHAIR);
 
 
@@ -1579,6 +1590,12 @@ void SCR_UpdateScreen (void)
 //
 	SCR_SetUpToDrawConsole ();
 
+	{	// QuadEXQ: bullet time = 1996 (qx_retro): point-sampled textures
+		float QX_Retro_Level (void);
+		void TexMgr_QX_Retro_Filter (cbool on);
+		TexMgr_QX_Retro_Filter (QX_Retro_Level () > 0);
+	}
+
 	View_RenderView ();
 
 	Draw_Set2D ();
@@ -1623,10 +1640,19 @@ void SCR_UpdateScreen (void)
 		SCR_DrawNet ();
 		SCR_DrawTurtle ();
 		SCR_DrawPause ();
-		SCR_CheckDrawCenterString (); // CENTER STRING LOCATION.
-		SCR_DrawCrosshair ();  // Baker:moved
-		Sbar_Draw ();
-		Sbar_DrawQuadEXQ (); // QuadEXQ HUD
+		{	// QuadEXQ: in bullet time the view and HUD slide back to 1996 (qx_retro)
+			float QX_Retro_Level (void);
+			void QX_Retro_Apply (float t);
+			float qx_rt = QX_Retro_Level ();
+
+
+			SCR_CheckDrawCenterString (); // CENTER STRING LOCATION.
+			SCR_DrawCrosshair ();  // Baker:moved
+			Sbar_Draw ();
+			Sbar_DrawQuadEXQ (); // QuadEXQ HUD
+			if (qx_rt > 0)
+				QX_Retro_Apply (qx_rt);
+		}
 		SCR_DrawDevStats (); //johnfitz
 		SCR_DrawFPS (); // johnfitz
 		SCR_DrawConsole ();
