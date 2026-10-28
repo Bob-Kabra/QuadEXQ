@@ -432,6 +432,10 @@ fork), which adds the HUD, music switching, checkpoints and more.
       JET   Jet bursts left (only once you have the jetpack)
       BOSS  Direction and distance to the boss (while it is alive)
   - Sound pitch drops during bullet time.
+  - Bullet time takes you back to 1996: as the world slows down, the
+    picture loses pixels and colours and the crosshair turns into the old
+    "+". At the slowest (Quad) it is 640x480 in the Quake palette with
+    point-sampled textures. Console and menus stay sharp.
   - MP3 music (music\trackXX.mp3), with the boss theme switching in and
     out.
   - Checkpoints: when you die, you go back to the map's latest autosave
@@ -488,6 +492,11 @@ fork), which adds the HUD, music switching, checkpoints and more.
   sv_autosave 0            turn autosave off completely
   autosave                 autosave right now
   qx_playerskill           saved PlayerSkill + 1 (-1 = nothing saved yet)
+  qx_retro 0/1/2           bullet time 1996 look: 1 = software-style
+                           shading (default), 2 = plain palette colours,
+                           0 = off
+  qx_checkpoints 0         plain Quake / other mods: restart the map on
+                           death instead of loading the checkpoint
   newgame_map <map>        map that NEW GAME starts on (QuadEXQ ships
                            "newgame_map start" in autoexec.cfg; empty =
                            guess from the maps in the mod folder)
