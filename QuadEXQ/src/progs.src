@@ -1,0 +1,75 @@
+../progs.dat
+
+defs.qc
+qx_defs.qc		// QuadEXQ
+frikbot/bot.qc
+frikbot/bot_way.qc
+frikbot/bot_ai.qc
+frikbot/bot_misc.qc
+frikbot/bot_phys.qc
+frikbot/bot_move.qc
+
+subs.qc
+
+check.qc
+fight.qc
+ai.qc
+combat.qc
+items.qc
+
+CHASECAM.QC  // Rob
+
+dice.qc
+zap.qc
+weapons.qc
+world.qc
+client.qc
+player.qc
+monsters.qc
+doors.qc
+buttons.qc
+triggers.qc
+plats.qc
+misc.qc
+
+ogre.qc
+ogre_qutf.qc
+
+demon.qc
+demon2.qc
+shambler.qc
+shambler_qutf.qc
+knight.qc
+soldier.qc
+wizard.qc
+swizard.qc
+h_player.qc
+dog.qc
+zombie.qc
+MUMMY.QC
+boss.qc
+
+tarbaby.qc		// registered
+hknight.qc		// registered
+cyber.qc
+fish.qc			// registered
+EEL.QC			// registered
+shalrath.qc		// registered
+enforcer.qc		// registered
+enforcertank.qc		// registered
+ENFORCE2.QC		// registered
+BLARG.QC
+
+
+oldone.qc		// registered
+//add on
+smine.qc
+md.qc
+bd.qc
+
+qx_stats.qc		// QuadEXQ map report
+quadexq.qc		// QuadEXQ core
+qx_hunter.qc		// QuadEXQ: the Rune Hunter
+//goarc1.qc
+//goarc2.qc
+//goarc3.qc

@@ -8,3 +8,11 @@ bin/
 *.exe
 *.dll
 
+
+# QuadEXQ mod: build output and game data (shipped in the release zip, not here)
+QuadEXQ/progs.dat
+QuadEXQ/progs.lno
+QuadEXQ/*.pak
+QuadEXQ/music/
+QuadEXQ/maps/
+*.sav
