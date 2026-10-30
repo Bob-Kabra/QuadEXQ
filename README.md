@@ -8,7 +8,7 @@ A single-player Quake mod by **Bob Kabura**, built on his earlier mods EXQ and Q
 - **Bullet time**: build up adrenaline and the world slows down around you.
 - **Elites and bosses**: every map has a boss, and the exit stays sealed until it is dead. Elites fight like players and call in reinforcements.
 - **The Rune Hunter**: come back to the start map with 2 or more runes and a rival who looks just like you calls you out to an arena for a deathmatch duel, first to 10 frags. Lose and it steals a rune; then every death is a chance at a **revenge match** to win it back.
-- **EXQ Arena**: duels are fought on any map you have with "dm" in its name, plus Q1Edge and Towersp.
+- **EXQ Arena**: duels are fought on any map you have with "dm" in its name or named "d" + a number, plus Q1Edge and Towersp.
 
 ## The engine (Mark V, modified)
 

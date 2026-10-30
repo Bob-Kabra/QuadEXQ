@@ -1446,8 +1446,8 @@ QuadEXQ: qx_arena
 
 Called by the progs when the Rune Hunter calls you out: go to a random duel
 arena. Candidates are every map you have with "dm" in its name (dm1-dm6 from
-registered Quake, custom DM maps in the game folder...) plus q1edge and
-towersp. Maps you don't have, and maps with fewer than two deathmatch spawn
+registered Quake, custom DM maps in the game folder...), maps named "d" +
+a number (d1, d12...), plus q1edge and towersp. Maps you don't have, and maps with fewer than two deathmatch spawn
 spots, are not candidates.
 ===============
 */
@@ -1510,10 +1510,25 @@ static void QX_Arena_Add (const char *name)
 	qx_arena_count++;
 }
 
+// "d" + digits only (d1, d12 ...)
+static cbool QX_Arena_IsDNum (const char *name)
+{
+	const char *s = name;
+
+	if (*s != 'd' && *s != 'D')
+		return false;
+	if (!s[1])
+		return false;
+	for (s++; *s; s++)
+		if (*s < '0' || *s > '9')
+			return false;
+	return true;
+}
+
 static void QX_Arena_Scan (clist_t *cursor)
 {
 	for ( ; cursor; cursor = cursor->next)
-		if (strcasestr (cursor->name, "dm"))
+		if (strcasestr (cursor->name, "dm") || QX_Arena_IsDNum (cursor->name))
 			QX_Arena_Add (cursor->name);
 }
 
