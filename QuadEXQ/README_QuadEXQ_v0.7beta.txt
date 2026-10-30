@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v0.6.1 beta
+  QuadEXQ  v0.7 beta
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -53,9 +53,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
         maps\towersp.bsp       <- a Rune Hunter arena (included)
         (the EXQ data: pak / progs / sound, etc.)
         music\track01.mp3       <- boss music (included)
-        music\track02.mp3 ...   <- map music: the QuadEXQ soundtrack
-                                   (track02-11, optional download), or
-                                   your own / Quake's
+        music\track02.mp3 ...   <- map music (optional: your own or
+                                   Quake's; a QuadEXQ soundtrack for
+                                   track02-11 is on the way)
         sound\player\taunt.wav  <- auto-melee shout (optional)
       quadexq.exe        <- the QuadEXQ engine (recommended)
 
@@ -369,9 +369,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
 
   Jetpack:
     Pick up the glowing backpack a jet knight drops to unlock it.
-    Jump again in mid-air to fire a burst; you get 3 bursts before you land.
-    Once you have it, you keep it on later maps.
-    Picking up another one while you have it gives +5 rockets. Dropped
+    Jump again in mid-air to fire a burst. Each jetpack you find adds one
+    burst per jump, up to 3 before you land. You keep them on later maps.
+    Picking one up when you already have 3 gives +5 rockets. Dropped
     jetpacks vanish after 120 seconds.
 
   Auto melee:
@@ -439,7 +439,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
             - orange above 150%, red at max, gold during Quad Damage
             - "TIME x0.7" (or similar) while the world is slowed
       SKL   PlayerSkill bar ("MAX" at 100)
-      JET   Jet bursts left (only once you have the jetpack)
+      JET   Jet bursts left, one box per jetpack you have
       BOSS  Direction and distance to the boss (while it is alive)
   - Sound pitch drops during bullet time.
   - Bullet time takes you back to 1996: as the world slows down, the
@@ -532,6 +532,21 @@ fork), which adds the HUD, music switching, checkpoints and more.
 ==============================================================================
  13. Version history
 ==============================================================================
+
+  v0.7 beta
+    Game:
+    - DELTA TEAM: win a revenge match or an arena challenge and three
+      allies fight beside you for the rest of that map (SNG / RL / LG,
+      no armor, back 6 s after going down). After 3 losses Delta Labs
+      calls them back. Their kills show in the map report.
+    - The Shambler no longer takes x2.5 from explosions.
+    - Arrive in an arena and its map name and title are shown.
+    - Arenas: maps named "d" + a number (D1, D12 ...) are candidates too.
+    - Jetpack: each one you find adds a burst per jump (1, 2, then 3).
+    QuadEXQ engine:
+    - Bullet time takes you back to 1996 (qx_retro): fewer pixels and
+      colours as the world slows, the old "+" crosshair, and at the
+      slowest 640x480 in the Quake palette with point-sampled textures.
 
   v0.6.1 beta
     Game:
@@ -631,9 +646,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
   QuadEXQ             Bob Kabura
   Base mod            EXQ - Bob Kabura
   Some weapon ideas   QuadUTF - Bob Kabura
-  Music               track01-11 - Bob Kabura. All of the soundtrack
-                      (boss theme and map music) was made with Mureka,
-                      an AI music generator.
+  Music               Bob Kabura. All of QuadEXQ's music (the track01
+                      boss theme, and the coming soundtrack) is made
+                      with Mureka, an AI music generator.
   Bots                FrikBot - Ryan "Frika C" Smith
   Engine              Mark V - Baker and others (FitzQuake / QuakeSpasm lineage)
   Quake               id Software
