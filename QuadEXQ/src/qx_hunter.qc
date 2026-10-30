@@ -1135,6 +1135,8 @@ void() QX_DuelStart =
 	sound (world, CHAN_AUTO, "weapons/lstart.wav", 1, ATTN_NONE);
 
 	qx_rep_to = world;
+	if (qx_arena)
+		qx_arena_title_at = time + 4;	// after the welcome: which map this is
 	QX_LB ();
 	QX_LS ("    RUNE HUNTER ");
 	QX_LS (qx_hunter_name);
@@ -1782,6 +1784,15 @@ void() QX_DuelThink =
 		p = QX_FindLivePlayer ();
 		if (p)
 			QX_ArenaPrize (p, floor (cvar ("scratch4")));
+	}
+
+	if (qx_arena_title_at)
+	if (time > qx_arena_title_at)
+	{	// the arena's name, on its own (map file name + the title the map gives itself)
+		qx_arena_title_at = 0;
+		p = QX_FindLivePlayer ();
+		if (p)
+			qx_cprint8 (p, "EXQ ARENA\n\n", mapname, "\n", world.message, "", "", "", "");
 	}
 
 	if (qx_delta_call)

@@ -267,11 +267,8 @@ void(entity inflictor, entity attacker, float damage, entity ignore) T_RadiusDam
 				if (points > 0)
 				{
 					if (CanDamage (head, inflictor))
-					{	// shambler takes half damage from all explosions
-						if (head.classname == "monster_shambler")						
-							T_Damage (head, inflictor, attacker, points*2.5);
-						else
-							T_Damage (head, inflictor, attacker, points);
+					{	// QuadEXQ: no more shambler x2.5 from explosions (EXQ had it): the same as everyone
+						T_Damage (head, inflictor, attacker, points);
 					}
 				}
 			}

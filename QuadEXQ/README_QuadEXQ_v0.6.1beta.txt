@@ -53,7 +53,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
         maps\towersp.bsp       <- a Rune Hunter arena (included)
         (the EXQ data: pak / progs / sound, etc.)
         music\track01.mp3       <- boss music (included)
-        music\track02.mp3 ...   <- normal map music (optional)
+        music\track02.mp3 ...   <- map music: the QuadEXQ soundtrack
+                                   (track02-11, optional download), or
+                                   your own / Quake's
         sound\player\taunt.wav  <- auto-melee shout (optional)
       quadexq.exe        <- the QuadEXQ engine (recommended)
 
@@ -203,11 +205,12 @@ fork), which adds the HUD, music switching, checkpoints and more.
     frags, and back to start when it's over, win or lose.
       - The arena is picked at random from every map you have with "dm"
         in its name (DM1-DM6 from registered Quake, custom DM maps in your
-        folders), plus Q1Edge and Towersp (The Tower of Nightmare, by Bob
+        folders) or named "d" + a number (D1, D12 ...), plus Q1Edge and Towersp (The Tower of Nightmare, by Bob
         Kabura, included in maps\). Maps you don't have are skipped.
         (Needs the QuadEXQ engine's qx_arena command; with other engines
         the arena is one of DM1-DM6 or Towersp.)
-      - "Welcome to EXQ Arena!!" greets you when you arrive.
+      - "Welcome to EXQ Arena!!" greets you when you arrive, and a moment
+        later the arena's map name and title (e.g. dm6 / The Dark Zone).
       - Hold Tab for the duel scoreboard, and the HUD compass points at
         the hunter with its distance, like the boss compass. (QuadEXQ
         engine.)
@@ -628,8 +631,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
   QuadEXQ             Bob Kabura
   Base mod            EXQ - Bob Kabura
   Some weapon ideas   QuadUTF - Bob Kabura
-  Boss music          track01 - Bob Kabura (made with Mureka, an AI music
-                      generator)
+  Music               track01-11 - Bob Kabura. All of the soundtrack
+                      (boss theme and map music) was made with Mureka,
+                      an AI music generator.
   Bots                FrikBot - Ryan "Frika C" Smith
   Engine              Mark V - Baker and others (FitzQuake / QuakeSpasm lineage)
   Quake               id Software
