@@ -734,7 +734,8 @@ void() QX_PlayerUnboost =
 };
 
 // ---------------------------------------------------------------- air jet
-// Jump again in mid-air = jetpack burst. QX_JET_MAX bursts per airtime.
+// Jump again in mid-air = jetpack burst. One burst per airtime for each
+// jetpack you found (qx_hasjet = how many), QX_JET_MAX at most.
 void() QX_AirJet =
 {
 	local vector f;
@@ -754,7 +755,7 @@ void() QX_AirJet =
 		return;
 	if (self.health <= 0)
 		return;
-	if (self.qx_jets >= QX_JET_MAX)
+	if (self.qx_jets >= self.qx_hasjet)
 		return;
 
 	self.qx_jets = self.qx_jets + 1;
@@ -774,7 +775,7 @@ void() QX_AirJet =
 
 	sound (self, CHAN_BODY, "hknight/attack1.wav", 1, ATTN_NORM);
 	particle (self.origin - '0 0 24', '0 0 -150', 230, 40);
-	if (self.qx_jets == QX_JET_MAX)
+	if (self.qx_jets == self.qx_hasjet)
 		QX_Center (self, "JET EMPTY", "", "", "");
 };
 
@@ -929,8 +930,8 @@ void() QX_SendHUD =
 	}
 
 	v = 0;
-	if (self.qx_hasjet)
-		v = QX_JET_MAX - self.qx_jets;
+	if (self.qx_hasjet)				// bursts left + 16 x bursts you have (QuadEXQ engine HUD)
+		v = (self.qx_hasjet - self.qx_jets) + 16 * self.qx_hasjet;
 	if (full || v != self.qx_hs_jets)
 	{
 		self.qx_hs_jets = v;
@@ -2394,15 +2395,21 @@ void() QX_JetpackTouch =
 	if (other.health <= 0)
 		return;
 
-	if (other.qx_hasjet)
+	if (other.qx_hasjet >= QX_JET_MAX)
 	{
-		// already have one: take the fuel as rockets
+		// already have them all: take the fuel as rockets
 		if (other.ammo_rockets >= 100)
 			return;
 		other.ammo_rockets = other.ammo_rockets + 5;
 		if (other.ammo_rockets > 100)
 			other.ammo_rockets = 100;
 		sprint (other, "You got 5 rockets\n");
+	}
+	else if (other.qx_hasjet)
+	{	// one more burst per jump
+		other.qx_hasjet = other.qx_hasjet + 1;
+		QX_Center (other, "JETPACK UPGRADE\n\n", ftos (other.qx_hasjet), " bursts per jump", "");
+		sprint (other, "You got another Jetpack\n");
 	}
 	else
 	{
