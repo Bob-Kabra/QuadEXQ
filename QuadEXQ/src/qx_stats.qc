@@ -289,6 +289,12 @@ void(entity targ, entity attacker) QX_StatKill =
 		QX_LE ();
 	}
 
+	if (attacker.qx_delta)			// Delta team (allies)
+	{
+		qx_st_delta = qx_st_delta + 1;
+		qx_delta_kills = qx_delta_kills + 1;
+		return;
+	}
 	if (!(attacker.flags & FL_CLIENT))
 		return;
 
@@ -405,6 +411,11 @@ void(entity p) QX_StatMapEnd =
 	QX_LN (total_monsters);
 	QX_LS ("  (by you ");
 	QX_LN (qx_st_kills);
+	if (qx_st_delta)
+	{
+		QX_LS (", Delta team ");
+		QX_LN (qx_st_delta);
+	}
 	QX_LS (", elite ");
 	QX_LN (qx_st_elites);
 	QX_LS (", scout ");

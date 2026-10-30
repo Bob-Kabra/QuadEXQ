@@ -1197,7 +1197,7 @@ void(float won) QX_DuelEnd =
 		{
 			serverflags = serverflags | bit;
 			serverflags = serverflags - (serverflags & QX_HoldBit (bit));
-			cvar_set ("scratch3", ftos (bit));	// survives the checkpoint load on the way back
+			cvar_set ("scratch3", ftos (bit + 16));	// survives the checkpoint load on the way back (+16 = Delta team)
 			pts = QX_DuelWinScore ();
 			cvar_set ("scratch4", ftos (pts * 128));	// score, given after the trip back
 			if (pts == QX_PERFECT_SCORE)
@@ -1226,6 +1226,7 @@ void(float won) QX_DuelEnd =
 				wb = p.items & (IT_SUPER_SHOTGUN | IT_NAILGUN | IT_SUPER_NAILGUN | IT_GRENADE_LAUNCHER | IT_ROCKET_LAUNCHER | IT_LIGHTNING);
 			pts = QX_DuelWinScore ();
 			cvar_set ("scratch4", ftos (wb + pts * 128));	// weapons + score, given after the trip back
+			cvar_set ("scratch3", "16");		// + Delta team
 			if (pts == QX_PERFECT_SCORE)
 				QX_CenterAll ("!!! PERFECT !!!\n\n", qx_hunter_name, " DEFEATED 10 - 0\nyou keep the arena weapons\nSCORE +", ftos (pts));
 			else
@@ -1764,8 +1765,16 @@ void() QX_DuelThink =
 	{
 		n = floor (cvar ("scratch3"));
 		cvar_set ("scratch3", "0");
-		serverflags = serverflags | n;
-		serverflags = serverflags - (serverflags & QX_HoldBit (n));
+		if (n & 16)
+		{	// an arena win: Delta team comes to help
+			n = n - 16;
+			qx_delta_call = time + 2;
+		}
+		if (n)
+		{
+			serverflags = serverflags | n;
+			serverflags = serverflags - (serverflags & QX_HoldBit (n));
+		}
 	}
 	if (cvar ("scratch4"))
 	if (!qx_arena && !qx_arena_go)
@@ -1773,6 +1782,15 @@ void() QX_DuelThink =
 		p = QX_FindLivePlayer ();
 		if (p)
 			QX_ArenaPrize (p, floor (cvar ("scratch4")));
+	}
+
+	if (qx_delta_call)
+	if (time > qx_delta_call)
+	if (!qx_arena && !qx_duel)
+	if (QX_FindLivePlayer ())
+	{
+		qx_delta_call = 0;
+		QX_DeltaArrive ();
 	}
 
 	if (qx_back_failsafe)
@@ -1844,4 +1862,529 @@ void() QX_DuelThink =
 	if (serverflags & QX_DuelDoneBit (n))
 		return;					// already settled at this rune count
 	QX_ArenaCall (1);			// off to an arena
+};
+
+// ======================================================================
+// DELTA TEAM
+// ======================================================================
+// Win a revenge match or an arena challenge and, back on the map you died
+// on, Delta team comes to help: three allies who fight like the Rune Hunter
+// (same AI and weapons, by PlayerSkill), each with its own weapon:
+//   Delta 1: super nailgun   Delta 2: rocket launcher   Delta 3: thunderbolt
+// (all use the super shotgun up close). They follow you, go for the
+// monsters, never hurt you (and you never hurt them), and respawn near you
+// 6 s after going down -- for as long as you stay on that map, or until
+// they have lost QX_DELTA_LOSSES members: then they pull out (Delta Labs
+// needs them more).
+//
+// They are not monsters (no FL_MONSTER): they don't count toward kills,
+// autoaim ignores them, and monsters only turn on them once they get shot.
+
+float	QX_DELTA_RESPAWN	= 6;	// seconds before a fallen member comes back
+float	QX_DELTA_LOSSES		= 3;	// this many down (in all) and the team pulls out
+float	QX_DELTA_RANGE		= 1600;	// how far they look for monsters
+float	QX_DELTA_FOLLOW		= 220;	// start walking after you past this
+float	QX_DELTA_WARP		= 1400;	// farther than this (or lost 8 s): teleport to you
+
+void() dl_stand1;
+void() dl_run1;
+void() dl_walk1;
+
+string(float n) QX_DeltaName =
+{
+	if (n == 1) return "Delta 1";
+	if (n == 2) return "Delta 2";
+	return "Delta 3";
+};
+
+// the nearest monster it can see (ones after you first); not the Rune Hunter
+entity() QX_DeltaFindTarget =
+{
+	local entity e, best;
+	local float d, bestd;
+
+	best = world;
+	bestd = QX_DELTA_RANGE;
+	e = findradius (self.origin, QX_DELTA_RANGE);
+	while (e)
+	{
+		if (e.flags & FL_MONSTER)
+		if (e.health > 0)
+		if (e.takedamage)
+		if (e.classname != "monster_runehunter")
+		{
+			d = vlen (e.origin - self.origin);
+			if (e.enemy.flags & FL_CLIENT)
+				d = d * 0.7;
+			if (d < bestd)
+			if (visible (e))
+			{
+				bestd = d;
+				best = e;
+			}
+		}
+		e = e.chain;
+	}
+	return best;
+};
+
+float() QX_DeltaLook =
+{
+	local entity t;
+
+	if (time < self.qx_dl_look)
+		return FALSE;
+	self.qx_dl_look = time + 0.3;
+	t = QX_DeltaFindTarget ();
+	if (!t)
+		return FALSE;
+	self.enemy = t;
+	HuntTarget ();
+	return TRUE;
+};
+
+// put a next to p (behind, to the sides, then in front); FALSE if no room
+float(entity a, entity p) QX_DeltaPlace =
+{
+	local float i, yaw, ok;
+	local vector org, old, ang;
+	local entity e, oself;
+
+	old = a.origin;
+	i = 0;
+	while (i < 8)
+	{
+		if (i == 0)		yaw = 180;
+		else if (i == 1)	yaw = 135;
+		else if (i == 2)	yaw = 225;
+		else if (i == 3)	yaw = 90;
+		else if (i == 4)	yaw = 270;
+		else if (i == 5)	yaw = 45;
+		else if (i == 6)	yaw = 315;
+		else			yaw = 0;
+		i = i + 1;
+
+		ang = '0 0 0';
+		ang_y = p.angles_y + yaw;
+		makevectors (ang);
+		org = p.origin + v_forward * 96 + '0 0 8';
+		traceline (p.origin, org, TRUE, p);
+		if (trace_fraction < 1)
+			continue;
+		if (pointcontents (org) != CONTENT_EMPTY)
+			continue;
+		ok = TRUE;
+		e = findradius (org, 48);
+		while (e)
+		{
+			if (e != a)
+			if (e.solid == SOLID_SLIDEBOX || e.solid == SOLID_BBOX)
+				ok = FALSE;
+			e = e.chain;
+		}
+		if (!ok)
+			continue;
+
+		setorigin (a, org);
+		oself = self;
+		self = a;
+		ok = droptofloor (0, 0);
+		self = oself;
+		if (ok)
+			return TRUE;
+		setorigin (a, old);
+	}
+	return FALSE;
+};
+
+void(entity p) QX_DeltaWarp =
+{
+	local vector old;
+
+	old = self.origin;
+	if (QX_DeltaPlace (self, p))
+	{
+		spawn_tfog (old);
+		spawn_tfog (self.origin);
+		self.angles_y = p.angles_y;
+		self.enemy = world;
+		self.goalentity = world;
+		self.qx_dl_lost = time;
+	}
+	else
+		self.qx_dl_lost = time - 6;		// try again in 2 s
+};
+
+// idle / following: look for monsters, keep up with the player
+void() QX_DeltaIdle =
+{
+	local entity p;
+	local float d;
+
+	if (QX_DeltaLook ())
+		return;
+	p = QX_FindLivePlayer ();
+	if (!p)
+		return;
+	if (visible (p))
+		self.qx_dl_lost = time;
+	d = vlen (p.origin - self.origin);
+	if (d > QX_DELTA_WARP || time - self.qx_dl_lost > 8)
+	{
+		QX_DeltaWarp (p);
+		return;
+	}
+	if (d > QX_DELTA_FOLLOW)
+	if (self.think != dl_walk1)
+	if (self.frame < $rockrun1 || self.frame > $rockrun6)
+	{
+		self.goalentity = p;
+		self.think = dl_walk1;
+		self.nextthink = time + 0.1;
+	}
+};
+
+void() QX_DeltaWalk =
+{
+	local entity p;
+
+	if (QX_DeltaLook ())
+		return;
+	p = QX_FindLivePlayer ();
+	if (!p || vlen (p.origin - self.origin) < 160)
+	{
+		self.think = dl_stand1;
+		self.nextthink = time + 0.1;
+		return;
+	}
+	if (visible (p))
+		self.qx_dl_lost = time;
+	if (vlen (p.origin - self.origin) > QX_DELTA_WARP || time - self.qx_dl_lost > 8)
+	{
+		QX_DeltaWarp (p);
+		return;
+	}
+	self.goalentity = p;
+	movetogoal (20);
+};
+
+// in a fight: switch to a closer monster, give up on one it lost
+void() QX_DeltaRunCheck =
+{
+	local entity t, p;
+
+	if (time > self.qx_dl_look)
+	{
+		self.qx_dl_look = time + 0.5;
+		if (visible (self.enemy))
+			self.qx_dl_lost = time;
+		t = QX_DeltaFindTarget ();
+		if (t)
+		if (t != self.enemy)
+		if (!visible (self.enemy) || vlen (t.origin - self.origin) < vlen (self.enemy.origin - self.origin) * 0.6)
+		{
+			self.enemy = t;
+			self.goalentity = t;
+		}
+	}
+	p = QX_FindLivePlayer ();
+	if (time - self.qx_dl_lost > 6 || (p && vlen (p.origin - self.origin) > QX_DELTA_WARP))
+	{	// lost it, or the player is far away: back to following
+		self.enemy = world;
+		self.goalentity = world;
+		self.qx_dl_lost = time;
+		self.think = dl_stand1;
+		self.nextthink = time + 0.1;
+	}
+};
+
+void() QX_DeltaTouch =
+{
+	if (other.flags & FL_CLIENT)		// out of your way
+	if (!walkmove (self.angles_y + 90, 16))
+		walkmove (self.angles_y - 90, 16);
+};
+
+void() dl_stand1 =[ $stand1, dl_stand2 ] { QX_DeltaIdle (); };
+void() dl_stand2 =[ $stand2, dl_stand3 ] { QX_DeltaIdle (); };
+void() dl_stand3 =[ $stand3, dl_stand4 ] { QX_DeltaIdle (); };
+void() dl_stand4 =[ $stand4, dl_stand5 ] { QX_DeltaIdle (); };
+void() dl_stand5 =[ $stand5, dl_stand1 ] { QX_DeltaIdle (); };
+
+void() dl_walk1 =[ $rockrun1, dl_walk2 ] { QX_DeltaWalk (); };
+void() dl_walk2 =[ $rockrun2, dl_walk3 ] { QX_DeltaWalk (); };
+void() dl_walk3 =[ $rockrun3, dl_walk4 ] { QX_DeltaWalk (); };
+void() dl_walk4 =[ $rockrun4, dl_walk5 ] { QX_DeltaWalk (); };
+void() dl_walk5 =[ $rockrun5, dl_walk6 ] { QX_DeltaWalk (); };
+void() dl_walk6 =[ $rockrun6, dl_walk1 ] { QX_DeltaWalk (); };
+
+void() dl_run1 =[ $rockrun1, dl_run2 ] { QX_DeltaRunCheck (); ai_run (24); };
+void() dl_run2 =[ $rockrun2, dl_run3 ] { ai_run (24); };
+void() dl_run3 =[ $rockrun3, dl_run4 ] { ai_run (24); };
+void() dl_run4 =[ $rockrun4, dl_run5 ] { QX_DeltaRunCheck (); ai_run (24); };
+void() dl_run5 =[ $rockrun5, dl_run6 ] { ai_run (24); };
+void() dl_run6 =[ $rockrun6, dl_run1 ] { ai_run (24); };
+
+void() dl_shot1 =[ $shotatt1, dl_shot2 ] { ai_face (); self.weapon = IT_SUPER_SHOTGUN; QX_HunterShotgun (); };
+void() dl_shot2 =[ $shotatt2, dl_shot3 ] { ai_face (); };
+void() dl_shot3 =[ $shotatt3, dl_shot4 ] { ai_face (); };
+void() dl_shot4 =[ $shotatt4, dl_shot5 ] { ai_face (); };
+void() dl_shot5 =[ $shotatt5, dl_shot6 ] { ai_face (); };
+void() dl_shot6 =[ $shotatt6, dl_run1  ] { ai_face (); SUB_AttackFinished (1.0 - 0.15 * self.qx_hskill); };
+
+void() dl_rock1 =[ $rockatt1, dl_rock2 ] { ai_face (); self.weapon = IT_ROCKET_LAUNCHER; QX_HunterRocket (); };
+void() dl_rock2 =[ $rockatt2, dl_rock3 ] { ai_face (); };
+void() dl_rock3 =[ $rockatt3, dl_rock4 ] { ai_face (); };
+void() dl_rock4 =[ $rockatt4, dl_rock5 ] { ai_face (); };
+void() dl_rock5 =[ $rockatt5, dl_rock6 ] { ai_face (); };
+void() dl_rock6 =[ $rockatt6, dl_run1  ] { ai_face (); SUB_AttackFinished (1.3 - 0.25 * self.qx_hskill); };
+
+void() dl_nail1 =[ $nailatt1, dl_nail2 ] { ai_face (); self.weapon = IT_SUPER_NAILGUN; QX_HunterNail (); };
+void() dl_nail2 =[ $nailatt2, dl_nail3 ] { ai_face (); QX_HunterNail (); };
+void() dl_nail3 =[ $nailatt1, dl_nail4 ] { ai_face (); QX_HunterNail (); };
+void() dl_nail4 =[ $nailatt2, dl_nail5 ] { ai_face (); QX_HunterNail (); };
+void() dl_nail5 =[ $nailatt1, dl_nail6 ] { ai_face (); QX_HunterNail (); };
+void() dl_nail6 =[ $nailatt2, dl_nail7 ] { ai_face (); QX_HunterNail (); };
+void() dl_nail7 =[ $nailatt1, dl_nail8 ] { ai_face (); QX_HunterNail (); };
+void() dl_nail8 =[ $nailatt2, dl_run1  ] { ai_face (); QX_HunterNail (); SUB_AttackFinished (0.7); };
+
+void() dl_bolt1 =[ $light1, dl_bolt2 ] { ai_face (); self.weapon = IT_LIGHTNING; sound (self, CHAN_WEAPON, "weapons/lstart.wav", 1, ATTN_NORM); QX_HunterBolt (); };
+void() dl_bolt2 =[ $light2, dl_bolt3 ] { ai_face (); QX_HunterBolt (); };
+void() dl_bolt3 =[ $light1, dl_bolt4 ] { ai_face (); sound (self, CHAN_WEAPON, "weapons/lhit.wav", 1, ATTN_NORM); QX_HunterBolt (); };
+void() dl_bolt4 =[ $light2, dl_bolt5 ] { ai_face (); QX_HunterBolt (); };
+void() dl_bolt5 =[ $light1, dl_bolt6 ] { ai_face (); QX_HunterBolt (); };
+void() dl_bolt6 =[ $light2, dl_run1  ] { ai_face (); QX_HunterBolt (); SUB_AttackFinished (0.6); };
+
+void() dl_attack =
+{
+	local float d;
+
+	d = vlen (self.enemy.origin - self.origin);
+	if (d < 260)
+		dl_shot1 ();
+	else if (self.qx_delta == 1 && d < 900 && random () < 0.6)
+		dl_nail1 ();
+	else if (self.qx_delta == 3 && d < 600 && random () < 0.7)
+		dl_bolt1 ();
+	else
+		dl_rock1 ();
+};
+
+void() dl_pain1 =[ $pain1, dl_pain2 ] {};
+void() dl_pain2 =[ $pain2, dl_pain3 ] {};
+void() dl_pain3 =[ $pain3, dl_run1  ] {};
+
+void(entity attacker, float damage) dl_pain =
+{
+	// shot by a monster: shoot back (it isn't a monster, so T_Damage won't do it)
+	if (attacker.flags & FL_MONSTER)
+	if (attacker.health > 0)
+	if (attacker != self.enemy)
+	if (attacker.classname != "monster_runehunter")
+	if (self.enemy.health <= 0 || !visible (self.enemy) || random () < 0.6)
+	{
+		self.enemy = attacker;
+		HuntTarget ();
+	}
+	if (self.pain_finished > time)
+		return;
+	self.pain_finished = time + 1.5;
+	sound (self, CHAN_VOICE, "player/pain2.wav", 1, ATTN_NORM);
+	if (random () < 0.3 - 0.1 * self.qx_hskill)
+		dl_pain1 ();
+};
+
+float(float slot) QX_DeltaSpawn;
+
+void() QX_DeltaWaitThink =
+{
+	if (QX_DeltaSpawn (self.qx_delta))
+	{
+		remove (self);
+		return;
+	}
+	self.nextthink = time + 2;
+};
+
+// too many losses: the survivors teleport out
+void() QX_DeltaWithdrawThink =
+{
+	local entity e, n, p;
+
+	p = QX_FindLivePlayer ();
+	if (p)
+	{
+		QX_Center (p, "DELTA TEAM TAKING HEAVY LOSSES\n\n!! DELTA LABS !!\nurgent support request\n\nDelta team pulls out", "", "", "");
+		sound (p, CHAN_AUTO, "misc/talk.wav", 1, ATTN_NONE);
+	}
+	e = nextent (world);
+	while (e)
+	{
+		n = nextent (e);
+		if (e.classname == "qx_delta_wait")
+			remove (e);
+		else if (e.classname == "qx_delta" && e.qx_delta && e.health > 0)
+		{
+			spawn_tfog (e.origin);
+			remove (e);
+		}
+		e = n;
+	}
+	QX_LB ();
+	QX_LS ("    DELTA TEAM pulls out at ");
+	QX_LT (QX_RunTime (time));
+	QX_LS ("  (heavy losses) after ");
+	QX_LN (qx_delta_kills);
+	QX_LS (" kills");
+	QX_LE ();
+	remove (self);
+};
+
+void() dl_die =
+{
+	local entity t, p;
+
+	qx_delta_losses = qx_delta_losses + 1;
+	p = QX_FindLivePlayer ();
+	if (p)
+	{
+		sprint (p, QX_DeltaName (self.qx_delta));
+		sprint (p, " down!\n");
+	}
+	t = spawn ();
+	if (qx_delta_losses >= QX_DELTA_LOSSES)
+	{	// that's enough: the rest leave in a moment
+		t.classname = "qx_delta_out";
+		t.think = QX_DeltaWithdrawThink;
+		t.nextthink = time + 1.5;
+	}
+	else
+	{	// back in QX_DELTA_RESPAWN seconds, next to you
+		t.classname = "qx_delta_wait";
+		t.qx_delta = self.qx_delta;
+		t.think = QX_DeltaWaitThink;
+		t.nextthink = time + QX_DELTA_RESPAWN;
+	}
+	self.qx_delta = 0;				// the body is just a body now
+	self.touch = SUB_Null;
+	rh_die ();
+};
+
+// a member of Delta team, next to the player; FALSE if it can't (yet)
+float(float slot) QX_DeltaSpawn =
+{
+	local entity p, a;
+
+	p = QX_FindLivePlayer ();
+	if (!p || qx_arena || qx_arena_go || qx_duel || intermission_running)
+		return FALSE;
+
+	a = spawn ();
+	a.classname = "qx_delta";
+	a.qx_delta = slot;
+	a.netname = QX_DeltaName (slot);
+	a.solid = SOLID_SLIDEBOX;
+	a.movetype = MOVETYPE_STEP;
+	setmodel (a, "progs/player.mdl");
+	setsize (a, VEC_HULL_MIN, VEC_HULL_MAX);
+	if (!QX_DeltaPlace (a, p))
+	{
+		remove (a);
+		return FALSE;
+	}
+	// green team colors (QuadEXQ engine): 3 green, 10 olive
+	if (cvar ("qx_colormap_ok"))
+	{
+		if (slot == 1)		a.colormap = 32 + 3 * 14 + 3;
+		else if (slot == 2)	a.colormap = 32 + 3 * 14 + 10;
+		else			a.colormap = 32 + 10 * 14 + 3;
+	}
+	a.view_ofs = '0 0 22';
+	a.angles = '0 0 0';
+	a.angles_y = p.angles_y;
+	a.ideal_yaw = a.angles_y;
+	a.yaw_speed = 20;
+	a.takedamage = DAMAGE_AIM;
+	a.qx_hskill = floor (qx_pskill / 50);
+	if (a.qx_hskill > 2)
+		a.qx_hskill = 2;
+	a.health = (QX_HUNTER_HP + 50 * a.qx_hskill) * (1 + QX_F ());
+	a.max_health = a.health;
+	a.armortype = 0;				// no armor: health only
+	a.armorvalue = 0;
+	a.qx_elite = 1;					// strafe, bunny-hop, dodge
+	a.qx_announced = 1;
+	a.qx_init = 1;
+	a.qx_tempo = 1 + 0.15 * a.qx_hskill;
+	a.qx_dl_lost = time;
+	a.th_stand = dl_stand1;
+	a.th_walk = dl_stand1;
+	a.th_run = dl_run1;
+	a.th_missile = dl_attack;
+	a.th_melee = dl_attack;
+	a.th_pain = dl_pain;
+	a.th_die = dl_die;
+	a.touch = QX_DeltaTouch;
+	a.think = dl_stand1;
+	a.nextthink = time + 0.1 + random () * 0.3;
+	spawn_tfog (a.origin);
+	return TRUE;
+};
+
+// the whole team (members already here stay; fallen ones come right away)
+void() QX_DeltaArrive =
+{
+	local entity e, p, n;
+	local float slot, here;
+
+	p = QX_FindLivePlayer ();
+	if (!p)
+		return;
+	qx_delta_losses = 0;
+	qx_delta_kills = 0;
+	e = find (world, classname, "qx_delta_out");	// a withdrawal on its way: called off
+	while (e)
+	{
+		n = find (e, classname, "qx_delta_out");
+		remove (e);
+		e = n;
+	}
+	e = find (world, classname, "qx_delta_wait");
+	while (e)
+	{
+		n = find (e, classname, "qx_delta_wait");
+		remove (e);
+		e = n;
+	}
+	slot = 1;
+	while (slot <= 3)
+	{
+		here = FALSE;
+		e = find (world, classname, "qx_delta");
+		while (e)
+		{
+			if (e.qx_delta == slot)
+			if (e.health > 0)
+				here = TRUE;
+			e = find (e, classname, "qx_delta");
+		}
+		if (!here)
+		if (!QX_DeltaSpawn (slot))
+		{	// no room right now: it comes a moment later
+			e = spawn ();
+			e.classname = "qx_delta_wait";
+			e.qx_delta = slot;
+			e.think = QX_DeltaWaitThink;
+			e.nextthink = time + 1 + slot * 0.5;
+		}
+		slot = slot + 1;
+	}
+	QX_Center (p, "!! DELTA TEAM !!\n\nthree allies for this map", "", "", "");
+	sound (p, CHAN_AUTO, "misc/talk.wav", 1, ATTN_NONE);
+	QX_LB ();
+	QX_LS ("    DELTA TEAM arrives at ");
+	QX_LT (QX_RunTime (time));
+	QX_LS ("   PlayerSkill ");
+	QX_LN (qx_pskill);
+	QX_LE ();
 };

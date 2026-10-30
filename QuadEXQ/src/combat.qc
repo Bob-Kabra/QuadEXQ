@@ -111,6 +111,14 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 	if (!targ.takedamage)
 		return;
 
+// QuadEXQ: Delta team (allies) and the player never hurt each other
+	if (attacker.qx_delta)
+	if (targ.flags & FL_CLIENT || targ.qx_delta)
+		return;
+	if (targ.qx_delta)
+	if (attacker.flags & FL_CLIENT)
+		return;
+
 // used by buttons and triggers to set activator for target firing
 	damage_attacker = attacker;
 

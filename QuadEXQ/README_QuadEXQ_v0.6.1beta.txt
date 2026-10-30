@@ -265,6 +265,13 @@ fork), which adds the HUD, music switching, checkpoints and more.
         and a win lets you keep the weapons you had in the arena (with
         some ammo) plus the score (+1000, PERFECT +10000). Back to where
         you died afterwards, like a revenge match.
+      - !! DELTA TEAM !!: win a revenge match or an arena challenge and,
+        back on the map, three allies come to help for the rest of that
+        map. They fight like the Rune Hunter (Delta 1 super nailgun,
+        Delta 2 rockets, Delta 3 thunderbolt, all super shotgun up
+        close), follow you around, never hurt you and can't be hurt by
+        you. No armor. A fallen member is back next to you 6 seconds later,
+        but after 3 losses in all the team pulls out (Delta Labs calls).
       - Arenas need at least two deathmatch spawn spots; maps with fewer
         are never picked.
   * Chthon: hit him with the lightning trap. While he is stunned (and for a
@@ -481,6 +488,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
                            revenge match (win it and you get that rune).
   impulse 155              arena challenge test: your next death calls an
                            arena challenge.
+  impulse 156              Delta team test: call them in now.
 
   QuadEXQ engine:
   scr_qxhud 0/1            show the HUD (default 1)

@@ -1292,7 +1292,7 @@ void() QX_MonsterSync =
 	// telefrag), so PlayerSkill must not scale it
 	if (self.classname == "monster_boss" || self.classname == "monster_oldone")
 		return;
-	if (self.classname == "monster_runehunter")
+	if (self.classname == "monster_runehunter" || self.qx_delta)
 		return;				// its stats are set when it spawns
 
 	if (!self.qx_init)
@@ -1365,6 +1365,7 @@ void() QX_AIHook =
 	local entity p;
 
 	if (!(self.flags & FL_MONSTER))
+	if (!self.qx_delta)				// Delta team (allies) get the tempo / dodge handling too
 		return;
 	if (self.health <= 0)
 		return;
@@ -1876,6 +1877,7 @@ float() QX_AIRun =
 
 	if (self.qx_elite)
 	if (self.classname != "monster_runehunter")	// the hunter has its own fire rates
+	if (!self.qx_delta)				// so has Delta team
 	{
 		// fire twice as often
 		if (self.attack_finished > time)
@@ -1946,7 +1948,7 @@ float(entity attacker, entity targ) QX_DamageMult =
 
 	// B: the player's weapons grow at the same rate as enemy HP, so time-to-kill
 	//    stays the same at any PlayerSkill. Difficulty comes from enemy behaviour.
-	if (attacker.flags & FL_CLIENT)
+	if (attacker.flags & FL_CLIENT || attacker.qx_delta)	// Delta team hits like you
 	if (targ.flags & FL_MONSTER)
 		return 1 + QX_PLAYER_DMG_SCALE * QX_F ();
 

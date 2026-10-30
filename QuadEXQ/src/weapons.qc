@@ -2470,6 +2470,9 @@ void() ImpulseCommands =
 		QX_RevengeTest ();
 	if (self.impulse == 155)		// QuadEXQ: test the arena challenge
 		QX_ChallengeTest ();
+	if (self.impulse == 156)		// QuadEXQ: test Delta team (call them in now)
+	if (!deathmatch && !coop)
+		QX_DeltaArrive ();
 	if (self.impulse == 151)		// QuadEXQ: reset PlayerSkill
 	{
 		QX_SetSkill (QX_StartSkill ());

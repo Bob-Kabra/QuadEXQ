@@ -286,7 +286,15 @@ void() QX_RevengeGo;
 .vector	qx_safe_org;		// last safe footing on this map (revenge / challenge comes back here)
 .vector	qx_safe_ang;
 .float	qx_safe_next;
-.float	qx_back_prot;		// no damage until this time (just back from the arena)
+.float	qx_back_prot;
+.float	qx_delta;			// Delta team member 1..3 (an ally, qx_hunter.qc)
+.float	qx_dl_lost;			// last time it saw what it was after
+.float	qx_dl_look;			// next target search
+float	qx_delta_call;			// call Delta team in at this time (after an arena win)
+float	qx_delta_losses;		// members down since the team arrived (3 = they pull out)
+float	qx_delta_kills;			// monsters Delta team killed since it arrived
+float	qx_st_delta;			// monsters Delta team killed on this map (map report)
+void() QX_DeltaArrive;		// no damage until this time (just back from the arena)
 void() QX_RevengeRoll;
 void() QX_RevengeTest;
 void() QX_ChallengeTest;
