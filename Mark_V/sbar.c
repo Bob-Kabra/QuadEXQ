@@ -1874,9 +1874,14 @@ void Sbar_DrawQuadEXQ (void)
 	// ---- jetpack bursts
 	if (flags & QX_F_HASJET)
 	{
+		// stat = bursts left + 16 x bursts owned (one per jetpack found); an
+		// older progs sends only the bursts left, out of 3
+		int owned = jets >> 4, left = jets & 15;
+		if (!owned)
+			owned = 3, left = jets;
 		QX_StringAlt (x + 206, y - 2, "JET");
-		for (i = 0; i < 3; i++)
-			Draw_Fill (x + 238 + i * 8, y - 1, 6, 6, i < jets ? QXC_JET : QXC_BAR_BG, 1.0f);
+		for (i = 0; i < owned && i < 8; i++)
+			Draw_Fill (x + 238 + i * 8, y - 1, 6, 6, i < left ? QXC_JET : QXC_BAR_BG, 1.0f);
 	}
 
 	// ---- boss compass
