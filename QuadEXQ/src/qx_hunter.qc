@@ -1762,8 +1762,12 @@ void() QX_DuelThink =
 
 	// a revenge match / arena challenge won: the prize is handed out after the
 	// trip back (a checkpoint load would undo anything given in the arena)
+	// (only once you are in the game: a load first spawns the map and runs a
+	// couple of frames with fresh globals, and then the save overwrites them --
+	// anything done in those frames, Delta team's call or a rune, was lost)
 	if (cvar ("scratch3"))
 	if (!qx_arena)
+	if (QX_FindLivePlayer ())
 	{
 		n = floor (cvar ("scratch3"));
 		cvar_set ("scratch3", "0");
