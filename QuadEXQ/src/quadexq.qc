@@ -888,7 +888,8 @@ void(float dash) QX_FireFist =
 
 	makevectors (self.v_angle);
 	source = self.origin + '0 0 16';
-	vdmg = 50 + vlen (self.velocity) / 3;		// velocity damage
+	// adrenaline (100% .. 300%, as the HUD shows it) and speed make the punch
+	vdmg = (100 + 2 * self.qx_adren) / QX_FIST_ADREN + vlen (self.velocity) / QX_FIST_SPEED;
 
 	traceline (source, source + v_forward * 100, FALSE, self);
 	if (trace_fraction == 1.0)

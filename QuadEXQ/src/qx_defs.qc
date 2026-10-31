@@ -297,7 +297,9 @@ float	QX_W_FIST		= -1;	// the Golden Left Hand, for the map report
 .float	qx_deflect_msg;			// last "DEFLECT!" banner
 float	qx_st_deflects;			// enemy shots swatted back on this map (map report)
 void(float dash) QX_FireFist;
-float	QX_EEL_DAMAGE		= 0.75;	// the eel's electric zap was brutal: x0.75
+float	QX_EEL_DAMAGE		= 0.75;
+float	QX_FIST_ADREN		= 10;	// Golden Left Hand, per hit (3 hits a swing): adrenaline % / this
+float	QX_FIST_SPEED		= 15;	//   + your speed / this (QuadUTF had 50 + speed / 3)	// the eel's electric zap was brutal: x0.75
 void() QX_AutoDeflect;		// show the arena's map name and title at this time
 float	qx_delta_call;			// call Delta team in at this time (after an arena win)
 float	qx_delta_losses;		// members down since the team arrived (3 = they pull out)

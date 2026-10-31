@@ -85,7 +85,7 @@ PlayerSkill(0〜100)
     一度拾えばマップを越えて持ち越し(parm10)。死亡リスタートではそのレベル開始時の状態に戻る
     3個持っているときに拾うとロケット+5。HUD の JET は持っている数だけ枠(stat 24 = 残り + 16×所持数)。落ちたバックパックは120秒で消える
     弾薬は使わない。従来の1番のジェットパック武器は廃止
-  自動近接攻撃: 敵との当たり判定の隙間が30未満、かつほぼ正面で自動。敵が右側(v_right との内積 >= 0)なら斧、左側なら Golden Left Hand(QuadUTF のパンチ W_Fire_SuAxe を移植した QX_FireFist、v_punch.mdl、qx_fist1-4 で3回判定、突進(照準方向 +200、上 +40)は1回目だけ、威力 50 + 速度/3、射程100)。振っている間は EF_DIMLIGHT で周りが光り、エンジン側で拳自体も金色に脈打つ明るさで描く。qx_meleeing = 1 斧 / 2 拳。斧を構えているときも左側の敵には拳が出る(右側は自分で斧を振る)。v_punch はエンジン側で左右反転して描く(gl_alias.c: Y を -1 倍 + glFrontFace 反転、QuadEXQ progs のときだけ)。マップ集計では武器表に "LeftHand" の行、打ち返した数は "deflects N"(qx_st_deflects) ※QX_MELEE_GAP
+  自動近接攻撃: 敵との当たり判定の隙間が30未満、かつほぼ正面で自動。敵が右側(v_right との内積 >= 0)なら斧、左側なら Golden Left Hand(QuadUTF のパンチ W_Fire_SuAxe を移植した QX_FireFist、v_punch.mdl、qx_fist1-4 で3回判定、突進(照準方向 +200、上 +40)は1回目だけ、威力は1発 アドレナリン%/10 + 速度/15(HUD 表示の 100-300%、QX_FIST_ADREN / QX_FIST_SPEED、Quad は T_Damage の x4 が別にかかる、QuadUTF の 50 + 速度/3 では1振り400超えで強すぎた)、射程100)。振っている間は EF_DIMLIGHT で周りが光り、エンジン側で拳自体も金色に脈打つ明るさで描く。qx_meleeing = 1 斧 / 2 拳。斧を構えているときも左側の敵には拳が出る(右側は自分で斧を振る)。v_punch はエンジン側で左右反転して描く(gl_alias.c: Y を -1 倍 + glFrontFace 反転、QuadEXQ progs のときだけ)。マップ集計では武器表に "LeftHand" の行、打ち返した数は "deflects N"(qx_st_deflects) ※QX_MELEE_GAP
   打ち返し: アドレナリン 250% 以上(qx_adren >= QX_DEFLECT_ADREN = 75)か Quad 中、QX_DEFLECT_RANGE(110)以内に向かってくるモンスターの弾(FLYMISSILE/BOUNCE/FLY/TOSS で touch あり)を撃った本人に向けて 1.3倍速で打ち返す(QX_AutoDeflect)。owner を自分にするので自分の弾扱い、追尾弾(.enemy)は撃った本人を追う。左右で拳/斧の空振りモーション(qx_swatL/R、ダメージなし)。"DEFLECT!" は1.5秒に1回
     発動時に player/taunt.wav を再生(素材は別途用意)
     持っている武器は変わらないが、振っている間は撃てない(無防備)
