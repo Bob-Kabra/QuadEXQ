@@ -24,7 +24,7 @@ A single-player Quake mod by **Bob Kabura**, built on his earlier mods EXQ and Q
 
 This repository holds the **engine** source: Mark V v1099 Revision 4 (see `README_MarkV.md`) with the QuadEXQ changes on top, one commit each, and the mod's QuakeC source.
 
-- `Mark_V/`: engine source (Windows, Code::Blocks / MinGW: `Mark_V/Mark_V.cbp`)
+- `Mark_V/`: engine source (Windows, Code::Blocks / MinGW: `Mark_V/QuadEXQ.cbp`)
 - `SDK/`: the libraries Mark V builds against
 - `QuadEXQ/`: the mod's QuakeC source (`src/`, build with FTEQCC: `fteqcc -srcfile progs.src`) and the player's guide
 
