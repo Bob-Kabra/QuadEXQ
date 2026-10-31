@@ -378,7 +378,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
     When an enemy is right in front of you, you hit it automatically: the
     axe if it is on your right, the Golden Left Hand (a glowing left-handed
     punch that throws you at it, harder the faster you move) if it is on
-    your left. You can't shoot during the swing.
+    your left -- even with the axe in hand (your left hand is free). You
+    can't shoot during the swing.
     At 250% adrenaline or more (or with Quad), enemy shots that come
     close -- rockets, grenades, nails, magic -- are swatted back at
     whoever fired them, and they count as yours.

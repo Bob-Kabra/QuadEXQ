@@ -807,8 +807,6 @@ void() QX_AutoMelee =
 		return;
 	if (time < self.qx_melee_next)
 		return;
-	if (self.weapon == IT_AXE)
-		return;					// already melee: the fire button does it
 
 	makevectors (self.v_angle);
 	f = v_forward;
@@ -845,8 +843,12 @@ void() QX_AutoMelee =
 	if (!best)
 		return;
 
-	sound (self, CHAN_VOICE, "player/taunt.wav", 1, ATTN_NORM);
 	makevectors (self.v_angle);
+	if (self.weapon == IT_AXE)
+	if ((best.origin - self.origin) * v_right >= 0)
+		return;					// axe in hand: the right side is yours (fire button);
+							// the left hand is free, so it still punches
+	sound (self, CHAN_VOICE, "player/taunt.wav", 1, ATTN_NORM);
 	if ((best.origin - self.origin) * v_right < 0)
 	{	// on your left: the Golden Left Hand
 		self.qx_meleeing = 2;
