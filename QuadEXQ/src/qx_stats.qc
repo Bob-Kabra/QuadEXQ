@@ -34,6 +34,7 @@ entity	qx_ws_list;			// first weapon-stat entity (chained by .enemy)
 
 float(float w) QX_WIdx =
 {
+	if (w == QX_W_FIST)		return 13;
 	if (w == IT_AXE)		return 1;
 	if (w == IT_BLASTER)		return 2;
 	if (w == IT_SHOTGUN)		return 3;
@@ -50,6 +51,7 @@ float(float w) QX_WIdx =
 
 string(float i) QX_WName =
 {
+	if (i == 13)	return "LeftHand   ";
 	if (i == 1)	return "Axe        ";
 	if (i == 2)	return "Blaster    ";
 	if (i == 3)	return "Shotgun    ";
@@ -69,6 +71,8 @@ string(float i) QX_WName =
 float	qx_st_axehit;			// the latest QX_StatHit was a melee swing
 float(entity p) QX_StatWeap =
 {
+	if (p.qx_meleeing == 2)
+		return QX_W_FIST;
 	if (p.qx_meleeing)
 		return IT_AXE;
 	return p.weapon;
@@ -246,7 +250,7 @@ void(entity attacker, entity inflictor, entity targ, float take) QX_StatHit =
 	if (real < 0)
 		real = 0;
 	if (qx_st_axehit)
-		e = QX_WStat (IT_AXE);
+		e = QX_WStat (QX_StatWeap (attacker));
 	else
 		e = QX_WStat (attacker.weapon);
 	e.qx_ws_hits = e.qx_ws_hits + 1;
@@ -299,7 +303,7 @@ void(entity targ, entity attacker) QX_StatKill =
 		return;
 
 	if (qx_st_axehit)			// killed by the hit just counted (T_Damage -> Killed)
-		e = QX_WStat (IT_AXE);
+		e = QX_WStat (QX_StatWeap (attacker));
 	else
 		e = QX_WStat (attacker.weapon);
 	qx_st_axehit = FALSE;
@@ -440,6 +444,11 @@ void(entity p) QX_StatMapEnd =
 	QX_LN (qx_st_slow);
 	QX_LS ("s   jets ");
 	QX_LN (qx_st_jets);
+	if (qx_st_deflects)
+	{
+		QX_LS ("   deflects ");
+		QX_LN (qx_st_deflects);
+	}
 	QX_LE ();
 
 	QX_LB ();
@@ -453,7 +462,7 @@ void(entity p) QX_StatMapEnd =
 	QX_LS ("  weapon        held  firing  hits   damage kills  dps(firing)");
 	QX_LE ();
 	i = 1;
-	while (i <= 12)
+	while (i <= 13)
 	{
 		e = qx_ws_list;
 		while (e)
@@ -515,7 +524,7 @@ void(entity p) QX_StatMapEnd =
 
 	QX_CB ("row"); QX_LS ("WEAPON|TIME|DMG|KILL|DPS"); QX_CE ();
 	i = 1;
-	while (i <= 12)
+	while (i <= 13)
 	{
 		e = qx_ws_list;
 		while (e)

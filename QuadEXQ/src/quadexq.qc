@@ -846,13 +846,150 @@ void() QX_AutoMelee =
 		return;
 
 	sound (self, CHAN_VOICE, "player/taunt.wav", 1, ATTN_NORM);
-	self.qx_meleeing = 1;
-	self.weaponmodel = "progs/v_axe.mdl";
-	sound (self, CHAN_WEAPON, "weapons/ax1.wav", 1, ATTN_NORM);
-	player_axe1 ();
-	self.attack_finished = time + 0.5;
+	makevectors (self.v_angle);
+	if ((best.origin - self.origin) * v_right < 0)
+	{	// on your left: the Golden Left Hand
+		self.qx_meleeing = 2;
+		self.effects = self.effects | EF_DIMLIGHT;	// it glows
+		self.weaponmodel = "progs/v_punch.mdl";
+		sound (self, CHAN_WEAPON, "player/punch.wav", 1, ATTN_NORM);
+		qx_fist1 ();
+		self.attack_finished = time + 0.6;
+	}
+	else
+	{	// on your right: the axe
+		self.qx_meleeing = 1;
+		self.weaponmodel = "progs/v_axe.mdl";
+		sound (self, CHAN_WEAPON, "weapons/ax1.wav", 1, ATTN_NORM);
+		player_axe1 ();
+		self.attack_finished = time + 0.5;
+	}
 	// a short window to shoot before the next auto swing
 	self.qx_melee_next = self.attack_finished + 0.6;
+};
+
+// The Golden Left Hand: QuadUTF's punch. The first hit of a swing throws
+// you at the target (+200 along your aim, a little up); every hit hurts more
+// the faster you go.
+void(float dash) QX_FireFist =
+{
+	local vector source, org, dir;
+	local float vdmg;
+
+	dir = aim (self, 100000);
+	if (dash)
+	{
+		FireTracer (dir);
+		self.velocity = self.velocity + dir * 200;
+		self.velocity_z = self.velocity_z + 40;
+	}
+
+	makevectors (self.v_angle);
+	source = self.origin + '0 0 16';
+	vdmg = 50 + vlen (self.velocity) / 3;		// velocity damage
+
+	traceline (source, source + v_forward * 100, FALSE, self);
+	if (trace_fraction == 1.0)
+		return;
+
+	org = trace_endpos - v_forward * 4;
+	self.touch = Player_JumpTouch;
+	if (trace_ent.takedamage)
+	{
+		trace_ent.axhitme = 1;
+		SpawnBlood (org, self.v_angle, 500);
+		T_Damage (trace_ent, self, self, vdmg);
+		sound (self, CHAN_WEAPON, "player/gibtouch.wav", 1, ATTN_NORM);
+	}
+	else
+	{	// hit wall
+		sound (self, CHAN_WEAPON, "player/land1.wav", 1, ATTN_NORM);
+		WriteByte (MSG_BROADCAST, SVC_TEMPENTITY);
+		WriteByte (MSG_BROADCAST, TE_GUNSHOT);
+		WriteCoord (MSG_BROADCAST, org_x);
+		WriteCoord (MSG_BROADCAST, org_y);
+		WriteCoord (MSG_BROADCAST, org_z);
+	}
+};
+
+// Adrenaline 250%+ (or Quad): enemy shots coming at you get swatted back --
+// rockets, grenades, nails, magic. Back at whoever fired them (homing ones
+// home in on them), and they are yours now. Left side: the Golden Left
+// Hand, right side: the axe.
+void() QX_AutoDeflect =
+{
+	local entity e, mon;
+	local vector d, dir;
+	local float sp, left;
+
+	if (!self.ishuman || self.health <= 0)
+		return;
+	if (self.qx_adren < QX_DEFLECT_ADREN && self.super_damage_finished <= time)
+		return;
+
+	e = findradius (self.origin, QX_DEFLECT_RANGE);
+	while (e)
+	{
+		if (e.owner.flags & FL_MONSTER)
+		if (!(e.flags & (FL_MONSTER | FL_CLIENT | FL_ITEM)))
+		if (e.movetype == MOVETYPE_FLYMISSILE || e.movetype == MOVETYPE_BOUNCE || e.movetype == MOVETYPE_FLY || e.movetype == MOVETYPE_TOSS)
+		if (e.touch)
+		if (vlen (e.velocity) > 50)
+		{
+			d = self.origin - e.origin;
+			if (e.velocity * d > 0)			// coming at you
+			{
+				mon = e.owner;
+				sp = vlen (e.velocity) * 1.3;
+				if (sp < 600)
+					sp = 600;
+				if (mon.health > 0)
+					dir = normalize ((mon.origin + '0 0 16') - e.origin);
+				else
+				{
+					makevectors (self.v_angle);
+					dir = v_forward;
+				}
+				e.velocity = dir * sp;
+				if (e.movetype == MOVETYPE_BOUNCE || e.movetype == MOVETYPE_TOSS)
+					e.velocity_z = e.velocity_z + 200;
+				e.angles = vectoangles (e.velocity);
+				e.owner = self;
+				if (e.enemy == self)
+					e.enemy = mon;			// homing shots go home
+				sound (e, CHAN_AUTO, "weapons/ric2.wav", 1, ATTN_NORM);
+				particle (e.origin, '0 0 0', 111, 30);
+				qx_st_deflects = qx_st_deflects + 1;
+
+				if (time > self.qx_deflect_msg)
+				{
+					self.qx_deflect_msg = time + 1.5;
+					QX_Center (self, "DEFLECT!", "", "", "");
+				}
+				if (!self.qx_meleeing)
+				{
+					makevectors (self.v_angle);
+					left = ((e.origin - self.origin) * v_right < 0);
+					self.qx_meleeing = 1 + left;
+					self.attack_finished = time + 0.3;
+					if (left)
+					{
+						self.effects = self.effects | EF_DIMLIGHT;
+						self.weaponmodel = "progs/v_punch.mdl";
+						sound (self, CHAN_WEAPON, "player/punch.wav", 1, ATTN_NORM);
+						qx_swatL1 ();
+					}
+					else
+					{
+						self.weaponmodel = "progs/v_axe.mdl";
+						sound (self, CHAN_WEAPON, "weapons/ax1.wav", 1, ATTN_NORM);
+						qx_swatR1 ();
+					}
+				}
+			}
+		}
+		e = e.chain;
+	}
 };
 
 // ---------------------------------------------------------------- engine HUD
@@ -993,6 +1130,9 @@ void() QX_PlayerFrame =
 	if (self.qx_meleeing)
 	if (time >= self.attack_finished)
 	{
+		if (self.qx_meleeing == 2)
+		if (self.invincible_finished <= time)	// (the pentagram keeps its own light)
+			self.effects = self.effects - (self.effects & EF_DIMLIGHT);
 		self.qx_meleeing = 0;
 		W_SetCurrentAmmo ();
 	}

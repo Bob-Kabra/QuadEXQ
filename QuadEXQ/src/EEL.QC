@@ -37,7 +37,7 @@ void(entity inflictor, entity attacker, float damage) T_EELZap =
 				{	// eels take no damage from this attack
 					if (head.classname != "monster_eel" && 
 						(head.flags & FL_INWATER))					
-						T_Damage (head, inflictor, attacker, points);
+						T_Damage (head, inflictor, attacker, points * QX_EEL_DAMAGE);	// QuadEXQ: x0.75
 				}
 			}
 		}

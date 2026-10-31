@@ -290,7 +290,15 @@ void() QX_RevengeGo;
 .float	qx_delta;			// Delta team member 1..3 (an ally, qx_hunter.qc)
 .float	qx_dl_lost;			// last time it saw what it was after
 .float	qx_dl_look;			// next target search
-float	qx_arena_title_at;		// show the arena's map name and title at this time
+float	qx_arena_title_at;
+float	QX_DEFLECT_ADREN	= 75;	// adrenaline gauge for deflecting (75 = 250%), or Quad
+float	QX_DEFLECT_RANGE	= 110;	// enemy shots this close get swatted back
+float	QX_W_FIST		= -1;	// the Golden Left Hand, for the map report
+.float	qx_deflect_msg;			// last "DEFLECT!" banner
+float	qx_st_deflects;			// enemy shots swatted back on this map (map report)
+void(float dash) QX_FireFist;
+float	QX_EEL_DAMAGE		= 0.75;	// the eel's electric zap was brutal: x0.75
+void() QX_AutoDeflect;		// show the arena's map name and title at this time
 float	qx_delta_call;			// call Delta team in at this time (after an arena win)
 float	qx_delta_losses;		// members down since the team arrived (3 = they pull out)
 float	qx_delta_kills;			// monsters Delta team killed since it arrived

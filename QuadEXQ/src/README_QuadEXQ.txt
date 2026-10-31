@@ -85,7 +85,8 @@ PlayerSkill(0〜100)
     一度拾えばマップを越えて持ち越し(parm10)。死亡リスタートではそのレベル開始時の状態に戻る
     3個持っているときに拾うとロケット+5。HUD の JET は持っている数だけ枠(stat 24 = 残り + 16×所持数)。落ちたバックパックは120秒で消える
     弾薬は使わない。従来の1番のジェットパック武器は廃止
-  自動近接攻撃: 敵との当たり判定の隙間が30未満、かつほぼ正面で自動で斧 ※QX_MELEE_GAP
+  自動近接攻撃: 敵との当たり判定の隙間が30未満、かつほぼ正面で自動。敵が右側(v_right との内積 >= 0)なら斧、左側なら Golden Left Hand(QuadUTF のパンチ W_Fire_SuAxe を移植した QX_FireFist、v_punch.mdl、qx_fist1-4 で3回判定、突進(照準方向 +200、上 +40)は1回目だけ、威力 50 + 速度/3、射程100)。振っている間は EF_DIMLIGHT で周りが光り、エンジン側で拳自体も金色に脈打つ明るさで描く。qx_meleeing = 1 斧 / 2 拳。v_punch はエンジン側で左右反転して描く(gl_alias.c: Y を -1 倍 + glFrontFace 反転、QuadEXQ progs のときだけ)。マップ集計では武器表に "LeftHand" の行、打ち返した数は "deflects N"(qx_st_deflects) ※QX_MELEE_GAP
+  打ち返し: アドレナリン 250% 以上(qx_adren >= QX_DEFLECT_ADREN = 75)か Quad 中、QX_DEFLECT_RANGE(110)以内に向かってくるモンスターの弾(FLYMISSILE/BOUNCE/FLY/TOSS で touch あり)を撃った本人に向けて 1.3倍速で打ち返す(QX_AutoDeflect)。owner を自分にするので自分の弾扱い、追尾弾(.enemy)は撃った本人を追う。左右で拳/斧の空振りモーション(qx_swatL/R、ダメージなし)。"DEFLECT!" は1.5秒に1回
     発動時に player/taunt.wav を再生(素材は別途用意)
     持っている武器は変わらないが、振っている間は撃てない(無防備)
     連続発動しないよう、振り終わりから0.6秒は再発動しない
@@ -161,6 +162,7 @@ PlayerSkill(0〜100)
   キラキラ光る(EF_BRIGHTFIELD)。見つけると「!!! BOSS !!!」表示。impulse 150 でボスとの距離が見える
   ボスが生きている間は出口(trigger_changelevel)が封印される。倒すと開く
   対象外: smine / 魚 / ウナギ / ゾンビ系(ゴア必須なので)。リベナントにはならない
+  ウナギ(monster_eel)の電撃 T_EELZap はダメージ x0.75(QX_EEL_DAMAGE、範囲はそのまま)
   クトゥン・シュブニグラスのいるマップや、候補がいないマップでは封印なし
   daikon は v0.3 では出現しない ※QX_DAIKON
   ヴォア(シャルラス)の分裂: 分裂するたびに残りHPを親子で半分ずつ。1体の家系で最大2回まで ※QX_VORE_SPLITS

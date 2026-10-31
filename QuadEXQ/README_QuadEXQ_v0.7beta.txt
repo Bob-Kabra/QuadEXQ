@@ -375,8 +375,13 @@ fork), which adds the HUD, music switching, checkpoints and more.
     jetpacks vanish after 120 seconds.
 
   Auto melee:
-    When an enemy is right in front of you, you swing the axe automatically.
-    You can't shoot during the swing.
+    When an enemy is right in front of you, you hit it automatically: the
+    axe if it is on your right, the Golden Left Hand (a glowing left-handed
+    punch that throws you at it, harder the faster you move) if it is on
+    your left. You can't shoot during the swing.
+    At 250% adrenaline or more (or with Quad), enemy shots that come
+    close -- rockets, grenades, nails, magic -- are swatted back at
+    whoever fired them, and they count as yours.
 
   Health regeneration:
     Go 5 seconds without firing or taking damage and you heal up to 60 HP:

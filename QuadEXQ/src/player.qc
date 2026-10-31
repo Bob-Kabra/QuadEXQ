@@ -198,6 +198,20 @@ void()	player_axed2 =	[$axattd2, player_axed3	] {self.weaponframe=6;};
 void()	player_axed3 =	[$axattd3, player_axed4	] {self.weaponframe=7;W_FireAxe();};
 void()	player_axed4 =	[$axattd4, player_run	] {self.weaponframe=8;};
 
+// QuadEXQ: the Golden Left Hand (QuadUTF's punch, held left-handed)
+void()	qx_fist1 =	[$axattd1, qx_fist2	] {self.weaponframe=5;};
+void()	qx_fist2 =	[$axattd2, qx_fist3	] {self.weaponframe=6;QX_FireFist(1);};
+void()	qx_fist3 =	[$axattd3, qx_fist4	] {self.weaponframe=7;QX_FireFist(0);};
+void()	qx_fist4 =	[$axattd4, player_run	] {self.weaponframe=8;QX_FireFist(0);};
+
+// QuadEXQ: swatting a shot back (no hit of its own)
+void()	qx_swatL1 =	[$axattd1, qx_swatL2	] {self.weaponframe=5;};
+void()	qx_swatL2 =	[$axattd2, qx_swatL3	] {self.weaponframe=7;};
+void()	qx_swatL3 =	[$axattd4, player_run	] {self.weaponframe=8;};
+void()	qx_swatR1 =	[$axatt1, qx_swatR2	] {self.weaponframe=1;};
+void()	qx_swatR2 =	[$axatt2, qx_swatR3	] {self.weaponframe=3;};
+void()	qx_swatR3 =	[$axatt4, player_run	] {self.weaponframe=4;};
+
 
 
 //============================================================================

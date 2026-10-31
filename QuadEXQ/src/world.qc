@@ -271,6 +271,10 @@ void() worldspawn =
 	precache_model ("progs/s_explod.spr");	// sprite explosion
 
 	precache_model ("progs/v_axe.mdl");
+	precache_model ("progs/v_punch.mdl");	// QuadEXQ: the Golden Left Hand
+	precache_sound ("player/punch.wav");
+	precache_sound ("player/gibtouch.wav");
+	precache_sound ("player/land1.wav");
 	precache_model ("progs/v_shot.mdl");
 	precache_model ("progs/v_nail.mdl");
 	precache_model ("progs/v_rock.mdl");

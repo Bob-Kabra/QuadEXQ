@@ -1197,6 +1197,7 @@ void() PlayerPostThink =
 		
 // do weapon stuff
 
+	QX_AutoDeflect ();	// QuadEXQ: 250%+ adrenaline = swat enemy shots back
 	QX_AutoMelee ();	// QuadEXQ: enemy in your face = automatic axe / fist
 	W_WeaponFrame ();
 
