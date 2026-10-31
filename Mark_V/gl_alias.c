@@ -671,6 +671,8 @@ typedef void (*GL_DrawAliasFrame_Fn_t) (aliashdr_t *paliashdr, lerpdata_t lerpda
 
 void R_DrawAliasModel (entity_t *e)
 {
+	cbool qx_mirror;			// QuadEXQ: left-handed view model
+	GLint qx_frontface = GL_CCW;
 	aliashdr_t				*paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
 	GL_DrawAliasFrame_Fn_t	GL_DrawAliasFrame =	GL_DrawAliasFrame_New;
 	int						anim, skinnum;
@@ -701,6 +703,16 @@ void R_DrawAliasModel (entity_t *e)
 	//
     eglPushMatrix ();
 	R_RotateForEntity (lerpdata.origin, lerpdata.angles);
+
+	// QuadEXQ: the Golden Left Hand (v_punch.mdl) is held left-handed:
+	// mirror it across the view, and flip the winding so culling still works
+	qx_mirror = (e == &cl.viewent_gun && (cl.stats[STAT_QX_FLAGS] & QX_F_ACTIVE)
+		&& e->model && !strcmp (e->model->name, "progs/v_punch.mdl"));
+	if (qx_mirror) {
+		eglGetIntegerv (GL_FRONT_FACE, &qx_frontface);
+		eglScalef (1, -1, 1);
+		eglFrontFace (qx_frontface == GL_CCW ? GL_CW : GL_CCW);
+	}
 
 	// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
 	if (e == &cl.viewent_gun && r_viewmodel_fov.value)
@@ -769,6 +781,13 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	rs_aliaspolys += paliashdr->numtris;
 	R_SetupAliasLighting (e);
+	if (qx_mirror)
+	{	// QuadEXQ: the Golden Left Hand glows -- bright, warm, pulsing
+		float pulse = 1.25f + 0.25f * (float) sin (cl.ctime * 9.0);
+		lightcolor[0] = 1.00f * pulse;
+		lightcolor[1] = 0.82f * pulse;
+		lightcolor[2] = 0.42f * pulse;
+	}
 
 	//
 	// set up textures
@@ -1034,6 +1053,8 @@ cleanup:
 		RB_ShadowTessEnd (&lerpdata); 
 	} while (0);
 
+	if (qx_mirror)
+		eglFrontFace (qx_frontface);		// QuadEXQ: back to normal winding
 	eglPopMatrix ();
 
 
