@@ -199,14 +199,17 @@ fork), which adds the HUD, music switching, checkpoints and more.
 
   * There is no sealed exit on maps with Chthon or Shub-Niggurath, or on
     maps with no suitable boss.
-  * THE RUNE HUNTER: come back to the start map holding 2 or more runes
-    and a rival who looks just like you calls you out. Three seconds later
-    you are both taken to an arena for a deathmatch duel, first to 10
-    frags, and back to start when it's over, win or lose.
+  * THE RUNE HUNTER: come back to the start map holding 1 to 3 runes and
+    a rival who looks just like you calls you out -- every time. (With all
+    4 runes the way to the end map is open, and it leaves you alone.)
+    Three seconds later you are both taken to an arena for a deathmatch
+    duel, first to 10 frags, and back to start when it's over, win or
+    lose.
       - The arena is picked at random from every map you have with "dm"
         in its name (DM1-DM6 from registered Quake, custom DM maps in your
-        folders) or named "d" + a number (D1, D12 ...), plus Q1Edge and Towersp (The Tower of Nightmare, by Bob
-        Kabura, included in maps\). Maps you don't have are skipped.
+        folders) or named "d" + a number (D1, D12 ...), plus Q1Edge and
+        Towersp (The Tower of Nightmare, by Bob Kabura, included in
+        maps\). Maps you don't have are skipped.
         (Needs the QuadEXQ engine's qx_arena command; with other engines
         the arena is one of DM1-DM6 or Towersp.)
       - "Welcome to EXQ Arena!!" greets you when you arrive, and a moment
@@ -256,7 +259,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
       - Win: +1000 score, or +10000 for a PERFECT 10 - 0.
         Lose: it takes the rune you got last and runs,
         and you are back in the start map.
-      - Each rune count (2, 3, 4) is fought once; your saves remember it.
+      - Coming back from the duel itself doesn't call the next one.
       - !! REVENGE MATCH !!: while the hunter holds one of your runes,
         each death has a 20% chance of a revenge match instead of the
         checkpoint. You go to an arena with nothing to lose; win and the
@@ -390,6 +393,10 @@ fork), which adds the HUD, music switching, checkpoints and more.
     Go 5 seconds without firing or taking damage and you heal up to 60 HP:
     5 HP per second, or 10 per second below 20 HP.
     You don't heal while holding the Lightning Gun.
+
+  Ammo:
+    You can carry up to 200 cells (Quake: 100). Shells, nails and rockets
+    keep the usual limits.
 
 
 ==============================================================================

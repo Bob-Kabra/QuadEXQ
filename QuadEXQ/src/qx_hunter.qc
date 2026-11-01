@@ -1711,6 +1711,17 @@ void() QX_ArenaPractice =
 };
 
 // every frame from QX_StartFrame
+// back to start after a duel: don't call the next one on arrival (+64 in
+// scratch3, which survives the level change; read in QX_DuelThink)
+void() QX_SkipNextCall =
+{
+	local float n;
+
+	n = floor (cvar ("scratch3"));
+	if (!(n & 64))
+		cvar_set ("scratch3", ftos (n + 64));
+};
+
 void() QX_DuelThink =
 {
 	local float n;
@@ -1759,7 +1770,10 @@ void() QX_DuelThink =
 			qx_back_failsafe = time + 3;	// (no qx_back alias after a restart: start instead)
 		}
 		else
+		{
+			QX_SkipNextCall ();
 			changelevel ("start");
+		}
 		return;
 	}
 
@@ -1774,6 +1788,11 @@ void() QX_DuelThink =
 	{
 		n = floor (cvar ("scratch3"));
 		cvar_set ("scratch3", "0");
+		if (n & 64)
+		{	// just back from a duel: no new call on this visit to start
+			n = n - 64;
+			qx_duel_checked = TRUE;
+		}
 		if (n & 32)
 		{	// back from the arena: make this spot the checkpoint (after the prize)
 			n = n - 32;
@@ -1838,6 +1857,7 @@ void() QX_DuelThink =
 	if (time > qx_back_failsafe)
 	{
 		qx_back_failsafe = 0;
+		QX_SkipNextCall ();
 		changelevel ("start");
 		return;
 	}
@@ -1896,12 +1916,13 @@ void() QX_DuelThink =
 	if (!QX_FindLivePlayer ())
 		return;
 
+	// every visit to start with 1 to 3 runes brings the Rune Hunter (with all
+	// 4 the way to the end map is open: no call then). Coming back from a duel
+	// doesn't count (QX_SkipNextCall).
 	qx_duel_checked = TRUE;
 	n = QX_RuneCount (serverflags);
-	if (n < 2)
+	if (n < 1 || n > 3)
 		return;
-	if (serverflags & QX_DuelDoneBit (n))
-		return;					// already settled at this rune count
 	QX_ArenaCall (1);			// off to an arena
 };
 

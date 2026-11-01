@@ -2253,7 +2253,7 @@ void() CheatCommand =
 		IT_GRENADE_LAUNCHER |
 		IT_ROCKET_LAUNCHER;
 
-	self.ammo_cells = 100;
+	self.ammo_cells = QX_CELLS_MAX;
 	self.items = self.items | 
 		IT_LIGHTNING | IT_ION;
 

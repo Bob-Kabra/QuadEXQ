@@ -340,8 +340,8 @@ void() bound_other_ammo =
 		other.ammo_nails = 200;
 	if (other.ammo_rockets > 100)
 		other.ammo_rockets = 100;		
-	if (other.ammo_cells > 100)
-		other.ammo_cells = 100;		
+	if (other.ammo_cells > QX_CELLS_MAX)	// QuadEXQ: 200 cells (Quake: 100)
+		other.ammo_cells = QX_CELLS_MAX;
 };
 
 
@@ -638,7 +638,7 @@ local float		best;
 //	cells
 	if (self.weapon == 4)
 	{
-		if (other.ammo_cells >= 100)
+		if (other.ammo_cells >= QX_CELLS_MAX)
 			return;
 		other.ammo_cells = other.ammo_cells + self.aflag;
 	}
