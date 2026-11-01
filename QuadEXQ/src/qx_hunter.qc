@@ -415,6 +415,12 @@ float(entity it) QX_HunterWants =
 		return 0;
 	if (it.qx_duelitem != 1)		// only arena / duel pickups (they come back)
 		return 0;
+	if (it.classname == "item_artifact_super_damage")
+	{
+		if (self.super_damage_finished > time)
+			return 0;
+		return 4;				// the Quad: always worth a run
+	}
 	if (it.classname == "item_health")
 	{
 		if (it.healamount >= 100)		// megahealth: always nice
@@ -437,7 +443,15 @@ void(entity it) QX_HunterTake =
 {
 	local float t, v;
 
-	if (it.classname == "item_health")
+	if (it.classname == "item_artifact_super_damage")
+	{	// Quad: x4 damage, and it moves and fires 2.5 x as fast (the world
+		// looks slow to it, the way it looks to you on Quad)
+		self.super_damage_finished = time + 30;
+		self.effects = self.effects | QX_EF_BLUE;
+		sound (self, CHAN_ITEM, "items/damage3.wav", 1, ATTN_NONE);
+		QX_CenterAll ("!!! ", self.netname, " GOT THE QUAD !!!", "");
+	}
+	else if (it.classname == "item_health")
 	{
 		if (it.healamount >= 100)
 			self.health = self.health + 100;
@@ -494,7 +508,6 @@ float() QX_HunterItems =
 	{
 		self.qx_seek_next = time + 0.5;
 		if (!self.qx_goalitem)
-		if (self.health < self.max_health * 0.6 || self.armorvalue < 40)
 		{
 			best = world;
 			bestd = 700;
@@ -502,6 +515,9 @@ float() QX_HunterItems =
 			while (e)
 			{
 				want = QX_HunterWants (e);
+				if (want < 4)			// health / armor: only when hurt (a Quad: always)
+				if (self.health >= self.max_health * 0.6 && self.armorvalue >= 40)
+					want = 0;
 				if (want)
 				if (want >= 2 || self.health >= self.max_health * 0.6)	// hurt: health first
 				{
@@ -591,7 +607,7 @@ void() rh_run6 =[ $rockrun6, rh_run1 ] { ai_run (24); };
 
 void() rh_shot1 =[ $shotatt1, rh_shot2 ] { ai_face (); self.weapon = IT_SUPER_SHOTGUN; QX_HunterShotgun (); };
 void() rh_shot2 =[ $shotatt2, rh_shot3 ] { ai_face (); };
-void() rh_shot3 =[ $shotatt3, rh_shot4 ] { ai_face (); };
+void() rh_shot3 =[ $shotatt3, rh_shot4 ] { ai_face (); if (self.netname == "K4B") QX_HunterShotgun (); };	// K4B: a double tap
 void() rh_shot4 =[ $shotatt4, rh_shot5 ] { ai_face (); };
 void() rh_shot5 =[ $shotatt5, rh_shot6 ] { ai_face (); };
 void() rh_shot6 =[ $shotatt6, rh_run1  ] { ai_face (); SUB_AttackFinished (1.0 - 0.15 * self.qx_hskill); };
@@ -643,8 +659,8 @@ void() rh_attack =
 	local float d;
 
 	d = vlen (self.enemy.origin - self.origin);
-	if (d < 260)
-		rh_shot1 ();
+	if (d < 260 || (self.netname == "K4B" && d < 450 && random () < 0.5))
+		rh_shot1 ();				// K4B likes the super shotgun from further out
 	else if (self.netname == "Tres" && d < 600 && random () < 0.7)
 		rh_bolt1 ();
 	else if (self.netname == "G" && d < 900 && random () < 0.5)
@@ -1711,6 +1727,35 @@ void() QX_ArenaPractice =
 };
 
 // every frame from QX_StartFrame
+// a Rune Hunter on Quad: faster everything (QX_AIHook uses qx_tempo for its
+// animation / think rate; the gaps between shots shrink here), blue glow
+void() QX_HunterQuadThink =
+{
+	local entity h;
+
+	h = qx_hunter;
+	if (!h || h.health <= 0)
+		return;
+	if (!h.qx_tempo0)
+		h.qx_tempo0 = h.qx_tempo;
+	if (h.super_damage_finished > time)
+	{
+		h.qx_tempo = h.qx_tempo0 * QX_HUNTER_QUAD_TEMPO;
+		if (h.attack_finished > time)
+		if (h.attack_finished != h.qx_af_seen)
+		{
+			h.attack_finished = time + (h.attack_finished - time) / QX_HUNTER_QUAD_TEMPO;
+			h.qx_af_seen = h.attack_finished;
+		}
+	}
+	else if (h.qx_tempo != h.qx_tempo0)
+	{	// it wore off
+		h.qx_tempo = h.qx_tempo0;
+		h.effects = h.effects - (h.effects & QX_EF_BLUE);
+		h.super_damage_finished = 0;
+	}
+};
+
 // back to start after a duel: don't call the next one on arrival (+64 in
 // scratch3, which survives the level change; read in QX_DuelThink)
 void() QX_SkipNextCall =
@@ -1903,6 +1948,7 @@ void() QX_DuelThink =
 	if (qx_duel)
 	{
 		QX_DuelArmorThink ();
+		QX_HunterQuadThink ();
 		return;
 	}
 	if (qx_arena_go)

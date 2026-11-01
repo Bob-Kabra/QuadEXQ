@@ -228,7 +228,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
           G      also fires super nailgun bursts (nails led at you).
           K4B    mostly swaps the rockets for the grenade launcher and lobs
                  lead shots that land where you're running to, often (a
-                 rocket now and then).
+                 rocket now and then), and fires the super shotgun twice
+                 in a row from further out.
           Tres   uses a thunderbolt at mid range (no auto-aim: it aims
                  where you were a moment ago, so keep strafing) and jumps
                  around on a jetpack. He can't be locked by your auto-aim
@@ -236,6 +237,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
       - Like a deathmatch bot it grabs health and armor: hurt, it runs
         for the nearest one it can see (shooting on the way), and it takes
         any it walks over. Deny it the megahealth and the red armor!
+      - It goes for the Quad too. On Quad it does x4 damage and moves and
+        fires 2.5 x as fast (glowing blue) for 30 seconds.
       - It moves like an elite, uses a super shotgun up close and rockets
         at range, and better hunters aim tighter and lead their rockets.
       - You get an arena kit for the duel: super shotgun, nailgun and
