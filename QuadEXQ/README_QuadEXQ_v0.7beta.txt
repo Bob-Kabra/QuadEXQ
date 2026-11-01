@@ -258,13 +258,13 @@ fork), which adds the HUD, music switching, checkpoints and more.
         and you are back in the start map.
       - Each rune count (2, 3, 4) is fought once; your saves remember it.
       - !! REVENGE MATCH !!: while the hunter holds one of your runes,
-        each death has a 30% chance of a revenge match instead of the
+        each death has a 20% chance of a revenge match instead of the
         checkpoint. You go to an arena with nothing to lose; win and the
         rune is yours again. Either way you come back to where you died
         (the last safe spot you stood on), with 100 health and 3 seconds
         of safety. (QuadEXQ engine.)
       - !! ARENA CHALLENGE !!: when it holds none of your runes, each death
-        still has a 30% chance of a challenge instead: nothing to lose,
+        still has a 20% chance of a challenge instead: nothing to lose,
         and a win lets you keep the weapons you had in the arena (with
         some ammo) plus the score (+1000, PERFECT +10000). Back to where
         you died afterwards, like a revenge match.
@@ -287,9 +287,10 @@ fork), which adds the HUD, music switching, checkpoints and more.
 
   Dodging      Enemies sidestep shots flying at them, and sidestep when you
                aim at them while firing. They won't jump into pits or lava.
-  Jet knights  Some knights charge at you with a jetpack. A hit does heavy
-               damage and knocks you back. They drop their jetpack when
-               killed (section 8).
+  Jet knights  Some knights, and half the Death Knights (Lord, Bane and
+               Super ones too), charge at you with a jetpack. A hit does
+               heavy damage and knocks you back. They drop their jetpack
+               when killed (section 8).
   Revenants    A few seconds after you kill one, it teleports back to where
                it started and comes straight for you. It returns at most
                twice.

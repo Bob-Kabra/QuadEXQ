@@ -84,7 +84,7 @@ float	QX_PERFECT_SCORE	= 10000;	// 10 - 0
 float	qx_duel_revenge;		// this arena duel is a revenge match
 float	qx_revenge_back;		// after it, go back with the qx_back alias (not to start)
 
-#define QX_REVENGE_CHANCE	0.3		// chance per death while the hunter holds a rune
+#define QX_REVENGE_CHANCE	0.2		// chance per death of a revenge match / arena challenge (was 0.3)
 // serverflags 256 / 512 / 1024 / 2048: the hunter holds the rune of episode 1-4
 float(float rune) QX_HoldBit = { return rune * 256; };	// rune bit 1/2/4/8 -> 256..2048
 
@@ -1752,6 +1752,9 @@ void() QX_DuelThink =
 		if (qx_revenge_back)
 		{
 			qx_revenge_back = FALSE;
+			n = floor (cvar ("scratch3"));
+			if (!(n & 32))			// +32: "came back from the arena" (checkpoint there)
+				cvar_set ("scratch3", ftos (n + 32));
 			localcmd ("qx_back\n");	// back to where you died (load qx_back)
 			qx_back_failsafe = time + 3;	// (no qx_back alias after a restart: start instead)
 		}
@@ -1771,6 +1774,11 @@ void() QX_DuelThink =
 	{
 		n = floor (cvar ("scratch3"));
 		cvar_set ("scratch3", "0");
+		if (n & 32)
+		{	// back from the arena: make this spot the checkpoint (after the prize)
+			n = n - 32;
+			qx_back_ckpt_at = time + 0.5;
+		}
 		if (n & 16)
 		{	// an arena win: Delta team comes to help
 			n = n - 16;
@@ -1788,6 +1796,24 @@ void() QX_DuelThink =
 		p = QX_FindLivePlayer ();
 		if (p)
 			QX_ArenaPrize (p, floor (cvar ("scratch4")));
+	}
+
+	// the checkpoint where you came back. The usual autosave waits for calm,
+	// and right here the monster that killed you is usually still looking at
+	// you: die again before it is calm and you'd go back to before the arena.
+	// (You arrive with 3 s of safety, and a load of this save has it too.)
+	if (qx_back_ckpt_at)
+	if (time > qx_back_ckpt_at)
+	if (QX_FindLivePlayer ())
+	{
+		qx_back_ckpt_at = 0;
+		n = floor (cvar ("sv_autosave_slot"));
+		if (n >= 1 && n <= 20)
+		{
+			localcmd ("save s");
+			localcmd (ftos (n - 1));
+			localcmd ("\n");
+		}
 	}
 
 	if (qx_arena_title_at)

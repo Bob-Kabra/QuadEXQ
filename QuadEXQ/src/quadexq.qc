@@ -1463,6 +1463,13 @@ void() QX_MonsterSync =
 				self.qx_jet = 1;
 				self.qx_jet_next = time + 1 + random () * 2;
 			}
+			if (self.qx_spawnclass == "monster_hell_knight" || self.qx_spawnclass == "monster_lord"
+			 || self.qx_spawnclass == "monster_bane" || self.qx_spawnclass == "monster_super_hknight")
+			if (random () < 0.5)
+			{	// half the Death Knights (Lord, Bane and Super ones too) fly a jetpack (and drop it)
+				self.qx_jet = 1;
+				self.qx_jet_next = time + 1 + random () * 2;
+			}
 			if (QX_CanRevive ())
 			if (random () < 0.08 + 0.22 * f)
 				self.qx_revenant = 1;
