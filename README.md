@@ -10,6 +10,7 @@ A single-player Quake mod by **Bob Kabura**, built on his earlier mods EXQ and Q
 - **The Rune Hunter**: come back to the start map with 1 to 3 runes and a rival who looks just like you calls you out to an arena for a deathmatch duel, first to 10 frags. Lose and it steals a rune; then every death is a chance at a **revenge match** to win it back.
 - **EXQ Arena**: duels are fought on any map you have with "dm" in its name or named "d" + a number, plus Q1Edge and Towersp.
 - **Delta team**: win an arena fight and three allies join you for the rest of the map, until Delta Labs calls them back.
+- **The Golden Left Hand**: auto melee punches enemies on your left; at 250% adrenaline you swat their rockets back.
 
 ## The engine (Mark V, modified)
 
@@ -38,7 +39,7 @@ You need Quake (`id1/pak0.pak`, plus `pak1.pak` for the full game). Put the mod 
 quadexq.exe -game QuadEXQ
 ```
 
-The player's guide comes with the mod (`README_QuadEXQ_v0.7beta.txt`).
+The player's guide comes with the mod (`README_QuadEXQ_v0.8beta.txt`).
 
 ## License
 

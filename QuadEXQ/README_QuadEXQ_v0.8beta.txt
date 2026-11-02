@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v0.7 beta
+  QuadEXQ  v0.8 beta
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -562,7 +562,32 @@ fork), which adds the HUD, music switching, checkpoints and more.
  13. Version history
 ==============================================================================
 
-  v0.7 beta
+  v0.8 beta
+    Game:
+    - The Golden Left Hand: auto melee hits an enemy on your left with a
+      glowing left-handed punch (the axe takes the right). It throws you
+      at the enemy and hits harder with more adrenaline and speed. It
+      works with the axe in hand too.
+    - At 250% adrenaline or more (or on Quad), enemy rockets, grenades,
+      nails and magic that come close are swatted back at whoever fired
+      them.
+    - The Rune Hunter calls on every visit to start with 1 to 3 runes
+      (none with all 4). K4B fires a double-tap super shotgun, and every
+      hunter goes for the Quad: x4 damage, 2.5 x as fast, glowing blue.
+    - A death calls an arena fight 20% of the time (was 30%), and coming
+      back from the arena makes that spot your checkpoint.
+    - Half the Death Knights (Lord, Bane and Super ones too) charge with a
+      jetpack, and drop it.
+    - Carry up to 200 cells.
+    - Picking up a weapon switches to it only for the Thunderbolt
+      (qx_autoswitch: 0 never, 1 Thunderbolt, 2 always).
+    - The Thunderbolt's health drain stops at 1 HP: no more self-destruct.
+    - The eel's zap does 3/4 of the damage.
+    QuadEXQ engine:
+    - The left hand is drawn left-handed and glowing.
+    - qx_autoswitch. The project file is QuadEXQ.cbp.
+
+  v0.7.1 beta (v0.7 beta was never released)
     Game:
     - DELTA TEAM: win a revenge match or an arena challenge and three
       allies fight beside you for the rest of that map (SNG / RL / LG,
@@ -572,6 +597,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
     - Arrive in an arena and its map name and title are shown.
     - Arenas: maps named "d" + a number (D1, D12 ...) are candidates too.
     - Jetpack: each one you find adds a burst per jump (1, 2, then 3).
+    - Fix: Delta team (and a won-back rune) could be lost on the way back
+      from the arena.
     QuadEXQ engine:
     - Bullet time takes you back to 1996 (qx_retro): fewer pixels and
       colours as the world slows, the old "+" crosshair, and at the
