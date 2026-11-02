@@ -395,7 +395,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
   Health regeneration:
     Go 5 seconds without firing or taking damage and you heal up to 60 HP:
     5 HP per second, or 10 per second below 20 HP.
-    You don't heal while holding the Lightning Gun.
+    You don't heal while holding the Lightning Gun: instead, while you
+    hold it without firing, it drinks your health to make cells (up to
+    100 cells). It stops at 1 HP -- it won't kill you.
 
   Ammo:
     You can carry up to 200 cells (Quake: 100). Shells, nails and rockets

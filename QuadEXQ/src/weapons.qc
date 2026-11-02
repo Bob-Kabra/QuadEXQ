@@ -2511,27 +2511,16 @@ void() W_WeaponFrame =
         	if (self.powertime > time)  return;
 		self.ammo_cells = self.ammo_cells + 0.5;  // Add 0.5%
 		self.health = self.health - 1;
+		if (self.health < 1)
+			self.health = 1;			// QuadEXQ: never below 1
 
 		if(self.health < 20){ 
 			sound (self, CHAN_BODY, "player/lpain.wav", 1, ATTN_NORM);
 		}
 		else if(random()<0.2) sound (self, CHAN_BODY, "player/gibcrash.wav", 1, ATTN_NORM);
 		
-		if(self.health < 1.5){
-			sound (self, CHAN_BODY, "player/gib.wav", 1, ATTN_NORM);
-			self.health = self.health - 1000;
-			GibPlayer();
-		T_RadiusDamage (self, self.owner, 1000, self.owner);
-    sound (self, CHAN_WEAPON, "weapons/nukex.wav", 1, ATTN_NORM);
-
-    WriteByte (MSG_BROADCAST, SVC_TEMPENTITY);
-	WriteByte (MSG_BROADCAST, TE_LAVASPLASH);
-	WriteCoord (MSG_BROADCAST, self.origin_x);
-	WriteCoord (MSG_BROADCAST, self.origin_y);
-	WriteCoord (MSG_BROADCAST, self.origin_z);
-
-		}
-		
+		// QuadEXQ: it stops at 1 HP. (EXQ blew you up at the end: a gib,
+		// a 1000-point blast and a nuke -- unfair even by our standards.)
 		W_SetCurrentAmmo ();
 		self.powertime = time + 0.5;
 		if(self.health < 8) self.powertime = time + 0.15;
