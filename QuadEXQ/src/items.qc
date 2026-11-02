@@ -371,6 +371,24 @@ Deathmatch weapon change rules for picking up a weapon
 .float		ammo_shells, ammo_nails, ammo_rockets, ammo_cells;
 =============
 */
+// QuadEXQ: switch to a weapon you just picked up? (single player)
+// qx_autoswitch (QuadEXQ engine, saved in your config):
+//   0 = never, 1 = only the Thunderbolt (default), 2 = always (stock Quake)
+// Other engines don't have the cvar: 1.
+float(float new) QX_AutoSwitch =
+{
+	local float m;
+
+	m = 1;
+	if (qx_newengine)
+		m = cvar ("qx_autoswitch");
+	if (m >= 2)
+		return TRUE;
+	if (m >= 1)
+		return (new == IT_LIGHTNING);
+	return FALSE;
+};
+
 void(float old, float new) Deathmatch_Weapon =
 {
 	local float or, nr;
@@ -477,7 +495,10 @@ void() weapon_touch =
 	self = other;
 
 	if (!deathmatch)
-		self.weapon = new;
+	{	// QuadEXQ: only when qx_autoswitch says so (default: the Thunderbolt)
+		if (QX_AutoSwitch (new))
+			self.weapon = new;
+	}
 	else
 		Deathmatch_Weapon (old, new);
 
@@ -1317,7 +1338,10 @@ void() BackpackTouch =
 
 // change to the weapon
 	if (!deathmatch)
-		self.weapon = new;
+	{	// QuadEXQ: only when qx_autoswitch says so (default: the Thunderbolt)
+		if (QX_AutoSwitch (new))
+			self.weapon = new;
+	}
 	else
 		Deathmatch_Weapon (old, new);
 

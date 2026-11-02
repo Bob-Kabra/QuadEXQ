@@ -401,6 +401,12 @@ fork), which adds the HUD, music switching, checkpoints and more.
     You can carry up to 200 cells (Quake: 100). Shells, nails and rockets
     keep the usual limits.
 
+  Weapon pickups:
+    Picking up a weapon doesn't switch to it -- you switch with your keys,
+    like in any modern shooter. The Thunderbolt is the exception: grab it
+    and it's in your hands, as Quake intended. (qx_autoswitch changes
+    this; section 11.)
+
 
 ==============================================================================
  9. Score and map report
@@ -521,6 +527,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
   sv_autosave 0            turn autosave off completely
   autosave                 autosave right now
   qx_playerskill           saved PlayerSkill + 1 (-1 = nothing saved yet)
+  qx_autoswitch 0/1/2      switch to a weapon you pick up: 0 = never,
+                           1 = only the Thunderbolt (default), 2 = always
+                           (stock Quake)
   qx_retro 0/1/2           bullet time 1996 look: 1 = software-style
                            shading (default), 2 = plain palette colours,
                            0 = off
