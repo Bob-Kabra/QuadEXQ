@@ -303,6 +303,9 @@ float	QX_CELLS_MAX		= 200;	// cells you can carry (Quake: 100)
 float	QX_EF_BLUE		= 64;	// blue glow (Mark V / FitzQuake engines): the quad look
 float	QX_HUNTER_QUAD_TEMPO	= 2.5;	// a Rune Hunter on Quad moves and fires this much faster
 .float	qx_tempo0;			// the hunter's own tempo (without the Quad)
+float	QX_VORE_DEFLECT_RANGE	= 180;	// a Vore swats your rockets / grenades / nails back from this close
+.float	qx_vore_swat;			// a Vore's next swat
+void() QX_VoreDeflect;
 float	QX_FIST_ADREN		= 10;	// Golden Left Hand, per hit (3 hits a swing): adrenaline % / this
 float	QX_FIST_SPEED		= 15;	//   + your speed / this (QuadUTF had 50 + speed / 3)	// the eel's electric zap was brutal: x0.75
 void() QX_AutoDeflect;		// show the arena's map name and title at this time

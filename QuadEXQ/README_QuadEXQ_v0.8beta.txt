@@ -315,6 +315,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
   Vores        When a Vore splits, the health it has left is shared
                half-and-half with the new one. One Vore can split at most
                twice (in EXQ it never stopped).
+               A Vore has a Golden Left Hand of its own: your rockets,
+               grenades and nails that get close are swatted straight back
+               at you. The Thunderbolt is a beam -- it can't swat that.
   Spike mines  The homing mines some Wizards fire can be shot down: any
                hit makes them blow up early.
 

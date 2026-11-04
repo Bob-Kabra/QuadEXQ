@@ -919,6 +919,64 @@ void(float dash) QX_FireFist =
 // rockets, grenades, nails, magic. Back at whoever fired them (homing ones
 // home in on them), and they are yours now. Left side: the Golden Left
 // Hand, right side: the axe.
+// The Vore's own Golden Left Hand: your rockets, grenades and nails that
+// come close are swatted straight back at you (and they are its shots now).
+// Run from QX_AIHook (self = the Vore). The Thunderbolt is a beam: no swat.
+void() QX_VoreDeflect =
+{
+	local entity e, p;
+	local vector d, dir;
+	local float sp, n;
+
+	if (self.health <= 0)
+		return;
+	if (time < self.qx_vore_swat)
+		return;
+
+	n = 0;
+	e = findradius (self.origin, QX_VORE_DEFLECT_RANGE);
+	while (e)
+	{
+		if (e.owner.flags & FL_CLIENT)
+		if (!(e.flags & (FL_MONSTER | FL_CLIENT | FL_ITEM)))
+		if (e.movetype == MOVETYPE_FLYMISSILE || e.movetype == MOVETYPE_BOUNCE || e.movetype == MOVETYPE_FLY || e.movetype == MOVETYPE_TOSS)
+		if (e.touch)
+		if (vlen (e.velocity) > 50)
+		{
+			d = self.origin - e.origin;
+			if (e.velocity * d > 0)			// coming at it
+			{
+				p = e.owner;
+				sp = vlen (e.velocity) * 1.2;
+				if (sp < 600)
+					sp = 600;
+				dir = normalize ((p.origin + '0 0 8') - e.origin);
+				e.velocity = dir * sp;
+				if (e.movetype == MOVETYPE_BOUNCE || e.movetype == MOVETYPE_TOSS)
+					e.velocity_z = e.velocity_z + 200;
+				e.angles = vectoangles (e.velocity);
+				e.owner = self;
+				if (e.enemy == self)
+					e.enemy = p;			// homing nails home in on you
+				sound (e, CHAN_AUTO, "weapons/ric2.wav", 1, ATTN_NORM);
+				particle (e.origin, '0 0 0', 111, 30);
+				n = n + 1;
+			}
+		}
+		e = e.chain;
+	}
+	if (n)
+	{
+		self.qx_vore_swat = time + 0.3;		// a moment between swats
+		if (self.enemy.flags & FL_CLIENT)
+		if (time > self.enemy.qx_deflect_msg)
+		{
+			self.enemy.qx_deflect_msg = time + 1.5;
+			QX_Center (self.enemy, "VORE DEFLECTS!", "", "", "");
+		}
+	}
+};
+
 void() QX_AutoDeflect =
 {
 	local entity e, mon;
@@ -1542,6 +1600,9 @@ void() QX_AIHook =
 
 	if (self.qx_isscout)
 		QX_ScoutHook ();
+
+	if (self.classname == "monster_shalrath")
+		QX_VoreDeflect ();			// the Vore has a Golden Left Hand too
 
 	// a revenant comes back angry
 	if (self.qx_hunt)
