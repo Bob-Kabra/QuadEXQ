@@ -64,7 +64,8 @@ const byte *qx_newgame_lmp;
 /*
 QuadEXQ: the main menu's CONTINUE and NEW GAME rows in the real Quake menu
 font. They are put together from the player's own id1 menu art at startup
-(nothing of id's is shipped): NEW GAME is the top row of gfx/sp_menu.lmp,
+(nothing of id's is shipped, and they are read from id1 even under a mod with
+its own menu art, so Continue looks the same everywhere): NEW GAME is the top row of gfx/sp_menu.lmp,
 CONTINUE is cut letter by letter from gfx/mp_menu.lmp, and its C is the big
 O of "Options" (gfx/mainmenu.lmp) opened on the right, about 270 degrees. If those files are missing,
 not id1's, or not the expected size, the bundled pictures stay.
@@ -75,7 +76,7 @@ static byte qx_newg_buf[8 + QX_ROW_W * 24];
 
 static const byte *QX_LoadId1Pic (const char *path, int w, int h)
 {
-	byte *f = COM_LoadMallocFile (path);
+	byte *f = COM_LoadMallocFile_Id1 (path);	// id1's own, even when a mod (Arcane Dimensions) has its own menu art
 	if (!f)
 		return NULL;
 	if (!strstr (com_filepath, "/id1/") || LittleLong (((int *)f)[0]) != w || LittleLong (((int *)f)[1]) != h) {

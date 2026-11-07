@@ -159,6 +159,7 @@ byte *COM_LoadStackFile (const char *path, void *buffer, int bufsize);
 byte *COM_LoadTempFile (const char *path);
 byte *COM_LoadHunkFile (const char *path);
 byte *COM_LoadMallocFile (const char *path);
+byte *COM_LoadMallocFile_Id1 (const char *path);	// QuadEXQ: id1 only, even under a mod
 
 // Baker: This loads a file with restrictions if media_owner_path != NULL
 // The restriction is that that it will not find a file if it is higher up

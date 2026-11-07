@@ -1660,6 +1660,29 @@ byte *COM_LoadMallocFile (const char *path)
 	return COM_LoadFile (path, LOADFILE_MALLOC);
 }
 
+// QuadEXQ: load a file from id1 only (its folder and paks), even with a mod
+// running that has its own copy -- id1 is the tail of the search path list.
+byte *COM_LoadMallocFile_Id1 (const char *path)
+{
+	searchpath_t *saved = com_searchpaths, *s;
+	byte *f = NULL;
+
+	for (s = com_searchpaths; s; s = s->next)
+	{
+		const char *name = s->pack ? s->pack->filename : s->filename;
+		size_t len = strlen (name);
+		if (strstr (name, "/" GAMENAME_ID1 "/") || (len >= 4 && !strcmp (name + len - 4, "/" GAMENAME_ID1)))
+			break;
+	}
+	if (!s)
+		return NULL;
+
+	com_searchpaths = s;
+	f = COM_LoadFile (path, LOADFILE_MALLOC);
+	com_searchpaths = saved;
+	return f;
+}
+
 
 /*
 =================
