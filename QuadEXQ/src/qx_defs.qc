@@ -125,6 +125,7 @@ string	qx_st_bossname;
 .float	qx_adren_tick;
 .float	qx_adren_shown;		// last announced adrenaline step
 .float	qx_vmul;			// velocity multiplier applied this frame (0 = none)
+.float	qx_vride;	// bullet time: riding a moving lift, only the horizontal speed is boosted
 .float	qx_nt_seen;			// last nextthink we already rescaled
 .float	qx_af_seen;			// last attack_finished we already rescaled
 .float	qx_alive_time;		// seconds alive since last +1 skill

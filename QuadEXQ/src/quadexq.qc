@@ -720,17 +720,42 @@ void() QX_PlayerPreBoost =
 		return;
 	}
 	c = 1 / qx_timescale;
+	self.qx_vmul = c;
+
+	// Riding a moving lift / train: it moves in world (slowed) time, so the
+	// player rides it in world time too, up and down: only walking is boosted.
+	// A boosted fall (c*c gravity) hits the slow lift every frame = shaking.
+	self.qx_vride = 0;
+	if (self.groundentity != world)
+	if (self.groundentity.movetype == MOVETYPE_PUSH)
+	if (self.groundentity.velocity != '0 0 0')
+	if (fabs (self.absmin_z - self.groundentity.absmax_z) < 8)
+	if (self.velocity_z < 100)		// not jumping off it
+		self.qx_vride = 1;
+
+	if (self.qx_vride)
+	{
+		self.velocity_x = self.velocity_x * c;
+		self.velocity_y = self.velocity_y * c;
+		self.gravity = 1;
+		return;
+	}
 	self.velocity = self.velocity * c;
 	self.gravity = c * c;
-	self.qx_vmul = c;
 };
 
 void() QX_PlayerUnboost =
 {
 	if (!self.qx_vmul)
 		return;
-	self.velocity = self.velocity * (1 / self.qx_vmul);
+	if (self.qx_vride)
+	{	// only the walking speed was boosted (riding a lift)
+		self.velocity_x = self.velocity_x * (1 / self.qx_vmul);
+		self.velocity_y = self.velocity_y * (1 / self.qx_vmul);
+	}
+	else self.velocity = self.velocity * (1 / self.qx_vmul);
 	self.qx_vmul = 0;
+	self.qx_vride = 0;
 };
 
 // ---------------------------------------------------------------- air jet
