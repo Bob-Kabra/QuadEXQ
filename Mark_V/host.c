@@ -307,6 +307,50 @@ void Host_InitLocal (void)
 
 /*
 ===============
+Host_WriteQXConfiguration -- QuadEXQ
+
+The crosshair, status bar and QuadEXQ settings go to id1/qx_config.cfg as
+well, which every game reads (exec'd after quake.rc, so after config.cfg
+and autoexec.cfg): set them once, and Arcane Dimensions or any other mod
+keeps them too, even one whose own autoexec.cfg resets the crosshair.
+===============
+*/
+#define QX_CONFIG_CFG "qx_config.cfg"
+static const char *qx_shared_cvars[] = {
+	"crosshair", "scr_crosshairscale", "scr_weapon_crosshair",
+	"viewsize", "scr_sbaralpha", "scr_sbarcentered", "scr_sbarscale", "scr_scaleauto", "scr_qxhud",
+	"qx_retro", "qx_autoswitch", "qx_checkpoints",
+	NULL
+};
+
+static const char *Host_QXConfig_Path (void)
+{
+	return va("%s/%s/%s", com_basedir, GAMENAME_ID1, QX_CONFIG_CFG);
+}
+
+static void Host_WriteQXConfiguration (void)
+{
+	FILE *f = FS_fopen_write_create_path (Host_QXConfig_Path (), "w");
+	int i;
+
+	if (!f)
+	{
+		Con_PrintLinef ("Couldn't write %s.", QX_CONFIG_CFG);
+		return;
+	}
+
+	fprintf (f, "// QuadEXQ: settings shared by every game (written on quit, read after config.cfg and autoexec.cfg)" NEWLINE);
+	for (i = 0; qx_shared_cvars[i]; i ++)
+	{
+		cvar_t *var = Cvar_Find (qx_shared_cvars[i]);
+		if (var)
+			fprintf (f, "%s \"%s\"" NEWLINE, var->name, var->string);
+	}
+	FS_fclose (f);
+}
+
+/*
+===============
 Host_WriteConfiguration
 
 Writes key bindings and archived cvars to config.cfg
@@ -345,6 +389,8 @@ void Host_WriteConfiguration (void)
 
 			} else Con_PrintLinef ("Couldn't write %s.", CONFIG_CFG);
 		}} // End for
+
+		Host_WriteQXConfiguration ();	// QuadEXQ
 	} // End host initialized and not dedicated
 }
 
@@ -910,6 +956,8 @@ void Host_Init (void)
 #pragma message ("Have dedicated server show ip address and port on startup?")
 
 	Cbuf_InsertText ("exec quake.rc" NEWLINE);
+	if (!isDedicated && File_Exists (Host_QXConfig_Path ()))
+		Cbuf_AddTextLine ("exec " QX_CONFIG_CFG);	// QuadEXQ: after quake.rc (config.cfg, autoexec.cfg)
 	Cbuf_AddTextLine (NEWLINE "_host_post_initialized");  // Baker -- hint to dedicated server.
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
