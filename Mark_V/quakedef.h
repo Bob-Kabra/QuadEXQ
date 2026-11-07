@@ -718,6 +718,7 @@ extern build_t build;
 // QuadEXQ: entity colormap values from here on are fixed shirt/pants colors
 // (QX_COLORMAP_BASE + shirt * 14 + pants), for monsters that use player.mdl
 #define QX_COLORMAP_BASE 32
+#define QX_COLORMAP_RED 255		// QuadEXQ: a non-player model drawn blood red (the Vore Lord)
 
 #endif // ! __QUAKEDEF_H__
 

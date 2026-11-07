@@ -781,6 +781,15 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	rs_aliaspolys += paliashdr->numtris;
 	R_SetupAliasLighting (e);
+	if (e->colormap == QX_COLORMAP_RED && e != &cl.viewent_gun && (cl.stats[STAT_QX_FLAGS] & QX_F_ACTIVE))
+	{	// QuadEXQ: blood red (the Vore Lord): the light it stands in, all in red
+		float lum = (lightcolor[0] + lightcolor[1] + lightcolor[2]) / 3.0f;
+		if (lum < 0.35f)
+			lum = 0.35f;					// never lost in the dark
+		lightcolor[0] = lum * 1.9f;
+		lightcolor[1] = lum * 0.22f;
+		lightcolor[2] = lum * 0.18f;
+	}
 	if (qx_mirror)
 	{	// QuadEXQ: the Golden Left Hand glows -- bright, warm, pulsing
 		float pulse = 1.25f + 0.25f * (float) sin (cl.ctime * 9.0);
