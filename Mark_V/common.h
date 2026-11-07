@@ -49,9 +49,12 @@ void MSG_WriteLong (sizebuf_t *sb, int c);
 void MSG_WriteFloat (sizebuf_t *sb, float f);
 void MSG_WriteString (sizebuf_t *sb, const char *s);
 void MSG_WriteStringf (sizebuf_t *sb, const char *fmt, ...); //__core_attribute__((__format__(__printf__,2,3)));  // Baker
-void MSG_WriteCoord (sizebuf_t *sb, float f);
+void MSG_WriteCoord (sizebuf_t *sb, float f);	// QuadEXQ: these three use sv.protocolflags (server writes)
 void MSG_WriteAngle (sizebuf_t *sb, float f);
 void MSG_WriteAngle16 (sizebuf_t *sb, float f); //johnfitz
+void MSG_WriteCoordFlags (sizebuf_t *sb, float f, unsigned flags);	// QuadEXQ: explicit PRFL_ flags
+void MSG_WriteAngleFlags (sizebuf_t *sb, float f, unsigned flags);
+void MSG_WriteAngle16Flags (sizebuf_t *sb, float f, unsigned flags);
 
 extern int msg_readcount;
 extern cbool msg_badread; // set if a read goes beyond end of message
@@ -68,9 +71,12 @@ int MSG_PeekByte (void); // ProQuake
 int MSG_ReadBytePQ (void); 	// ProQuake.  ProQuake embedded messages appear to use this.
 int MSG_ReadShortPQ (void);	// ProQuake.  Ping in scoreboard uses.
 
-float MSG_ReadCoord (void);
+float MSG_ReadCoord (void);	// QuadEXQ: these three use cl.protocolflags (client reads)
 float MSG_ReadAngle (void);
 float MSG_ReadAngle16 (void); //johnfitz
+float MSG_ReadCoordFlags (unsigned flags);	// QuadEXQ: explicit PRFL_ flags
+float MSG_ReadAngleFlags (unsigned flags);
+float MSG_ReadAngle16Flags (unsigned flags);
 
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -428,14 +428,23 @@ void CL_ParseServerInfo (void)
 	i = MSG_ReadLong ();
 
 	//johnfitz -- support multiple protocols
-	if (i != PROTOCOL_NETQUAKE && i != PROTOCOL_FITZQUAKE && i != PROTOCOL_FITZQUAKE_PLUS && i != PROTOCOL_BJP3)
+	if (i != PROTOCOL_NETQUAKE && i != PROTOCOL_FITZQUAKE && i != PROTOCOL_FITZQUAKE_PLUS && i != PROTOCOL_RMQ && i != PROTOCOL_BJP3)
 	{
 		Con_PrintLine (); //because there's no newline after serverinfo print
-		Host_Error ("Server returned version %d, not %d, %d, %d or %d", i, PROTOCOL_NETQUAKE, PROTOCOL_FITZQUAKE, PROTOCOL_FITZQUAKE_PLUS, PROTOCOL_BJP3);
+		Host_Error ("Server returned version %d, not %d, %d, %d, %d or %d", i, PROTOCOL_NETQUAKE, PROTOCOL_FITZQUAKE, PROTOCOL_FITZQUAKE_PLUS, PROTOCOL_RMQ, PROTOCOL_BJP3);
 	}
 
 // wipe the client_state_t struct
 	CL_ClearState (i); // Baker --- Sets the protocol here
+
+	// QuadEXQ: PROTOCOL_RMQ -- the server's protocol flags (coord / angle sizes) follow
+	if (cl.protocol == PROTOCOL_RMQ)
+	{
+		cl.protocolflags = (unsigned) MSG_ReadLong ();
+		if (cl.protocolflags & ~PRFL_SUPPORTED)
+			Con_WarningLinef ("PROTOCOL_RMQ protocolflags %d contains unsupported flags", (int) cl.protocolflags);
+	}
+	else cl.protocolflags = 0;
 
 // parse maxclients
 	cl.maxclients = MSG_ReadByte ();
@@ -691,7 +700,7 @@ void CL_ParseUpdate (int bits)
 	}
 
 	//johnfitz -- PROTOCOL_FITZQUAKE
-	if (cl.protocol == PROTOCOL_FITZQUAKE || cl.protocol == PROTOCOL_FITZQUAKE_PLUS)
+	if (cl.protocol == PROTOCOL_FITZQUAKE || cl.protocol == PROTOCOL_FITZQUAKE_PLUS || cl.protocol == PROTOCOL_RMQ)
 	{
 		if (bits & U_EXTEND1)
 			bits |= MSG_ReadByte() << 16;
@@ -836,11 +845,14 @@ void CL_ParseUpdate (int bits)
 	//johnfitz
 
 	//johnfitz -- PROTOCOL_FITZQUAKE and PROTOCOL_NEHAHRA
-	if (cl.protocol == PROTOCOL_FITZQUAKE || cl.protocol == PROTOCOL_FITZQUAKE_PLUS)
+	if (cl.protocol == PROTOCOL_FITZQUAKE || cl.protocol == PROTOCOL_FITZQUAKE_PLUS || cl.protocol == PROTOCOL_RMQ)
 	{
 		if (bits & U_ALPHA)
 			ent->alpha = MSG_ReadByte();
 		else ent->alpha = ent->baseline.alpha;
+
+		if (cl.protocol == PROTOCOL_RMQ && (bits & U_SCALE))
+			MSG_ReadByte ();	// QuadEXQ: entity scale (PRFL_EDICTSCALE), not drawn here
 
 		if (bits & U_FRAME2) ent->frame = (ent->frame & 0x00FF) | (MSG_ReadByte() << 8);
 		if (bits & U_MODEL2) modnum = (modnum & 0x00FF) | (MSG_ReadByte() << 8);
@@ -948,6 +960,8 @@ void CL_ParseBaseline (entity_t *ent, int version) //johnfitz -- added argument
 	}
 
 	ent->baseline.alpha = (bits & B_ALPHA) ? MSG_ReadByte() : ENTALPHA_DEFAULT; //johnfitz -- PROTOCOL_FITZQUAKE
+	if (cl.protocol == PROTOCOL_RMQ && (bits & B_SCALE))
+		MSG_ReadByte ();	// QuadEXQ: entity scale (PRFL_EDICTSCALE), not drawn here
 
 #if 0 //def GLQUAKE_COLORMAP_TEXTURES
 // Mirrors
@@ -1776,8 +1790,8 @@ void CL_ParseServerMessage (cbool *found_server_command)
 			i = MSG_ReadLong ();
 
 			//johnfitz -- support multiple protocols
-			if (i != PROTOCOL_NETQUAKE && i != PROTOCOL_FITZQUAKE && i != PROTOCOL_FITZQUAKE_PLUS)
-				Host_Error ("Server returned version %d, not %d, %d or %d", i, PROTOCOL_NETQUAKE, PROTOCOL_FITZQUAKE, PROTOCOL_FITZQUAKE_PLUS);
+			if (i != PROTOCOL_NETQUAKE && i != PROTOCOL_FITZQUAKE && i != PROTOCOL_FITZQUAKE_PLUS && i != PROTOCOL_RMQ)
+				Host_Error ("Server returned version %d, not %d, %d, %d or %d", i, PROTOCOL_NETQUAKE, PROTOCOL_FITZQUAKE, PROTOCOL_FITZQUAKE_PLUS, PROTOCOL_RMQ);
 
 			cl.protocol = i;
 

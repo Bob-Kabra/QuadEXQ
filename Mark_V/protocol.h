@@ -29,10 +29,23 @@ typedef enum { ENUM_FORCE_INT_GCC_ (PROTOCOL)
 	PROTOCOL_NETQUAKE 		= 15,
 	PROTOCOL_FITZQUAKE 		= 666, 		// fitz
 	PROTOCOL_FITZQUAKE_PLUS = 668, 		// Baker: smooth rotation, sends entity angles as shorts not bytes.
+	PROTOCOL_RMQ			= 999,		// QuadEXQ: RMQ / QuakeSpasm protocol, protocol flags pick the coord and angle sizes (big maps past +-4096)
 	PROTOCOL_BJP3 			= 10002,	// Baker: Warpspasm uses this.  Supporting for playback only to play Warpspasm demos.
 } PROTOCOL_E;
 
-#define SUPPORTS_ROTATION(_protocol) (_protocol == PROTOCOL_FITZQUAKE_PLUS)
+#define SUPPORTS_ROTATION(_protocol) (_protocol == PROTOCOL_FITZQUAKE_PLUS)	// (rotating-brush collision: 668 only, so 999 plays like 666 / QuakeSpasm)
+
+// QuadEXQ: PROTOCOL_RMQ protocol flags (same values as QuakeSpasm), sent as a long after the protocol in svc_serverinfo
+#define PRFL_SHORTANGLE		(1 << 1)
+#define PRFL_FLOATANGLE		(1 << 2)
+#define PRFL_24BITCOORD		(1 << 3)
+#define PRFL_FLOATCOORD		(1 << 4)
+#define PRFL_EDICTSCALE		(1 << 5)	// U_SCALE / B_SCALE bytes are read and ignored (no model scaling here)
+#define PRFL_ALPHASANITY	(1 << 6)
+#define PRFL_INT32COORD		(1 << 7)
+#define PRFL_MOREFLAGS		(1 << 31)	// not supported
+#define PRFL_SUPPORTED		(PRFL_SHORTANGLE | PRFL_FLOATANGLE | PRFL_24BITCOORD | PRFL_FLOATCOORD | PRFL_EDICTSCALE | PRFL_INT32COORD)
+#define PRFL_SERVER_DEFAULT	(PRFL_INT32COORD | PRFL_SHORTANGLE)	// what this server sends, as QuakeSpasm does
 
 // if the high bit of the servercmd is set, the low bits are fast update flags:
 #define	U_MOREBITS		(1<<0)
@@ -58,7 +71,7 @@ typedef enum { ENUM_FORCE_INT_GCC_ (PROTOCOL)
 #define U_FRAME2		(1<<17) // 1 byte, this is .frame & 0xFF00 (second byte)
 #define U_MODEL2		(1<<18) // 1 byte, this is .modelindex & 0xFF00 (second byte)
 #define U_LERPFINISH	(1<<19) // 1 byte, 0.0-1.0 maps to 0-255, not sent if exactly 0.1, this is ent->v.nextthink - sv.time, used for lerping
-#define U_UNUSED20		(1<<20)
+#define U_SCALE			(1<<20) // QuadEXQ: 1 byte, PROTOCOL_RMQ with PRFL_EDICTSCALE (read and ignored)
 #define U_UNUSED21		(1<<21)
 #define U_UNUSED22		(1<<22)
 #define U_EXTEND2		(1<<23) // another byte to follow, future expansion
@@ -120,6 +133,7 @@ typedef enum { ENUM_FORCE_INT_GCC_ (PROTOCOL)
 #define B_LARGEMODEL	(1<<0)	// modelindex is short instead of byte
 #define B_LARGEFRAME	(1<<1)	// frame is short instead of byte
 #define B_ALPHA			(1<<2)	// 1 byte, uses ENTALPHA_ENCODE, not sent if ENTALPHA_DEFAULT
+#define B_SCALE			(1<<3)	// QuadEXQ: 1 byte, PROTOCOL_RMQ with PRFL_EDICTSCALE (read and ignored)
 //johnfitz
 
 //johnfitz -- PROTOCOL_FITZQUAKE -- alpha encoding

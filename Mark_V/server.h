@@ -78,6 +78,7 @@ typedef struct
 	const char			*lightstyles[MAX_LIGHTSTYLES];
 
 	unsigned			protocol; //johnfitz
+	unsigned			protocolflags;	// QuadEXQ: PRFL_ bits for PROTOCOL_RMQ, else 0
 
 	int					num_edicts;
 	int					max_edicts;

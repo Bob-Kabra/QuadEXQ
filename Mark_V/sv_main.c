@@ -29,7 +29,7 @@ cbool		isDedicated;
 
 static char	localmodels[MAX_FITZQUAKE_MODELS][8];			// inline model names for precache
 
-int sv_protocol = PROTOCOL_FITZQUAKE; //johnfitz
+int sv_protocol = PROTOCOL_RMQ; //johnfitz  QuadEXQ: was PROTOCOL_FITZQUAKE; 999 lifts the +-4096 coord limit (Arcane Dimensions)
 #ifdef SUPPORTS_SERVER_PROTOCOL_15
 int host_protocol_datagram_maxsize = MAX_MARK_V_DATAGRAM; // Baker
 #endif // SUPPORTS_SERVER_PROTOCOL_15
@@ -55,8 +55,8 @@ void SV_Protocol_f (lparse_t *line)
 	case 2:
 		i = atoi(line->args[1]);
 
-		if (i != PROTOCOL_NETQUAKE && i != PROTOCOL_FITZQUAKE && i != PROTOCOL_FITZQUAKE_PLUS)
-			Con_PrintLinef ("sv_protocol must be %d, %d or %d", PROTOCOL_NETQUAKE, PROTOCOL_FITZQUAKE, PROTOCOL_FITZQUAKE_PLUS);
+		if (i != PROTOCOL_NETQUAKE && i != PROTOCOL_FITZQUAKE && i != PROTOCOL_FITZQUAKE_PLUS && i != PROTOCOL_RMQ)
+			Con_PrintLinef ("sv_protocol must be %d, %d, %d or %d", PROTOCOL_NETQUAKE, PROTOCOL_FITZQUAKE, PROTOCOL_FITZQUAKE_PLUS, PROTOCOL_RMQ);
 		else
 		{
 			sv_protocol = i;
@@ -354,6 +354,8 @@ void SV_SendServerinfo (client_t *client)
 
 	MSG_WriteByte (&client->message, svc_serverinfo);
 	MSG_WriteLong (&client->message, sv.protocol); //johnfitz -- sv.protocol instead of PROTOCOL_VERSION
+	if (sv.protocol == PROTOCOL_RMQ)
+		MSG_WriteLong (&client->message, sv.protocolflags);	// QuadEXQ: so the client knows the coord / angle sizes
 	MSG_WriteByte (&client->message, svs.maxclients_internal); // We tell clients the big limit so we change it at any time if we choose.
 
 
@@ -1893,6 +1895,7 @@ void SV_SpawnServer (const char *server)
 		else sv.fileserver_port = (int)sv_fileserver_port.value;
 
 	sv.protocol = sv_protocol; // johnfitz
+	sv.protocolflags = (sv.protocol == PROTOCOL_RMQ) ? PRFL_SERVER_DEFAULT : 0;	// QuadEXQ: 32-bit coords, 16-bit angles
 
 // Construct the hint strings now that we know the skill level
 	SV_HintStrings_NewMap ();
@@ -1913,6 +1916,7 @@ void SV_SpawnServer (const char *server)
 
 	case PROTOCOL_FITZQUAKE:
 	case PROTOCOL_FITZQUAKE_PLUS:
+	case PROTOCOL_RMQ:
 		if (svs.maxclients_internal == 1 && !isDedicated) // Because the cap can change at any time now.  But 1 still means single player.
 			sv.datagram.maxsize		 = MAX_MARK_V_DATAGRAM			/* 65527 */ ;
 		else sv.datagram.maxsize	 = MAX_FITZQUAKE_DATAGRAM_MTU	/* 1400 */ ;
@@ -1985,6 +1989,7 @@ void SV_SpawnServer (const char *server)
 
 	case PROTOCOL_FITZQUAKE:
 	case PROTOCOL_FITZQUAKE_PLUS:
+	case PROTOCOL_RMQ:
 		sv.max_edicts = MAX_SANE_EDICTS_8192;
 
 #if 0 // Goodbye to guessing ...

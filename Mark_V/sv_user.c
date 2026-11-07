@@ -461,9 +461,9 @@ void SV_ReadClientMove (usercmd_t *move)
 	{
 		//johnfitz -- 16-bit angles for PROTOCOL_FITZQUAKE
 		if (sv.protocol == PROTOCOL_NETQUAKE && !NET_QSocketIsProQuakeServer(host_client->netconnection))
-			angle[i] = MSG_ReadAngle ();
+			angle[i] = MSG_ReadAngleFlags (sv.protocolflags);	// QuadEXQ: server side flags
 		else
-			angle[i] = MSG_ReadAngle16 ();
+			angle[i] = MSG_ReadAngle16Flags (sv.protocolflags);
 		//johnfitz
 	}
 

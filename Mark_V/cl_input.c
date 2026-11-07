@@ -416,9 +416,9 @@ void CL_SendMove (const usercmd_t *cmd)
 #else
 		if (cl.protocol == PROTOCOL_NETQUAKE)
 #endif
-			MSG_WriteAngle (&buf, focus0.canvas.is_attack_firing ? focus0.canvas.attack_angles[i] :  cl.viewangles[i]);
+			MSG_WriteAngleFlags (&buf, focus0.canvas.is_attack_firing ? focus0.canvas.attack_angles[i] :  cl.viewangles[i], cl.protocolflags);	// QuadEXQ: client side flags
 		else
-			MSG_WriteAngle16 (&buf, focus0.canvas.is_attack_firing ? focus0.canvas.attack_angles[i] :  cl.viewangles[i]); // MOUSECLICK FIRE
+			MSG_WriteAngle16Flags (&buf, focus0.canvas.is_attack_firing ? focus0.canvas.attack_angles[i] :  cl.viewangles[i], cl.protocolflags); // MOUSECLICK FIRE
 	}
 		//johnfitz
 

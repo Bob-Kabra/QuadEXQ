@@ -327,6 +327,7 @@ typedef struct
 
 	cbool			noclip_anglehack;
 	unsigned		protocol; //johnfitz
+	unsigned		protocolflags;	// QuadEXQ: PRFL_ bits from the server for PROTOCOL_RMQ, else 0
 	cbool			warned_about_nehahra_protocol; // johnfitz
 	char			hintstrings[MAX_NUM_HINTS][MAX_HINT_BUF_64];
 	int				skillhint;
