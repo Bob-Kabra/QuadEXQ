@@ -919,7 +919,7 @@ void(float dash) QX_FireFist =
 // rockets, grenades, nails, magic. Back at whoever fired them (homing ones
 // home in on them), and they are yours now. Left side: the Golden Left
 // Hand, right side: the axe.
-// The Vore's own Golden Left Hand: your rockets, grenades and nails that
+// The Vore Lord's own Golden Left Hand: your rockets, grenades and nails that
 // come close are swatted straight back at you (and they are its shots now).
 // Run from QX_AIHook (self = the Vore). The Thunderbolt is a beam: no swat.
 void() QX_VoreDeflect =
@@ -972,7 +972,7 @@ void() QX_VoreDeflect =
 		if (time > self.enemy.qx_deflect_msg)
 		{
 			self.enemy.qx_deflect_msg = time + 1.5;
-			QX_Center (self.enemy, "VORE DEFLECTS!", "", "", "");
+			QX_Center (self.enemy, "VORE LORD DEFLECTS!", "", "", "");
 		}
 	}
 };
@@ -1521,6 +1521,19 @@ void() QX_MonsterSync =
 				self.qx_jet = 1;
 				self.qx_jet_next = time + 1 + random () * 2;
 			}
+			if (self.qx_spawnclass == "monster_shalrath")
+			if (random () < QX_VORELORD_CHANCE)
+			{	// the Vore Lord: blood red, tougher, and it swats your shots back
+				self.qx_vorelord = 1;
+				self.netname = "Vore Lord";
+				self.health = self.health * 1.5;
+				self.max_health = self.health;
+				self.qx_basehp = self.qx_basehp * 1.5;	// (PlayerSkill scaling works from this)
+				if (cvar ("qx_colormap_ok") >= 2)
+					self.colormap = 255;	// QuadEXQ engine: drawn blood red
+				else
+					self.effects = self.effects | EF_DIMLIGHT;
+			}
 			if (self.qx_spawnclass == "monster_hell_knight" || self.qx_spawnclass == "monster_lord"
 			 || self.qx_spawnclass == "monster_bane" || self.qx_spawnclass == "monster_super_hknight")
 			if (random () < 0.5)
@@ -1601,8 +1614,8 @@ void() QX_AIHook =
 	if (self.qx_isscout)
 		QX_ScoutHook ();
 
-	if (self.classname == "monster_shalrath")
-		QX_VoreDeflect ();			// the Vore has a Golden Left Hand too
+	if (self.qx_vorelord)
+		QX_VoreDeflect ();			// the Vore Lord has a Golden Left Hand too
 
 	// a revenant comes back angry
 	if (self.qx_hunt)
