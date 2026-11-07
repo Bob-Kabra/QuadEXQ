@@ -76,7 +76,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // But I think is too complicated for the user.
 
 #if defined(PLATFORM_WINDOWS) || defined(PLATFORM_IOS) || defined(PLATFORM_ANDROID)
-	#define MEM_DEFAULT_MEMORY		(256 * 1024 * 1024)		//  256 MB
+	#define MEM_DEFAULT_MEMORY		(512 * 1024 * 1024)		//  512 MB  QuadEXQ: was 256; Arcane Dimensions ad_tears ran out
 	#define MEM_DEFAULT_DEDICATED	( 64 * 1024 * 1024)		//   64 MB  ... No textures, so shouldn't require a whole ton.  But better to be safe at 64 than risky at 32.
 	#define	MEM_DYNAMIC_SIZE		(  4 * 1024 * 1024)		//    4 MB
 #else // 64 bits ... double the memory because many things are twice as large

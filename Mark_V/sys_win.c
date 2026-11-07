@@ -38,6 +38,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "resource.h"
 #include "dedicated_win.h"
 
+#if defined(_MSC_VER) && !defined(_WIN64)
+// QuadEXQ: let the 32-bit exe use up to 4 GB on 64-bit Windows (the hunk is
+// 512 MB now, for Arcane Dimensions), not just 2 GB
+#pragma comment (linker, "/LARGEADDRESSAWARE")
+#endif
+
 sysplat_t sysplat;
 
 
