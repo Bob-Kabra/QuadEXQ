@@ -399,6 +399,7 @@ void SV_SendServerinfo (client_t *client)
 	MSG_WriteByte (&client->message, 1);
 
 	client->sendsignon = true;
+	client->signonbufs = false;	// QuadEXQ: buffers go out after the client asks (prespawn)
 	client->spawned = false;		// need prespawn, spawn, etc
 }
 
@@ -1217,6 +1218,34 @@ static void SV_Host_Frame_UpdateServer_SendClientMessages (void)
 
 				continue;	// don't send out non-signon messages
 			}
+
+			// QuadEXQ: prespawn -- send the signon buffers, as many as fit per message
+			// for the local client, one per message for others, then signonnum 2
+			if (host_client->signonbufs)
+			{
+				cbool local = host_client->netconnection && !strcmp (NET_QSocketGetTrueAddressString (host_client->netconnection), "LOCAL");
+
+				while (host_client->signonidx < sv.num_signon_buffers)
+				{
+					sizebuf_t *sb = sv.signon_buffers[host_client->signonidx];
+
+					if (host_client->message.cursize && host_client->message.cursize + sb->cursize > host_client->message.maxsize - 16)	// (room for the loopback header)
+						break;
+
+					SZ_Write (&host_client->message, sb->data, sb->cursize);
+					host_client->signonidx ++;
+
+					if (!local)
+						break;
+				}
+
+				if (host_client->signonidx == sv.num_signon_buffers && host_client->message.cursize + 2 <= host_client->message.maxsize)
+				{
+					MSG_WriteByte (&host_client->message, svc_signonnum);
+					MSG_WriteByte (&host_client->message, 2);
+					host_client->signonbufs = false;
+				}
+			}
 		}
 
 		// check for an overflowed message.  Should only happen
@@ -1248,7 +1277,8 @@ static void SV_Host_Frame_UpdateServer_SendClientMessages (void)
 
 				SZ_Clear (&host_client->message);
 				host_client->last_message = realtime;
-				host_client->sendsignon = false;
+				if (!host_client->signonbufs)	// QuadEXQ: keep going until all the signon buffers are out
+					host_client->sendsignon = false;
 			}
 		}
 	}
@@ -1536,6 +1566,38 @@ int SV_ModelIndex (const char *name)
 SV_CreateBaseline
 ================
 */
+/*
+================
+SV_AddSignonBuffer / SV_ReserveSignonSpace -- QuadEXQ (from QuakeSpasm 0.93)
+
+The signon (baselines, static entities and sounds) is kept in a list of
+buffers, each small enough to go out as one message, instead of one 64K
+buffer: Arcane Dimensions' biggest maps overflow that, more so with the
+4-byte coords of protocol 999.
+================
+*/
+static void SV_AddSignonBuffer (void)
+{
+	int size = (sv.protocol == PROTOCOL_NETQUAKE) ? MAX_WINQUAKE_SIGNON : SIGNON_BUFFER_SIZE;
+	sizebuf_t *sb;
+
+	if (sv.num_signon_buffers >= MAX_SIGNON_BUFFERS)
+		Host_Error ("SV_AddSignonBuffer: more than %d signon buffers", MAX_SIGNON_BUFFERS);
+
+	sb = (sizebuf_t *) Hunk_AllocName (sizeof (sizebuf_t) + size, "signon");
+	sb->data = (byte *)(sb + 1);
+	sb->maxsize = size;
+	sb->cursize = 0;
+	sv.signon_buffers[sv.num_signon_buffers++] = sb;
+	sv.signon = sb;
+}
+
+void SV_ReserveSignonSpace (int numbytes)
+{
+	if (sv.signon->cursize + numbytes > sv.signon->maxsize)
+		SV_AddSignonBuffer ();
+}
+
 void SV_CreateBaseline (void)
 {
 	edict_t		*svent;
@@ -1592,39 +1654,40 @@ void SV_CreateBaseline (void)
 	//
 	// add to the message
 	//
+		SV_ReserveSignonSpace (40);	// QuadEXQ: keep the whole message in one signon buffer
 		//johnfitz -- PROTOCOL_FITZQUAKE
 		if (bits)
-			MSG_WriteByte (&sv.signon, svc_spawnbaseline2);
-		else MSG_WriteByte (&sv.signon, svc_spawnbaseline);
+			MSG_WriteByte (sv.signon, svc_spawnbaseline2);
+		else MSG_WriteByte (sv.signon, svc_spawnbaseline);
 		//johnfitz
 
-		MSG_WriteShort (&sv.signon,entnum);
+		MSG_WriteShort (sv.signon,entnum);
 
 		//johnfitz -- PROTOCOL_FITZQUAKE
-		if (bits) MSG_WriteByte (&sv.signon, bits);
+		if (bits) MSG_WriteByte (sv.signon, bits);
 
 		if (bits & B_LARGEMODEL)
-			MSG_WriteShort (&sv.signon, svent->baseline.modelindex);
-		else MSG_WriteByte (&sv.signon, svent->baseline.modelindex);
+			MSG_WriteShort (sv.signon, svent->baseline.modelindex);
+		else MSG_WriteByte (sv.signon, svent->baseline.modelindex);
 
 		if (bits & B_LARGEFRAME)
-			MSG_WriteShort (&sv.signon, svent->baseline.frame);
-		else MSG_WriteByte (&sv.signon, svent->baseline.frame);
+			MSG_WriteShort (sv.signon, svent->baseline.frame);
+		else MSG_WriteByte (sv.signon, svent->baseline.frame);
 		//johnfitz
 
-		MSG_WriteByte (&sv.signon, svent->baseline.colormap);
-		MSG_WriteByte (&sv.signon, svent->baseline.skin);
+		MSG_WriteByte (sv.signon, svent->baseline.colormap);
+		MSG_WriteByte (sv.signon, svent->baseline.skin);
 
-		MSG_WriteCoord(&sv.signon, svent->baseline.origin[0]);
-		MSG_WriteAngle(&sv.signon, svent->baseline.angles[0]);
-		MSG_WriteCoord(&sv.signon, svent->baseline.origin[1]);
-		MSG_WriteAngle(&sv.signon, svent->baseline.angles[1]);
-		MSG_WriteCoord(&sv.signon, svent->baseline.origin[2]);
-		MSG_WriteAngle(&sv.signon, svent->baseline.angles[2]);
+		MSG_WriteCoord(sv.signon, svent->baseline.origin[0]);
+		MSG_WriteAngle(sv.signon, svent->baseline.angles[0]);
+		MSG_WriteCoord(sv.signon, svent->baseline.origin[1]);
+		MSG_WriteAngle(sv.signon, svent->baseline.angles[1]);
+		MSG_WriteCoord(sv.signon, svent->baseline.origin[2]);
+		MSG_WriteAngle(sv.signon, svent->baseline.angles[2]);
 
 
 		//johnfitz -- PROTOCOL_FITZQUAKE
-		if (bits & B_ALPHA) MSG_WriteByte (&sv.signon, svent->baseline.alpha);
+		if (bits & B_ALPHA) MSG_WriteByte (sv.signon, svent->baseline.alpha);
 		//johnfitz
 	}
 }
@@ -1846,7 +1909,6 @@ void SV_SpawnServer (const char *server)
 	case PROTOCOL_NETQUAKE:
 		//sv.datagram.maxsize = sv_protocol == sizeof(sv.datagram_buf); // Baker: Was unused
 		sv.datagram.maxsize			 = MAX_WINQUAKE_DATAGRAM		/* 1024 */ ;
-		sv.signon.maxsize			 = MAX_WINQUAKE_SIGNON;			// 8000 - 2 = 7998
 		break;
 
 	case PROTOCOL_FITZQUAKE:
@@ -1854,13 +1916,11 @@ void SV_SpawnServer (const char *server)
 		if (svs.maxclients_internal == 1 && !isDedicated) // Because the cap can change at any time now.  But 1 still means single player.
 			sv.datagram.maxsize		 = MAX_MARK_V_DATAGRAM			/* 65527 */ ;
 		else sv.datagram.maxsize	 = MAX_FITZQUAKE_DATAGRAM_MTU	/* 1400 */ ;
-		sv.signon.maxsize			 = MAX_MARK_V_SIGNON;			// 65536-2  = 65534
 		break;
 	}
 
 #if 0
 	Con_PrintLinef ("sv.datagram.maxsize is %d", sv.datagram.maxsize);
-	Con_PrintLinef ("sv.signon.maxsize is %d", sv.signon.maxsize);
 	Con_PrintLinef ("sv_protocol is %d", sv_protocol);
 #endif
 	sv.datagram.cursize = 0;
@@ -1871,8 +1931,10 @@ void SV_SpawnServer (const char *server)
 	sv.reliable_datagram.cursize = 0;
 	sv.reliable_datagram.data = sv.reliable_datagram_buf;
 #endif // SUPPORTS_SERVER_PROTOCOL_15
-	sv.signon.cursize = 0;
-	sv.signon.data = sv.signon_buf;
+	// QuadEXQ: signon buffers are allocated as they fill (SV_ReserveSignonSpace), 7998 bytes each
+	// for protocol 15 (old clients), SIGNON_BUFFER_SIZE otherwise
+	sv.num_signon_buffers = 0;
+	SV_AddSignonBuffer ();
 
 
 	c_strlcpy (sv.name, server);
@@ -2025,10 +2087,13 @@ void SV_SpawnServer (const char *server)
 	Admin_Game_Files_List_Update_Server ();
 #endif // 	CORE_PTHREADS
 	//johnfitz -- warn if signon buffer larger than standard server can handle
-//	Con_PrintLinef ("Signon size is %d", sv.signon.cursize);
-	if (sv.signon.cursize > (MAX_WINQUAKE_MSGLEN /*8000*/ - 2) ) //max size that will fit into 8000-sized client->message buffer with 2 extra bytes on the end
-//		Con_DWarningLine ("%d byte signon buffer exceeds standard limit of 7998.", sv.signon.cursize);
-		Con_DWarningLine ("%d byte signon buffer exceeds standard limit of %d.", sv.signon.cursize, (MAX_WINQUAKE_MSGLEN /*8000*/ -2 ));
+	{	// QuadEXQ: the signon is split into buffers now, warn on the total
+		int b, signonsize = 0;
+		for (b = 0; b < sv.num_signon_buffers; b ++)
+			signonsize += sv.signon_buffers[b]->cursize;
+		if (signonsize > (MAX_WINQUAKE_MSGLEN /*8000*/ - 2) ) //max size that will fit into 8000-sized client->message buffer with 2 extra bytes on the end
+			Con_DWarningLine ("%d byte signon (%d buffers) exceeds standard limit of %d.", signonsize, sv.num_signon_buffers, (MAX_WINQUAKE_MSGLEN /*8000*/ -2 ));
+	}
 	//johnfitz
 
 // send serverinfo to all connected clients

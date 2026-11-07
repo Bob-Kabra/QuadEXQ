@@ -53,6 +53,9 @@ typedef struct
 
 typedef enum { ENUM_FORCE_INT_GCC_ (ss) ss_loading, ss_active} server_state_t;
 
+#define MAX_SIGNON_BUFFERS		256		// QuadEXQ: as QuakeSpasm
+#define SIGNON_BUFFER_SIZE		31500	// QuadEXQ: one signon message (QuakeSpasm clients take 32000)
+
 typedef struct
 {
 	cbool				active;				// false if only a net client
@@ -89,8 +92,9 @@ typedef struct
 	sizebuf_t			reliable_datagram;	// copied to all clients at end of frame
 	byte				reliable_datagram_buf[MAX_MARK_V_DATAGRAM];
 
-	sizebuf_t			signon;
-	byte				signon_buf[MAX_MARK_V_MSGLEN-2]; //johnfitz -- was 8192, now uses MAX_MSGLEN
+	sizebuf_t			*signon;			// QuadEXQ: the signon buffer being written (as QuakeSpasm 0.93+)
+	int					num_signon_buffers;	// QuadEXQ: big maps (Arcane Dimensions, protocol 999) need more than one 64K message
+	sizebuf_t			*signon_buffers[MAX_SIGNON_BUFFERS];
 
 	int					frozen;
 	int					disallow_major_cheats; // sv_cheats 0 or -1 (-1 allows some minor cheats like give because some coop maps supply too little ammo/health)
@@ -148,6 +152,8 @@ typedef struct client_s
 	cbool				dropasap;			// has been told to go to another level
 	cbool				privileged;			// can execute any host command
 	cbool				sendsignon;			// only valid before spawned
+	cbool				signonbufs;			// QuadEXQ: prespawn -- signon buffers still to send, from signonidx
+	int					signonidx;
 
 	double				last_message;		// reliable messages must be sent
 										// periodically
@@ -277,6 +283,7 @@ void SV_DropClient (cbool crash); // Happens many places
 // void SV_ClearDatagram (void); Made static, now named "SV_Host_Frame_UpdateServer_ClearDatagram"
 
 int SV_ModelIndex (const char *name); // Called often, gets model index for a model name.
+void SV_ReserveSignonSpace (int numbytes); // QuadEXQ: start a new signon buffer if this many bytes will not fit
 
 void SV_SetIdealPitch (void); // SV_WriteClientdataToMessage, which is called from 2 places (see below)
 

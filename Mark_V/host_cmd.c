@@ -2315,9 +2315,9 @@ void Host_PreSpawn_f (lparse_t *unused)
 		return;
 	}
 
-	SZ_Write (&host_client->message, sv.signon.data, sv.signon.cursize);
-	MSG_WriteByte (&host_client->message, svc_signonnum);
-	MSG_WriteByte (&host_client->message, 2);
+	// QuadEXQ: the signon buffers (and then svc_signonnum 2) go out from SV_SendClientMessages
+	host_client->signonbufs = true;
+	host_client->signonidx = 0;
 	host_client->sendsignon = true;
 }
 
