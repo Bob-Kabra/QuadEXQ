@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	MAX_MAP_PLANES		32767
 #define	MAX_MAP_NODES		32767 // because negative shorts are contents
 #define	MAX_MAP_CLIPNODES	32767
-#define	MAX_MAP_LEAFS		((32768*4) - 1) // johnfitz -- was 8192. Baker 65535 for Rubicon Rumble (80000 Sepulcher. Then again for DM4JAM)
+#define	MAX_MAP_LEAFS		((32768*16) - 1) // QuadEXQ: x4 for Arcane Dimensions (ad_tears has 134394 leafs). Was ((32768*4) - 1). // johnfitz -- was 8192. Baker 65535 for Rubicon Rumble (80000 Sepulcher. Then again for DM4JAM)
 #define	MAX_MAP_VERTS		65535
 #define	MAX_MAP_FACES		65535
 #define	MAX_MAP_MARKSURFACES 65535
