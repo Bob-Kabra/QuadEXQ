@@ -558,7 +558,56 @@ static void R_DrawBrushModel_DrawSequentialPoly (entity_t *ent, msurface_t *s)
 		eglDisable (GL_ALPHA_TEST); // Flip alpha test back off
 
 fullbrights:
-	if (gl_fullbrights.value && t->fullbright)
+	if (gl_fullbrights.value && t->fullbright && entalpha < 1 && !(s->flags & SURF_DRAWTILED) && renderer.gl_mtexable)
+	{	// QuadEXQ: a see-through brush (Arcane Dimensions' waterfalls) -- its "fullbright"
+		// pixels are lit by the lightmap like the rest: glowing, the front and back
+		// layers stacked up to a white blur (vkQuake's order-independent
+		// transparency averages the layers instead, so they look lit there)
+		eglDepthMask (GL_FALSE);
+		eglEnable (GL_BLEND);
+		eglBlendFunc (GL_ONE, GL_ONE);
+		eglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		eglColor3f (entalpha, entalpha, entalpha);
+		GL_Bind (t->fullbright);
+		GL_EnableMultitexture(); // selects TEXTURE1
+		GL_Bind (lightmap[s->lightmaptexturenum].texture);
+		if (gl_overbright.value && renderer.gl_texture_env_combine)
+		{
+			eglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+			eglTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
+			eglTexEnvi(GL_TEXTURE_ENV, GL_SRC0_RGB, GL_PREVIOUS);
+			eglTexEnvi(GL_TEXTURE_ENV, GL_SRC1_RGB, GL_TEXTURE);
+			eglTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 2.0f);
+		}
+		else eglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		Fog_StartAdditive ();
+		eglBegin (GL_POLYGON);
+		v = s->polys->verts[0];
+		for (i=0 ; i<s->polys->numverts ; i++, v+= VERTEXSIZE)
+		{
+			if (s->flags & (SURF_DRAWENVMAP | SURF_SCROLLX | SURF_SCROLLY))
+			{
+				float s0, t0;
+				CalcTexCoords (v, &s0, &t0, s->flags);
+				renderer.GL_MTexCoord2fFunc (renderer.TEXTURE0, s0, t0);
+			}
+			else renderer.GL_MTexCoord2fFunc (renderer.TEXTURE0, v[3], v[4]);
+			renderer.GL_MTexCoord2fFunc (renderer.TEXTURE1, v[5], v[6]);
+			eglVertex3fv (v);
+		}
+		eglEnd ();
+		Fog_StopAdditive ();
+		eglTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 1.0f);
+		eglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		GL_DisableMultitexture(); // selects TEXTURE0
+		eglColor3f(1, 1, 1);
+		eglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		eglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		eglDisable (GL_BLEND);
+		eglDepthMask (GL_TRUE);
+		rs_brushpasses++;
+	}
+	else if (gl_fullbrights.value && t->fullbright)
 	{
 		eglDepthMask (GL_FALSE);
 		eglEnable (GL_BLEND);
