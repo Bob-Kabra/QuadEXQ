@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v0.8 beta
+  QuadEXQ  v0.9 beta
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -546,6 +546,13 @@ fork), which adds the HUD, music switching, checkpoints and more.
                            resolution (only the 256 colours)
   qx_checkpoints 0         plain Quake / other mods: restart the map on
                            death instead of loading the checkpoint
+  sv_protocol 999          network protocol (default 999, as QuakeSpasm:
+                           big maps past +-4096; 666 = FitzQuake)
+
+  The crosshair, status bar (viewsize, scr_sbar*, scr_qxhud) and the qx_
+  settings are also saved to id1/qx_config.cfg on quit and read last at
+  start, so they hold in every game and mod, whatever its autoexec.cfg
+  says.
   newgame_map <map>        map that NEW GAME starts on (QuadEXQ ships
                            "newgame_map start" in autoexec.cfg; empty =
                            guess from the maps in the mod folder)
@@ -570,6 +577,26 @@ fork), which adds the HUD, music switching, checkpoints and more.
 ==============================================================================
  13. Version history
 ==============================================================================
+
+  v0.9 beta
+    Game:
+    - One Vore in four is a VORE LORD: blood red, half again as tough,
+      and it swats your rockets, grenades and nails straight back at you.
+    - Bullet time on a moving lift: you ride it smoothly (no shaking).
+    QuadEXQ engine:
+    - Plays Arcane Dimensions: bigger map limits (leafs, lightmaps), a
+      512 MB default heap, protocol 999 (now the default) and the signon
+      split into buffers like QuakeSpasm. Big maps such as ad_tears and
+      ad_sepulcher load and play.
+    - See-through waterfalls and walls no longer white out (their glowing
+      pixels are lit like the rest).
+    - qx_retro 4: always the 1996 look (640x480, the Quake palette) in any
+      game or mod; qx_retro 5: the same at full resolution.
+    - Crosshair, status bar and qx_ settings shared by every game
+      (id1/qx_config.cfg).
+    - The menu's Continue matches the other entries under mods with their
+      own menu art.
+    - A new exe icon: the QuadEXQ logo, glowing blue.
 
   v0.8 beta
     Game:
