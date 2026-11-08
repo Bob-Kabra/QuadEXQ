@@ -1278,7 +1278,9 @@ x0.4) it is 640x480 in the Quake palette, shaded the way the software
 renderer did it (colormap.lmp: 64 light levels along each colour ramp), and
 blown up with big square pixels. The level follows the world timescale the
 QuadEXQ progs sends (STAT_QX_TIME), so it starts exactly where the slow
-motion starts. Console and menus stay sharp.
+motion starts. Console and menus stay sharp. qx_retro 4: always full 1996
+(colormap shading), in any game -- for playing Quake or a mod retro style;
+5: the same at the full screen resolution (only the 256 colours).
 ================
 */
 extern int currenttexture;
@@ -1306,6 +1308,8 @@ float QX_Retro_Level (void)
 
 	if (!qx_retro.value || cls.signon != SIGNONS || cl.intermission)
 		return 0;
+	if (qx_retro.value == 4 || qx_retro.value == 5)	// always 1996, any game or mod (id1, Arcane Dimensions ..), no bullet time needed
+		return 1;
 	if (!(cl.stats[STAT_QX_FLAGS] & QX_F_ACTIVE))
 		return 0;
 	t = (100 - cl.stats[STAT_QX_TIME]) / 60.0f;
@@ -1405,7 +1409,7 @@ void QX_Retro_Apply (float t)
 		return;
 	palette = (t >= 0.99f);
 	p = palette ? clheight / (float)QX_RETRO_HEIGHT : 1 + t * (clheight / (float)QX_RETRO_HEIGHT - 1);
-	if (p < 1)
+	if (p < 1 || qx_retro.value == 5)	// 5: the palette look at the full resolution
 		p = 1;
 	w = c_max (1, (int)(clwidth / p + 0.5f));
 	h = c_max (1, (int)(clheight / p + 0.5f));
