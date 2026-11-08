@@ -538,9 +538,12 @@ fork), which adds the HUD, music switching, checkpoints and more.
   qx_autoswitch 0/1/2      switch to a weapon you pick up: 0 = never,
                            1 = only the Thunderbolt (default), 2 = always
                            (stock Quake)
-  qx_retro 0/1/2           bullet time 1996 look: 1 = software-style
+  qx_retro 0/1/2/4/5       bullet time 1996 look: 1 = software-style
                            shading (default), 2 = plain palette colours,
-                           0 = off
+                           0 = off. 4 = ALWAYS 1996, in any game or mod
+                           (plain Quake, Arcane Dimensions ..): 640x480,
+                           the Quake palette. 5 = always, at your full
+                           resolution (only the 256 colours)
   qx_checkpoints 0         plain Quake / other mods: restart the map on
                            death instead of loading the checkpoint
   newgame_map <map>        map that NEW GAME starts on (QuadEXQ ships
