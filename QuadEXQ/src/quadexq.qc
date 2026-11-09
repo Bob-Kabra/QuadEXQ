@@ -105,8 +105,9 @@ void(float v) QX_SetSkill =
 			stuffcmd (QX_FindLivePlayer (), "bf\n");
 		}
 		else
-		{
-			QX_CenterAll ("PLAYER SKILL ", ftos (floor (qx_pskill)), "\n\nthe enemies grow stronger...", "");
+		{	// the QuadEXQ engine shows it on the SKL bar: no banner there
+			if (!qx_newengine)
+				QX_CenterAll ("PLAYER SKILL ", ftos (floor (qx_pskill)), "\n\nthe enemies grow stronger...", "");
 			QX_MsgAll ("PlayerSkill up: ", ftos (floor (qx_pskill)), " / 100\n", "");
 		}
 	}
@@ -1350,16 +1351,20 @@ void() QX_PlayerFrame =
 		if (step > self.qx_adren_shown)
 		if (self.super_damage_finished < time)
 		{
-			if (step == 1)
-				QX_Center (self, "ADRENALINE 150%\n[###.........]", "", "", "");
-			else if (step == 2)
-				QX_Center (self, "ADRENALINE 200%\n[######......]\ntime is slowing", "", "", "");
-			else if (step == 3)
-				QX_Center (self, "ADRENALINE 250%\n[#########...]\ntime is slowing", "", "", "");
-			else
+			if (step >= 4)
 			{
 				QX_Center (self, "!! ADRENALINE MAX 300% !!\n[############]\nBULLET TIME", "", "", "");
 				stuffcmd (self, "bf\n");
+			}
+			// the QuadEXQ engine shows 150-250% on the ADR bar: only BULLET TIME gets a banner
+			else if (!qx_newengine)
+			{
+				if (step == 1)
+					QX_Center (self, "ADRENALINE 150%\n[###.........]", "", "", "");
+				else if (step == 2)
+					QX_Center (self, "ADRENALINE 200%\n[######......]\ntime is slowing", "", "", "");
+				else
+					QX_Center (self, "ADRENALINE 250%\n[#########...]\ntime is slowing", "", "", "");
 			}
 		}
 		self.qx_adren_shown = step;

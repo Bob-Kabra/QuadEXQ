@@ -65,6 +65,7 @@ PlayerSkill(0〜100)
   減る:   敵がいないと -10/秒 ※QX_ADREN_DECAY。20未満にはならない(スポーン時も20) ※QX_ADREN_MIN
   150%以上で「世界」が遅くなる(host_timescale)
     150% 等速 → 200% x0.8 → 250% x0.7 → 300% x0.5、Quad中は x0.4 ※QX_SLOW_* / QX_QUAD_TIMESCALE
+    段階ごとの画面中央表示: QuadEXQ エンジン(qx_newengine)では HUD の ADR/SKL バーがあるので 300%(BULLET TIME)と PLAYER SKILL MAX だけ。他のエンジンでは 150/200/250% と PlayerSkill 10 ごとも出す
   プレイヤーだけは補正されて、実時間で普通の速さのまま動ける・撃てる
     (速度 x1/s、重力 x1/s^2、sv_accelerate/sv_friction x1/s、アニメ・連射間隔 x s)
     動いているリフト/列車(MOVETYPE_PUSH)に乗っている間(.qx_vride)は水平速度だけ x1/s、重力は 1(上下はリフトと同じ世界時間。でないと毎フレーム落ちて着地してカクつく)
