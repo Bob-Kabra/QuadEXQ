@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v0.9 beta
+  QuadEXQ  v0.95 beta
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -159,6 +159,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
   Fills when:
     - you take enemy damage: about +18% per 30 damage
     - you kill something: +40% per kill
+    - you just SEE a Shambler, a Vore, a Cyberdemon or a BFG fiend: it
+      climbs while one is in sight, and never stays under 200%
 
   Drains:
     - 2 seconds after the last hit you took: -10% per second
@@ -322,7 +324,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
                as tough, and with a Golden Left Hand of its own -- your
                rockets, grenades and nails that get close are swatted
                straight back at you. The Thunderbolt is a beam -- it can't
-               swat that. (The red needs the QuadEXQ engine; on another
+               swat that, nor the Thunderbolt's plasma. (The red needs the QuadEXQ engine; on another
                engine a Vore Lord just glows.)
   Spike mines  The homing mines some Wizards fire can be shot down: any
                hit makes them blow up early.
@@ -400,8 +402,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
     higher your adrenaline and the faster you move. You can't shoot during
     the swing.
     At 250% adrenaline or more (or with Quad), enemy shots that come
-    close -- rockets, grenades, nails, magic -- are swatted back at
-    whoever fired them, and they count as yours.
+    close from IN FRONT of you -- rockets, grenades, nails, magic -- are
+    swatted back at whoever fired them, and they count as yours. Shots
+    from behind still hit you.
 
   Health regeneration:
     Go 5 seconds without firing or taking damage and you heal up to 60 HP:
@@ -582,6 +585,31 @@ fork), which adds the HUD, music switching, checkpoints and more.
 ==============================================================================
  13. Version history
 ==============================================================================
+
+  v0.95 beta
+    Game:
+    - The end map has a story of its own now. Play it to the end.
+      (It needs maps/ender.bsp and music/track12.mp3, both in the zip.)
+    - The Ion cannon and the BFG left the weapon slots. The Ion's plasma
+      is the Thunderbolt's bonus now (PlayerSkill above 50 and 300%
+      adrenaline); the BFG turns up somewhere special, as a big green ball.
+    - The BFG fiend (demon2) and the Juggernaut fire the same green ball.
+    - The sight of a Shambler, a Vore, a Cyberdemon or a BFG fiend gets
+      the adrenaline going; Shub-Niggurath in sight means 300% at once.
+    - The Golden Left Hand only swats shots coming from in front of you.
+    - The Vore Lord no longer swats plasma back.
+    - BFG chain lightning never jumps to Delta Team.
+    - Score: a clear without dying is +3000 (was +300). An arena win is
+      scored as the arena map's own clear, not added to the map you came
+      from; a PERFECT 10 - 0 is worth the hunter (Tres 10000, K4B / G
+      5000, GuroFighter 2000).
+    QuadEXQ engine:
+    - Frame interpolation in the menu, one by one: model animation,
+      movement and stairs. Effects get "QMB + Classic Bolt".
+    - The BFG glows green: its ball, and the gun in your hands (a new
+      high-resolution skin).
+    - With the ADR / SKL bars on the HUD, the 150-250% adrenaline and
+      PlayerSkill banners stay quiet; BULLET TIME still announces.
 
   v0.9 beta
     Game:
