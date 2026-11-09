@@ -94,7 +94,7 @@ PlayerSkill(0〜100)
   BFG の弾: progs/bfgball.spr(旧イオンの球をグレーにして 56〜64px に拡大した3コマ)、colormap 254 = QX_COLORMAP_GREEN でエンジンが緑に塗り、緑のハローと白い芯を加算で重ねる(gl_sprite.c)。旧エンジンでは白い球。monster_demon2 とシャンブラー QUTF(魔法の3割)が撃つ Dshot も同じ緑の球。プレイヤーの BFG・プラズマから出る連鎖の電撃(MakeChainBFG)は Delta Team と他のプレイヤーには飛ばない(.qx_chainfrom = 撃った本人、demon2.qc)。
   イオンキャノンと BFG は武器から外した(impulse 8 = Thunderbolt だけ、THE ENDER の ender.bsp では Thunderbolt → BFG)。イオンのプラズマは Thunderbolt の追加効果: PlayerSkill > 50(QX_LG_PLASMA_SKILL)かつアドレナリン 300%(ゲージ 100)のとき、W_FireLightning から 0.2 実秒ごと(QX_LG_PLASMA_RATE、qx_timescale で換算)に QX_LGPlasma = 旧イオンの4発ボレー、セル消費なし。
   ヴォアロードの打ち返し(普通のヴォアはしない): QX_AIHook から QX_VoreDeflect。180以内(QX_VORE_DEFLECT_RANGE)に向かってくるプレイヤーの弾(ロケット・グレネード・ネイル等)を 1.2倍速でプレイヤーへ打ち返し、owner をヴォアにする(ヴォアの弾扱い)。0.3秒に1回まとめて。LG はビームなので対象外。"VORE LORD DEFLECTS!" 表示。プラズマキャノンの弾(think == Plasma_Fly)は打ち返さない
-  見ただけでアドレナリン: 0.2秒ごとに視界内(infront + visible)のシャンブラー/ヴォア/サイバーデーモン(モデルで判定、ヴォアロードは2体分)1体につき +QX_ADREN_SIGHT(3)、1体でも見えていれば下限 QX_ADREN_SIGHT_MIN(50 = 200%)。Shub(monster_oldone)が見えたら下限 QX_ADREN_SHUB_MIN(100 = 300%)。
+  見ただけでアドレナリン: 0.2秒ごとに視界内(infront + visible)のシャンブラー/ヴォア/サイバーデーモン/BFG デーモン(monster_demon2)(モデルで判定、ヴォアロードは2体分)1体につき +QX_ADREN_SIGHT(3)、1体でも見えていれば下限 QX_ADREN_SIGHT_MIN(50 = 200%)。Shub(monster_oldone)が見えたら下限 QX_ADREN_SHUB_MIN(100 = 300%)。
   打ち返し: アドレナリン 250% 以上(qx_adren >= QX_DEFLECT_ADREN = 75)か Quad 中、QX_DEFLECT_RANGE(110)以内に向かってくる、自分の正面側(水平で v_forward との内積 > QX_DEFLECT_FRONT = 0、つまり前方180°)にあるモンスターの弾(FLYMISSILE/BOUNCE/FLY/TOSS で touch あり)を撃った本人に向けて 1.3倍速で打ち返す(QX_AutoDeflect)。owner を自分にするので自分の弾扱い、追尾弾(.enemy)は撃った本人を追う。左右で拳/斧の空振りモーション(qx_swatL/R、ダメージなし)。"DEFLECT!" は1.5秒に1回
     発動時に player/taunt.wav を再生(素材は別途用意)
     持っている武器は変わらないが、振っている間は撃てない(無防備)

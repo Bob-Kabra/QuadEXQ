@@ -1313,7 +1313,7 @@ void() QX_PlayerFrame =
 		if (self.qx_adren < QX_DUEL_ADREN_MIN)
 			self.qx_adren = QX_DUEL_ADREN_MIN;	// duel: never below 200% (world at 0.8x)
 
-		// The sight of a Shambler, a Vore or a Cyberdemon is enough to get the heart going
+		// The sight of a Shambler, a Vore, a Cyberdemon or a BFG fiend (demon2) is enough to get the heart going
 		// (and of Shub-Niggurath: 300% at once)
 		n = 0;
 		m = 0;
@@ -1322,7 +1322,7 @@ void() QX_PlayerFrame =
 		{
 			if (e.flags & FL_MONSTER)
 			if (e.health > 0)
-			if (e.model == "progs/shambler.mdl" || e.model == "progs/shalrath.mdl" || e.model == "progs/cyber.mdl" || e.classname == "monster_oldone")	// (by model: EXQ's swaps keep the old classname)
+			if (e.model == "progs/shambler.mdl" || e.model == "progs/shalrath.mdl" || e.model == "progs/cyber.mdl" || e.model == "progs/demon2.mdl" || e.classname == "monster_oldone")	// (by model: EXQ's swaps keep the old classname)
 			if (infront (e))
 			if (visible (e))
 			{
