@@ -672,6 +672,7 @@ typedef void (*GL_DrawAliasFrame_Fn_t) (aliashdr_t *paliashdr, lerpdata_t lerpda
 void R_DrawAliasModel (entity_t *e)
 {
 	cbool qx_mirror;			// QuadEXQ: left-handed view model
+	gltexture_t *qx_bfg_fb = NULL;	// QuadEXQ: the BFG's glow, drawn green
 	GLint qx_frontface = GL_CCW;
 	aliashdr_t				*paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
 	GL_DrawAliasFrame_Fn_t	GL_DrawAliasFrame =	GL_DrawAliasFrame_New;
@@ -816,6 +817,17 @@ void R_DrawAliasModel (entity_t *e)
 		tx = e->coloredskin;
 	if (!gl_fullbrights.value || (vid.direct3d == 9 && (tx->flags & TEXPREF_ALPHA))) // May 22 2018 FENCE TREE TEST
 		fb = NULL;
+
+	// QuadEXQ: the BFG in your hands glows the same green as its shot.  Its
+	// fullbright parts are kept out of the normal passes and added in green
+	// below (other engines just show them as they are in the skin)
+	// (it glows even with gl_fullbrights 0 -- it is the BFG)
+	if (paliashdr->fbtextures[skinnum][anim] && e == &cl.viewent_gun && (cl.stats[STAT_QX_FLAGS] & QX_F_ACTIVE)
+		&& e->model && !strcmp (e->model->name, "progs/v_bfg.mdl"))
+	{
+		qx_bfg_fb = paliashdr->fbtextures[skinnum][anim];
+		fb = NULL;
+	}
 
 // Here we go
 	if (entalpha < 1 && vid.direct3d == 8 && !renderer.gl_texture_env_combine) {
@@ -1047,6 +1059,27 @@ cleanup:
 	eglDepthMask(GL_TRUE);
 	eglDisable(GL_BLEND);
 	eglColor3f(1,1,1);
+
+	if (qx_bfg_fb)
+	{	// QuadEXQ: the BFG's energy parts, added in a slowly pulsing green
+		float pulse = entalpha * (0.85f + 0.15f * (float) sin (cl.ctime * 6.0));
+		GL_DisableMultitexture ();
+		GL_Bind (qx_bfg_fb);
+		eglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		eglEnable (GL_BLEND);
+		eglBlendFunc (GL_ONE, GL_ONE);
+		eglDepthMask (GL_FALSE);
+		shading = false;
+		eglColor3f (0.30f * pulse, 1.00f * pulse, 0.35f * pulse);
+		Fog_StartAdditive ();
+		GL_DrawAliasFrame (paliashdr, lerpdata, command_offset, e->is_fake_frame0, entalpha);
+		Fog_StopAdditive ();
+		eglDepthMask (GL_TRUE);
+		eglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		eglDisable (GL_BLEND);
+		eglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		eglColor3f (1,1,1);
+	}
 
 	//
 	// Shadow volumes - This excludes DX8 which does not have stencil.
