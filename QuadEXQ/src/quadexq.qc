@@ -967,6 +967,7 @@ void() QX_VoreDeflect =
 		if (e.owner.flags & FL_CLIENT)
 		if (!(e.flags & (FL_MONSTER | FL_CLIENT | FL_ITEM)))
 		if (e.movetype == MOVETYPE_FLYMISSILE || e.movetype == MOVETYPE_BOUNCE || e.movetype == MOVETYPE_FLY || e.movetype == MOVETYPE_TOSS)
+		if (e.think != Plasma_Fly)		// not the plasma cannon's balls (too much)
 		if (e.touch)
 		if (vlen (e.velocity) > 50)
 		{
@@ -1306,6 +1307,40 @@ void() QX_PlayerFrame =
 		if (qx_duel)
 		if (self.qx_adren < QX_DUEL_ADREN_MIN)
 			self.qx_adren = QX_DUEL_ADREN_MIN;	// duel: never below 200% (world at 0.8x)
+
+		// The sight of a Shambler, a Vore or a Cyberdemon is enough to get the heart going
+		// (and of Shub-Niggurath: 300% at once)
+		n = 0;
+		m = 0;
+		e = nextent (world);
+		while (e)
+		{
+			if (e.flags & FL_MONSTER)
+			if (e.health > 0)
+			if (e.model == "progs/shambler.mdl" || e.model == "progs/shalrath.mdl" || e.model == "progs/cyber.mdl" || e.classname == "monster_oldone")	// (by model: EXQ's swaps keep the old classname)
+			if (infront (e))
+			if (visible (e))
+			{
+				if (e.classname == "monster_oldone")
+					m = 1;
+				else if (e.qx_vorelord)
+					n = n + 2;
+				else
+					n = n + 1;
+			}
+			e = nextent (e);
+		}
+		if (n > 0)
+		{
+			self.qx_adren = self.qx_adren + QX_ADREN_SIGHT * n;
+			if (self.qx_adren < QX_ADREN_SIGHT_MIN)
+				self.qx_adren = QX_ADREN_SIGHT_MIN;
+		}
+		if (m)
+		if (self.qx_adren < QX_ADREN_SHUB_MIN)
+			self.qx_adren = QX_ADREN_SHUB_MIN;
+		if (self.qx_adren > 100)
+			self.qx_adren = 100;
 
 		step = floor (self.qx_adren / 25);
 		if (step > self.qx_adren_shown)

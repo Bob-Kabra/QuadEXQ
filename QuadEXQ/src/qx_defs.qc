@@ -44,6 +44,9 @@ float	QX_ADREN_HURT		= 0.3;	// gauge gained per point of damage taken from enemi
 float	QX_ADREN_DECAY		= 2;	// gauge loss per 0.2s tick with no enemy near (=10/sec)
 float	QX_ADREN_KILL		= 20;	// gauge gained per kill
 float	QX_ADREN_MIN		= 20;	// gauge never drops below this while alive
+float	QX_ADREN_SIGHT		= 3;	// gauge per 0.2s tick for each Shambler / Vore / Cyberdemon you can SEE (Vore Lord x2)
+float	QX_ADREN_SIGHT_MIN	= 50;	// ... and the gauge floor while one is in sight (50 = 200%)
+float	QX_ADREN_SHUB_MIN	= 100;	// Shub-Niggurath in sight: the gauge floor (100 = 300%)
 float	QX_SLOW_START		= 1.5;	// adrenaline 150%: world starts to slow
 float	QX_SLOW_MIN		= 0.5;	// adrenaline 300%: world at half speed
 float	QX_QUAD_TIMESCALE	= 0.4;	// Quad Damage (400%): world speed
