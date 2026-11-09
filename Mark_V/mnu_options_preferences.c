@@ -43,8 +43,11 @@ typedef enum { ENUM_FORCE_INT_GCC_ (opt)
 	opt_autoscale_10,
 	opt_status_bar_11,
 	opt_effects_12,
-	opt_set_fitz_13,
-	opt_set_mark_v_14,
+	opt_lerpmodels_13,		// QuadEXQ: the frame interpolation pieces, each on its own (was "Effects")
+	opt_lerpmove_14,
+	opt_stairs_15,
+	opt_set_fitz_16,
+	opt_set_mark_v_17,
 	opt_COUNT
 } opt_e;
 
@@ -92,18 +95,21 @@ static mnu_ent_t mnu_ent_table[] = { //                                         
 	{ opt_view_blends_3,	QCTRL(labeltoggle), " View Blends", "Screen blend underwater, powerup, ..",     0,  4,  0,  1, "Quake Default,Lite,None"											},
 	{ opt_bobbing_4,		QCTRL(labeltoggle), "     Bobbing", "Bobbing: cl_bob, cl_rollangle, ..",        0,  5,  0,  0, "Quake Default,DarkPlaces,None"										},
 	{ opt_flashblend_5,		QCTRL(labeltoggle), "  Flashblend", "Moving dynamic light drawing",             0,  6,  1,  0, "Quake Default,GLQuake style", "(GL Only)"							},
-	{ opt_stain_maps_6,		QCTRL(labeltoggle), "  Stain Maps", "Darkened stains that gradually fade",      1,  7,  0,  1, "Off,Subtle"															},
+	{ opt_stain_maps_6,		QCTRL(labeltoggle), "  Stain Maps", "Darkened stains that gradually fade",      0,  7,  0,  1, "Off,Subtle"															},
 
 	{ opt_start_demos_7,	QCTRL(labeltoggle), "  Startdemos", "Play startup demos on Quake startup",      0,  8,  1,  1, "Do Not Start,Quake Default"							    			},
 	{ opt_server_aim_8,		QCTRL(labeltoggle), "  Server Aim", "Lite aim help mostly for keyboarders",     0,  9,  0,  0, "Quake Default,Aim Help Off" 										},
-	{ opt_draw_clock_9,		QCTRL(labeltoggle), "  Draw Clock", "Show amount of time into level",           1, 10,  1,  0, "Deathmatch Only,Never,Always" 										},
+	{ opt_draw_clock_9,		QCTRL(labeltoggle), "  Draw Clock", "Show amount of time into level",           0, 10,  1,  0, "Deathmatch Only,Never,Always" 										},
 	
 	{ opt_autoscale_10,		QCTRL(labeltoggle), "   Autoscale", "Adjust status bar for resolution",         0, 11,  2,  2, "Forced Off,User Cvar Control,Auto Small,Auto Medium,Auto Large", "(GL Only)"   	},
 	{ opt_status_bar_11,	QCTRL(labeltoggle), "  Status Bar", "Only default is uncentered in deathmatch", 0, 12,  0,  3, "Quake Default,Minimal (QW-ish),Translucent (GL),Centered" 			},
-	{ opt_effects_12,		QCTRL(labeltoggle), "     Effects", "Original had jerky stairs/monsters",       1, 13,  0,  0, "Normal,JoeQuake (QMB),Normal + Jerky", "Normal,Normal + Jerky"		},
+	{ opt_effects_12,		QCTRL(labeltoggle), "     Effects", "QMB: JoeQuake-style particle effects",     0, 13,  0,  0, "Normal,JoeQuake (QMB),QMB + Classic Bolt", "Normal"		},
+	{ opt_lerpmodels_13,	QCTRL(labeltoggle), "  Model Anim", "Monster/weapon frames (r_lerpmodels)",      0, 14,  0,  0, "Smooth,Jerky (Original)"										},
+	{ opt_lerpmove_14,		QCTRL(labeltoggle), "    Movement", "Monster/item movement (r_lerpmove)",        0, 15,  0,  0, "Smooth,Jerky (Original)"										},
+	{ opt_stairs_15,		QCTRL(labeltoggle), "      Stairs", "Your view on stairs (v_smoothstairs)",      1, 16,  0,  0, "Smooth,Jerky (Original)"										},
 
-	{ opt_set_fitz_13,		QCTRL(labelbutton), "Set To FitzQuake", "Set FitzQuake 0.85 default settings",	0,  0, 112, -1, ""																	},
-	{ opt_set_mark_v_14,	QCTRL(labelbutton), "Set To Mark V", "Set Mark V revised settings",				0,  0, 124, -1, ""																	},
+	{ opt_set_fitz_16,		QCTRL(labelbutton), "Set To FitzQuake", "Set FitzQuake 0.85 default settings",	0,  0, 112, -1, ""																	},
+	{ opt_set_mark_v_17,	QCTRL(labelbutton), "Set To Mark V", "Set Mark V revised settings",				0,  0, 124, -1, ""																	},
 }; const int mnu_ent_table_count = ARRAY_COUNT(mnu_ent_table);
 
 
@@ -126,11 +132,17 @@ static int Mnu_Preferences_Get_Basket_Value_ (const opt_e option_idx)
 #ifdef WINQUAKE_RENDERER_SUPPORT
 	case_break opt_flashblend_5:	return 0;                                                                       // Flash Blends
     case_break opt_autoscale_10:	return 0;                                                                       // Autoscale
-	case_break opt_effects_12:		return !r_lerpmodels.value;
+	case_break opt_effects_12:		return 0;
+	case_break opt_lerpmodels_13:	return !r_lerpmodels.value;
+	case_break opt_lerpmove_14:		return !r_lerpmove.value;
+	case_break opt_stairs_15:		return !v_smoothstairs.value;
 #else
 	case_break opt_flashblend_5:	return CONVBOOL gl_flashblend.value;                                                                                    // Flash Blends
 	case_break opt_autoscale_10:	return CLAMP(0, (int)scr_scaleauto.value + 1, 5);                                                                       // Autoscale
-	case_break opt_effects_12:		return Choose12 (qmb_active.value, !r_lerpmodels.value);
+	case_break opt_effects_12:		return Choose12 (qmb_active.value && qmb_lightning.value, qmb_active.value && !qmb_lightning.value);
+	case_break opt_lerpmodels_13:	return !r_lerpmodels.value;
+	case_break opt_lerpmove_14:		return !r_lerpmove.value;
+	case_break opt_stairs_15:		return !v_smoothstairs.value;
 #endif
 
     case_break opt_status_bar_11:	return Choose123(scr_viewsize.value == 110, scr_sbaralpha.value < 1, scr_sbarcentered.value);                           // Status bar
@@ -176,16 +188,15 @@ static cbool Mnu_Preferences_Set_Basket_Value_ (const opt_e option_idx, const in
 									Cvar_SetValueQuick (&scr_viewsize,	   iif (newval == 1, 110, 100)		);
 
 									//Quake Default,Minimal (QW-ish),Translucent (GL),Centered
+	// QuadEXQ: each piece of the frame interpolation on its own row, so QMB and smooth / jerky mix freely
+    case_break opt_lerpmodels_13:	Cvar_SetValueQuick (&r_lerpmodels,   iif (newval == 1, 0, 1) );								// Model Anim
+    case_break opt_lerpmove_14:		Cvar_SetValueQuick (&r_lerpmove,     iif (newval == 1, 0, 1) );								// Movement
+    case_break opt_stairs_15:		Cvar_SetValueQuick (&v_smoothstairs, iif (newval == 1, 0, 1) );								// Stairs
 #ifdef WINQUAKE_RENDERER_SUPPORT
-    case_break opt_effects_12:		Cvar_SetValueQuick (&v_smoothstairs, iif (newval == 1, 0, 1) /* jerky */);						// Effects
-									Cvar_SetValueQuick (&r_lerpmodels,   iif (newval == 1, 0, 1) );
-									Cvar_SetValueQuick (&r_lerpmove,     iif (newval == 1, 0, 1) );
-
+    case_break opt_effects_12:		break;																							// Effects (no QMB)
 #else
-    case_break opt_effects_12:		Cvar_SetValueQuick (&v_smoothstairs, iif (newval == 2, 0, 1) /* jerky */);						// Effects
-									Cvar_SetValueQuick (&r_lerpmodels,   iif (newval == 2, 0, 1) );
-									Cvar_SetValueQuick (&r_lerpmove,     iif (newval == 2, 0, 1) );
-									Cvar_SetValueQuick (&qmb_active,     iif (newval == 1, 1, 0) );
+    case_break opt_effects_12:		Cvar_SetValueQuick (&qmb_active,     iif (newval >= 1, 1, 0) );									// Effects
+									Cvar_SetValueQuick (&qmb_lightning,  iif (newval == 2, 0, 1) );								// 2: QMB, but the classic bolt
 #endif 
     } // end switch
 	return true;
@@ -292,7 +303,7 @@ LOCAL_EVENT (KeyPress) (key_scancode_e key, int hotspot)
 								{ int row_px = 32; int n; for (n = 0; n < local_menu->cursor_solid_count; n ++) {
 									mnu_ent_t *e = &mnu_ent_table[n];
 									if (e->q_control == q_control_labeltoggle) {
-										int newval = local_menu->cursor == opt_set_fitz_13 ? e->fitz_num : e->markv_num;
+										int newval = local_menu->cursor == opt_set_fitz_16 ? e->fitz_num : e->markv_num;
 										Mnu_Preferences_Set_Basket_Value_ (e->opt_idx, newval);
 										MENU_TOGGLE_SOFT_SOUND();
 									}
@@ -320,7 +331,7 @@ LOCAL_EVENT (Enter_f) (lparse_t *unused)
 
 LOCAL_EVENT (InitOnce) (menux_t *self)
 {
-	DEBUG_COMPILE_TIME_ASSERT (/*hint word*/ opt_COUNT, opt_COUNT == 15);   // it is 15 because of gamma slider!
+	DEBUG_COMPILE_TIME_ASSERT (/*hint word*/ opt_COUNT, opt_COUNT == 18);   // QuadEXQ: 18 (Model Anim, Movement, Stairs rows)
 	self->cursor_solid_count = opt_COUNT; // Immutable - let's do this and check cursor against disabled attribute
 
 	{ int row_px = 32; int n; for (n = 0; n < self->cursor_solid_count; n ++) {
