@@ -119,6 +119,14 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 	if (attacker.flags & FL_CLIENT)
 		return;
 
+// QuadEXQ: the Cyberdemon boss fight (only your BFG hurts the boss)
+	if (qx_ender_arena)
+	{
+		damage = QX_EnderDamage (targ, inflictor, attacker, damage);
+		if (damage <= 0)
+			return;
+	}
+
 // used by buttons and triggers to set activator for target firing
 	damage_attacker = attacker;
 

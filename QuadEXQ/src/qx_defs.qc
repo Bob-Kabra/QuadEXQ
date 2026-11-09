@@ -321,3 +321,22 @@ void() QX_RevengeRoll;
 void() QX_RevengeTest;
 void() QX_ChallengeTest;
 .float	qx_hskill;		// Rune Hunter skill 0..2 (2 = Tres: no autoaim lock)
+
+// ---- THE ENDER (qx_ender.qc): the end map's own story
+float	QX_ENDER_WON		= 16384;	// serverflags: the Cyberdemon boss is down (end.bsp goes to the finale)
+float	QX_ENDER_MODE		= 5;		// scratch1: off to ender.bsp for the Cyberdemon boss
+float	qx_ender_go;			// 1: the gate turned on you, respawn goes to ender.bsp (2: on the way)
+float	qx_ender_arena;			// this is the Cyberdemon boss fight
+.float	qx_ender_boss;			// the Cyberdemon boss (only your BFG's direct hits hurt it)
+.float	qx_ender_scout;			// one of its scouts
+.float	qx_ender_counted;		// (a BFG ball) already counted as a hit
+.float	qx_ender_hp0;			// the boss's health before the first hit
+void() QX_EnderWorldSpawn;
+void() QX_EnderArenaInit;
+void() QX_EnderArenaStart;
+void() QX_EnderThink;
+void() QX_EnderGo;
+void() QX_EnderRetry;
+void() QX_EnderTest;
+float(entity p, entity trig) QX_EnderTeleport;
+float(entity targ, entity inflictor, entity attacker, float damage) QX_EnderDamage;

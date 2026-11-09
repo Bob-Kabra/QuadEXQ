@@ -178,6 +178,17 @@ void() finale_3 =
 	lightstyle(0, "abcdefghijklmlkjihgfedcb");	
 };
 
+// QuadEXQ: THE ENDER -- once the stock text has typed out, the screen
+// turns over to a second page: what became of Delta Team
+float	QX_FINALE_PAGE2	= 42;	// seconds (the stock text types at 8 a second)
+
+void() qx_finale_page2 =
+{
+	WriteByte (MSG_ALL, SVC_FINALE);
+	WriteString (MSG_ALL, "\n\nAnd Delta Team?\n\n\nFour of you brought it down together.\n\nThat's no Delta any more.\n\n\nCall it what it is:\n\nQUAD!");
+	remove (self);
+};
+
 void() finale_4 =
 {
 	// throw tons of meat chunks	
@@ -219,6 +230,13 @@ void() finale_4 =
 	// start the end text
 	WriteByte (MSG_ALL, SVC_FINALE);
 	WriteString (MSG_ALL, "Congratulations and well done! You have\nbeaten the hideous Shub-Niggurath, and\nher hundreds of ugly changelings and\nmonsters. You have proven that your\nskill and your cunning are greater than\nall the powers of Quake. You are the\nmaster now. Id Software salutes you.");
+
+	if (serverflags & QX_ENDER_WON)	// QuadEXQ: THE ENDER -- a second page for Delta Team
+	{
+		n = spawn ();
+		n.think = qx_finale_page2;
+		n.nextthink = time + QX_FINALE_PAGE2;
+	}
 
 // put a player model down
 	n = spawn();

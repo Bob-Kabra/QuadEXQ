@@ -2473,6 +2473,8 @@ void() ImpulseCommands =
 	if (self.impulse == 156)		// QuadEXQ: test Delta team (call them in now)
 	if (!deathmatch && !coop)
 		QX_DeltaArrive ();
+	if (self.impulse == 157)		// QuadEXQ: test THE ENDER's Cyberdemon boss fight (and back here)
+		QX_EnderTest ();
 	if (self.impulse == 151)		// QuadEXQ: reset PlayerSkill
 	{
 		QX_SetSkill (QX_StartSkill ());

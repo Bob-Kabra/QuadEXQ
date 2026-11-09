@@ -224,6 +224,7 @@ void() QX_WorldSpawn =
 	// Runes work as in stock Quake: they live in the game and in its savegames
 	// (CONTINUE keeps them, NEW GAME starts without them).
 
+	QX_EnderWorldSpawn ();			// end.bsp: precache the raging slipgates' monsters
 	QX_ArenaInit ();			// arrived here for a Rune Hunter duel?
 };
 
@@ -509,6 +510,7 @@ void() QX_StartFrame =
 
 	QX_MonstersInLiquid ();
 	QX_DuelThink ();
+	QX_EnderThink ();
 
 	if (!qx_boss_picked)
 	if (time > 2)
@@ -2619,7 +2621,10 @@ float(entity p) QX_ExitBlocked =
 		if (time > qx_exitmsg_time)
 		{
 			qx_exitmsg_time = time + 2;
-			QX_Center (p, "THE EXITS ARE SEALED\n\nbeat the RUNE HUNTER first", "", "", "");
+			if (qx_ender_arena)
+				QX_Center (p, "THE EXITS ARE SEALED\n\nkill the CYBERDEMON BOSS", "", "", "");
+			else
+				QX_Center (p, "THE EXITS ARE SEALED\n\nbeat the RUNE HUNTER first", "", "", "");
 		}
 		return TRUE;
 	}

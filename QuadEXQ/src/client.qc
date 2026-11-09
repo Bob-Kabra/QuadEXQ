@@ -365,6 +365,16 @@ void() respawn =
 		QX_DuelRespawn ();
 		return;
 	}
+	if (qx_ender_go == 1)
+	{	// QuadEXQ: the gate into Shub turned on you: off to ender.bsp
+		QX_EnderGo ();
+		return;
+	}
+	if (qx_ender_arena)
+	{	// QuadEXQ: the Cyberdemon boss fight starts over
+		QX_EnderRetry ();
+		return;
+	}
 	if (qx_revenge_pending)
 	{	// QuadEXQ: off to a revenge match instead of the checkpoint
 		QX_RevengeGo ();

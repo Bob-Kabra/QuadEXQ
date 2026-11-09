@@ -1467,7 +1467,7 @@ void() QX_ArenaInit =
 	qx_arena_go = 0;
 	qx_arena = FALSE;
 	qx_arena_pending = floor (cvar ("scratch1"));
-	if (qx_arena_pending < 1 || qx_arena_pending > 4 || deathmatch || coop)
+	if (qx_arena_pending < 1 || qx_arena_pending > QX_ENDER_MODE || deathmatch || coop)
 	{
 		qx_arena_pending = 0;
 		return;
@@ -1476,6 +1476,8 @@ void() QX_ArenaInit =
 	cvar_set ("scratch1", "0");	// one trip only
 	qx_arena = TRUE;
 	qx_boss_picked = 1;		// no map boss in an arena
+	if (qx_arena_pending == QX_ENDER_MODE)
+		QX_EnderArenaInit ();	// THE ENDER: the Cyberdemon boss (precache it now)
 };
 
 // nobody else is invited (towersp has wizards)
@@ -1582,6 +1584,7 @@ void() QX_RevengeRoll =
 	else if (qx_arena)			why = "already in an arena";
 	else if (qx_arena_go)		why = "already leaving for an arena";
 	else if (qx_duel_reload)	why = "a duel is just ending";
+	else if (qx_ender_go)		why = "the end map's gate";
 	if (why != "")
 	{
 		if (serverflags & 4096)		// impulse 154 test: say why not
@@ -1924,6 +1927,12 @@ void() QX_DuelThink =
 		if (time > 1.5)
 		if (QX_FindLivePlayer ())
 		{
+			if (qx_arena_pending == QX_ENDER_MODE)
+			{	// THE ENDER: no Rune Hunter here, the Cyberdemon boss
+				qx_arena_pending = 0;
+				QX_EnderArenaStart ();
+				return;
+			}
 			if (qx_arena_pending == 2)
 				qx_duel_test = TRUE;
 			if (qx_arena_pending == 3)
@@ -2360,7 +2369,9 @@ void() dl_die =
 		sprint (p, " down!\n");
 	}
 	t = spawn ();
-	if (qx_delta_losses >= QX_DELTA_LOSSES)
+	// (THE ENDER: they stay to the end -- in the Cyberdemon fight and on end.bsp after it)
+	if (qx_delta_losses >= QX_DELTA_LOSSES && !qx_ender_arena
+	 && !(world.model == "maps/end.bsp" && (serverflags & QX_ENDER_WON)))
 	{	// that's enough: the rest leave in a moment
 		t.classname = "qx_delta_out";
 		t.think = QX_DeltaWithdrawThink;
@@ -2384,7 +2395,7 @@ float(float slot) QX_DeltaSpawn =
 	local entity p, a;
 
 	p = QX_FindLivePlayer ();
-	if (!p || qx_arena || qx_arena_go || qx_duel || intermission_running)
+	if (!p || (qx_arena && !qx_ender_arena) || qx_arena_go || qx_duel || intermission_running)
 		return FALSE;
 
 	a = spawn ();

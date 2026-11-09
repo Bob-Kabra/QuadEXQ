@@ -382,6 +382,9 @@ local vector	org;
 	if (other.health <= 0 || other.solid != SOLID_SLIDEBOX)
 		return;
 
+	if (QX_EnderTeleport (other, self))	// QuadEXQ: the end map's gate into Shub
+		return;
+
 	SUB_UseTargets ();
 
 // put a tfog where the player was
