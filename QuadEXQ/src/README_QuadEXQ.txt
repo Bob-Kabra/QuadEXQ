@@ -90,6 +90,8 @@ PlayerSkill(0〜100)
     弾薬は使わない。従来の1番のジェットパック武器は廃止
   自動近接攻撃: 敵との当たり判定の隙間が30未満、かつほぼ正面で自動。敵が右側(v_right との内積 >= 0)なら斧、左側なら Golden Left Hand(QuadUTF のパンチ W_Fire_SuAxe を移植した QX_FireFist、v_punch.mdl、qx_fist1-4 で3回判定、突進(照準方向 +200、上 +40)は1回目だけ、威力は1発 アドレナリン%/10 + 速度/15(HUD 表示の 100-300%、QX_FIST_ADREN / QX_FIST_SPEED、Quad は T_Damage の x4 が別にかかる、QuadUTF の 50 + 速度/3 では1振り400超えで強すぎた)、射程100)。振っている間は EF_DIMLIGHT で周りが光り、エンジン側で拳自体も金色に脈打つ明るさで描く。qx_meleeing = 1 斧 / 2 拳。斧を構えているときも左側の敵には拳が出る(右側は自分で斧を振る)。v_punch はエンジン側で左右反転して描く(gl_alias.c: Y を -1 倍 + glFrontFace 反転、QuadEXQ progs のときだけ)。マップ集計では武器表に "LeftHand" の行、打ち返した数は "deflects N"(qx_st_deflects) ※QX_MELEE_GAP
   ヴォアロード(Vore Lord): MonsterSync で monster_shalrath の 25%(QX_VORELORD_CHANCE)が .qx_vorelord = 1、netname "Vore Lord"、HP/qx_basehp 1.5倍。見た目は colormap 255(エンジン: qx_colormap_ok >= 2 のとき周りの明るさを真っ赤にして描く、gl_alias.c)、古いエンジンでは EF_DIMLIGHT。分裂した子はロードにならない(skin のみコピー)
+  BFG の弾: progs/bfgball.spr(旧イオンの球をグレーにして 56〜64px に拡大した3コマ)、colormap 254 = QX_COLORMAP_GREEN でエンジンが緑に塗り、緑のハローと白い芯を加算で重ねる(gl_sprite.c)。旧エンジンでは白い球。
+  イオンキャノンと BFG は武器から外した(impulse 8 = Thunderbolt だけ、THE ENDER の ender.bsp では Thunderbolt → BFG)。イオンのプラズマは Thunderbolt の追加効果: PlayerSkill > 50(QX_LG_PLASMA_SKILL)かつアドレナリン 300%(ゲージ 100)のとき、W_FireLightning から 0.2 実秒ごと(QX_LG_PLASMA_RATE、qx_timescale で換算)に QX_LGPlasma = 旧イオンの4発ボレー、セル消費なし。
   ヴォアロードの打ち返し(普通のヴォアはしない): QX_AIHook から QX_VoreDeflect。180以内(QX_VORE_DEFLECT_RANGE)に向かってくるプレイヤーの弾(ロケット・グレネード・ネイル等)を 1.2倍速でプレイヤーへ打ち返し、owner をヴォアにする(ヴォアの弾扱い)。0.3秒に1回まとめて。LG はビームなので対象外。"VORE LORD DEFLECTS!" 表示
   打ち返し: アドレナリン 250% 以上(qx_adren >= QX_DEFLECT_ADREN = 75)か Quad 中、QX_DEFLECT_RANGE(110)以内に向かってくるモンスターの弾(FLYMISSILE/BOUNCE/FLY/TOSS で touch あり)を撃った本人に向けて 1.3倍速で打ち返す(QX_AutoDeflect)。owner を自分にするので自分の弾扱い、追尾弾(.enemy)は撃った本人を追う。左右で拳/斧の空振りモーション(qx_swatL/R、ダメージなし)。"DEFLECT!" は1.5秒に1回
     発動時に player/taunt.wav を再生(素材は別途用意)
@@ -137,7 +139,7 @@ PlayerSkill(0〜100)
 
   鎧の敵(アーマーナイト/ロード/ベイン/スーパーヘルナイト): 弾丸系は1/2(EXQは1/4)、ネイル・スーパーネイルは x2 ※QX_NAIL_PIERCE
     (v0.3: x1.5→x2に戻し、スーパーネイルにも適用。ベインにも適用)
-  8 ライトニング → イオン → BFG
+  8 ライトニング(イオンと BFG は外した、BFG は THE ENDER 専用)
       ライトニング: 0.1秒ごとに30固定(EXQはセル40超で60、90超で80+連鎖) ※QX_LG_DAMAGE
       イオン: 1発20 x 4発 / 0.4秒(LG所持ボーナス廃止) ※QX_ION_DAMAGE
 

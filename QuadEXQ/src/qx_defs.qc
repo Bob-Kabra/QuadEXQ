@@ -59,6 +59,11 @@ float	QX_SNG_TURN		= 0.15;	// homing steer strength per 0.05s (v0.3: 0.3 -> 0.15
 float	QX_NG_DAMAGE		= 11;	// nail damage (vanilla 9) -> 110 DPS
 float	QX_SSG_PELLETS		= 13;	// pellets per barrel, x4 dmg, 2 barrels -> 104 per shot
 float	QX_ION_DAMAGE		= 20;	// per plasma ball, 4 per volley / 0.4s -> 200 DPS
+float	QX_LG_PLASMA_SKILL	= 50;	// Thunderbolt bonus: above this PlayerSkill ...
+float	QX_LG_PLASMA_ADREN	= 100;	// ... and at this adrenaline gauge (100 = 300%) ...
+float	QX_LG_PLASMA_RATE	= 0.2;	// ... it also throws a plasma volley this often (real seconds), no cells
+.float	qx_lgplasma_next;
+void() QX_LGPlasma;
 float	QX_RL_SPEED		= 1500;	// rocket speed (vanilla 1000; EXQ gave 1500 only with the GL)
 float	QX_RL_DIRECT		= 120;	// direct hit 120-140 + splash 120 (was 100-120)
 float	QX_LG_DAMAGE		= 30;	// per 0.1s -> 300 DPS (vanilla)

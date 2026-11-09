@@ -351,9 +351,11 @@ fork), which adds the HUD, music switching, checkpoints and more.
       5 Super Nailgun   120    auto-aim, double nail speed, homing above 50
       6 Grenade L.      140    + splash damage
       7 Rocket L.       305    fast rockets (1500 units/s)
-      8 Lightning       300    auto-aim
-        Ion             200
-        BFG
+      8 Lightning       300    auto-aim. Above PlayerSkill 50 with adrenaline
+                               at 300% it also throws a plasma volley every
+                               0.2 s, for free (the old Ion cannon)
+        (the Ion cannon and the BFG are not weapons any more; the BFG turns
+         up somewhere special)
 
     Every weapon's damage grows with PlayerSkill (section 3).
 

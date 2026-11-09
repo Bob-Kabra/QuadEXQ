@@ -27,6 +27,7 @@ void() W_Precache =
 	precache_model ("progs/s_bfg.spr");
 	precache_model ("progs/t_explod.spr");
 	precache_model ("progs/v_bfg.mdl");
+	precache_model ("progs/bfgball.spr");	// QuadEXQ: the BFG ball (drawn green: colormap 254)
 	
 	precache_sound ("player/axehit.wav");	// new axhit
 	precache_sound ("weapons/r_exp3.wav");	// new rocket explosion
@@ -952,7 +953,7 @@ void(vector p1, vector p2, entity from, float damage) ChainLightDamage;
 void() W_FireLightning =
 {
 	local	vector		org;
-	local	float		cells;
+	local	float		cells, ts;
 
 	if (self.ammo_cells < 1)
 	{
@@ -1004,6 +1005,21 @@ void() W_FireLightning =
 	
 	// QuadEXQ: fixed 30 per 0.1s (EXQ: 60 above 40 cells, 80 + chain above 90)
 	LightningDamage (self.origin, trace_endpos + v_forward*4, self, QX_LG_DAMAGE);
+
+	// QuadEXQ: the Ion cannon is gone as a weapon -- its plasma is the
+	// Thunderbolt's bonus now: PlayerSkill above 50 and adrenaline at 300%,
+	// a plasma volley every 0.2 (real) seconds, no cells
+	if (!deathmatch)
+	if (qx_pskill > QX_LG_PLASMA_SKILL)
+	if (self.qx_adren >= QX_LG_PLASMA_ADREN)
+	if (time >= self.qx_lgplasma_next)
+	{
+		ts = qx_timescale;
+		if (ts <= 0)
+			ts = 1;
+		self.qx_lgplasma_next = time + QX_LG_PLASMA_RATE * ts;
+		QX_LGPlasma ();
+	}
 };
 
 
@@ -1530,11 +1546,28 @@ void() W_FireBFG =
 	missile.dmg = 20;
 	missile.think = Plasma_Fly;
 	
-	setmodel (missile, "progs/s_light.spr");
+	// QuadEXQ: a big glowing green ball (was progs/s_light.spr); the green is
+	// the QuadEXQ engine's (colormap 254) -- elsewhere a white-hot ball
+	setmodel (missile, "progs/bfgball.spr");
+	if (cvar ("qx_colormap_ok") >= 2)
+		missile.colormap = 254;
 	setsize (missile, '0 0 0', '0 0 0');		
 	setorigin (missile, self.origin + v_forward*8 + '0 0 16');
 };
 
+
+// QuadEXQ: the Thunderbolt's plasma bonus (the old Ion cannon's volley, free)
+void() QX_LGPlasma =
+{
+	local vector	dir;
+
+	makevectors (self.v_angle);
+	dir = aim (self, 1000);
+	Launchlaser2 (self.origin + '0 0 4', dir, 1000);
+	Launchlaser2 (self.origin + '0 0 5', dir, 950);
+	Launchlaser2 (self.origin + '0 0 6', dir, 900);
+	Launchlaser2 (self.origin + '0 0 7', dir, 850);
+};
 
 void() W_FireSuperSpikes =
 {
@@ -2181,18 +2214,24 @@ void() W_ChangeWeapon =
 	}
 	else if (self.impulse == 8)
 	{
-		if (self.weapon == IT_LIGHTNING)
-		{
-			fl = IT_ION;
-			
-			if (self.ammo_cells < 5)
+		if (self.weapon == IT_LIGHTNING && qx_ender_arena)
+		{	// QuadEXQ: the BFG is THE ENDER's own weapon (ender.bsp only)
+			fl = IT_BFG;
+			if (self.ammo_cells < 30)
+				am = 1;
+		}
+		else if (self.weapon == IT_LIGHTNING)
+		{	// QuadEXQ: the Ion cannon and the BFG are out of the cycle (the
+			// Ion's plasma comes with the Thunderbolt now): slot 8 = Thunderbolt
+			fl = IT_LIGHTNING;
+			if (self.ammo_cells < 1)
 				am = 1;
 		}
 		else if (self.weapon == IT_ION)
-		{
-			fl = IT_BFG;
-			if (self.ammo_cells < 30)
-                        am = 1;
+		{	// (an Ion cannon from an old save: back to the Thunderbolt)
+			fl = IT_LIGHTNING;
+			if (self.ammo_cells < 1)
+				am = 1;
 		}
 		else if (self.weapon == IT_BFG)
 		{
