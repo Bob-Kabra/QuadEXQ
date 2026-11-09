@@ -259,7 +259,10 @@ fork), which adds the HUD, music switching, checkpoints and more.
       - Both of you respawn on the spot during the duel (no PlayerSkill
         penalty; you get 100 health and some ammo back).
       - The exits are locked until it is over.
-      - Win: +1000 score, or +10000 for a PERFECT 10 - 0.
+      - Win: 1000 points. A PERFECT 10 - 0 is worth the hunter: Tres
+        10000, K4B / G 5000, GuroFighter 2000. The score is the
+        arena map's own (its own line in the stats), not added to the map
+        you came from.
         Lose: it takes the rune you got last and runs,
         and you are back in the start map.
       - Coming back from the duel itself doesn't call the next one.
@@ -272,7 +275,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
       - !! ARENA CHALLENGE !!: when it holds none of your runes, each death
         still has a 20% chance of a challenge instead: nothing to lose,
         and a win lets you keep the weapons you had in the arena (with
-        some ammo) plus the score (+1000, PERFECT +10000). Back to where
+        some ammo); the arena scores 1000 (PERFECT 2000-10000). Back to where
         you died afterwards, like a revenge match.
       - !! DELTA TEAM !!: win a revenge match or an arena challenge and,
         back on the map, three allies come to help for the rest of that
@@ -443,7 +446,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
 
   Score:
     kill 10 / scout 20 / elite 30 / boss +300
-    secret 100 / death -200 / clear without dying +300
+    secret 100 / death -200 / clear without dying +3000
 
   Play log (QuadEXQ engine):
     quadexq_stats.txt in the QuadEXQ folder grows with every session. It
@@ -669,8 +672,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
     - Revenge match: while the hunter holds your rune, each death has a 30%
       chance to call a rematch. Win it back.
     - Arena challenge: with no rune at stake, each death has a 30% chance
-      to call a challenge. Win and keep the arena weapons and the score.
-      10-0 is a PERFECT (10000 points).
+      to call a challenge. Win and keep the arena weapons.
+      10-0 is a PERFECT (2000-10000 points by hunter, the arena map's own
+      score).
     - Hunters: G fires SNG bursts, K4B leads grenades and sometimes fires
       rockets, Tres uses the LG and a jetpack. They bunnyhop and pick up
       health and armor. No autoaim against them.

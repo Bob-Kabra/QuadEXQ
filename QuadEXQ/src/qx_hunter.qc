@@ -78,9 +78,12 @@ float(float bit) QX_RuneEpisode;
 float	qx_back_failsafe;		// still here 3 s after qx_back: go to start
 float() QX_DuelWinScore;
 void(entity p, float v) QX_ArenaPrize;
+float	qx_duel_pts;			// this duel's win score (logged as the arena map's clear)
 float	qx_duel_bonus;			// this arena duel is an arena challenge (no rune at stake)
 float	qx_revenge_mode;		// 3 = revenge match, 4 = arena challenge (picked when you die)
-float	QX_PERFECT_SCORE	= 10000;	// 10 - 0
+float	QX_PERFECT_TRES		= 10000;	// a PERFECT 10 - 0 (you never died), by hunter:
+float	QX_PERFECT_MID		= 5000;		// K4B / G
+float	QX_PERFECT_GURO		= 2000;		// GuroFighter
 float	qx_duel_revenge;		// this arena duel is a revenge match
 float	qx_revenge_back;		// after it, go back with the qx_back alias (not to start)
 
@@ -1170,6 +1173,7 @@ void(float won) QX_DuelEnd =
 	local float bit, n, pts, wb;
 	local entity e, p;
 
+	qx_duel_pts = 0;
 	qx_duel = FALSE;
 	qx_duel_restore = TRUE;		// the arena kit goes back once you're on your feet
 	QX_DuelArmorRemove ();
@@ -1217,8 +1221,8 @@ void(float won) QX_DuelEnd =
 			serverflags = serverflags - (serverflags & QX_HoldBit (bit));
 			cvar_set ("scratch3", ftos (bit + 16));	// survives the checkpoint load on the way back (+16 = Delta team)
 			pts = QX_DuelWinScore ();
-			cvar_set ("scratch4", ftos (pts * 128));	// score, given after the trip back
-			if (pts == QX_PERFECT_SCORE)
+			qx_duel_pts = pts;			// the arena's own score (not carried back)
+			if (qx_duel_hf == 0)
 				QX_CenterAll ("!!! PERFECT !!!\n\n", qx_hunter_name, " DEFEATED 10 - 0\nyour rune is back\nSCORE +", ftos (pts));
 			else
 				QX_CenterAll ("!!! YOU WIN !!!\n\n", qx_hunter_name, " DEFEATED\nyour rune is back\nSCORE +", ftos (pts));
@@ -1243,9 +1247,10 @@ void(float won) QX_DuelEnd =
 			if (p)
 				wb = p.items & (IT_SUPER_SHOTGUN | IT_NAILGUN | IT_SUPER_NAILGUN | IT_GRENADE_LAUNCHER | IT_ROCKET_LAUNCHER | IT_LIGHTNING);
 			pts = QX_DuelWinScore ();
-			cvar_set ("scratch4", ftos (wb + pts * 128));	// weapons + score, given after the trip back
+			cvar_set ("scratch4", ftos (wb));	// the weapons, given after the trip back
+			qx_duel_pts = pts;			// the score stays with the arena map
 			cvar_set ("scratch3", "16");		// + Delta team
-			if (pts == QX_PERFECT_SCORE)
+			if (qx_duel_hf == 0)
 				QX_CenterAll ("!!! PERFECT !!!\n\n", qx_hunter_name, " DEFEATED 10 - 0\nyou keep the arena weapons\nSCORE +", ftos (pts));
 			else
 				QX_CenterAll ("!!! YOU WIN !!!\n\n", qx_hunter_name, " DEFEATED\nyou keep the arena weapons\nSCORE +", ftos (pts));
@@ -1273,8 +1278,8 @@ void(float won) QX_DuelEnd =
 		bit = QX_DuelDoneBit (qx_duel_runes);
 		serverflags = serverflags | bit;
 		pts = QX_DuelWinScore ();
-		qx_st_points = qx_st_points + pts;
-		if (pts == QX_PERFECT_SCORE)
+		qx_duel_pts = pts;
+		if (qx_duel_hf == 0)
 			QX_CenterAll ("!!! PERFECT !!!\n\n", qx_hunter_name, " DEFEATED 10 - 0\nyour runes are safe\nSCORE +", ftos (pts));
 		else
 			QX_CenterAll ("!!! YOU WIN !!!\n\n", qx_hunter_name, " DEFEATED\nyour runes are safe\nSCORE +", ftos (pts));
@@ -1306,6 +1311,28 @@ void(float won) QX_DuelEnd =
 	QX_LN (qx_duel_hf);
 	QX_LE ();
 
+	// the win is scored as this arena map's own clear (the map you came
+	// from gets nothing: a 10 - 0 there used to dwarf the map's own score)
+	if (qx_duel_pts > 0)
+	{
+		qx_rep_to = find (world, classname, "player");
+		QX_LB ();
+		QX_LS ("=== ");
+		QX_LS (mapname);
+		QX_LS (" ARENA CLEAR   SCORE ");
+		QX_LN (qx_duel_pts);
+		QX_LS ("   (");
+		QX_LN (qx_duel_pf);
+		QX_LS (" - ");
+		QX_LN (qx_duel_hf);
+		QX_LS (" vs ");
+		QX_LS (qx_hunter_name);
+		QX_LS (") ===");
+		QX_LE ();
+		qx_rep_to = world;
+		qx_duel_pts = 0;
+	}
+
 	if (qx_arena)
 		qx_duel_reload = time + 4;	// back to start, win or lose
 };
@@ -1314,7 +1341,13 @@ void(float won) QX_DuelEnd =
 float() QX_DuelWinScore =
 {
 	if (qx_duel_hf == 0)
-		return QX_PERFECT_SCORE;
+	{	// PERFECT: worth what the hunter is worth
+		if (qx_hunter_name == "Tres")
+			return QX_PERFECT_TRES;
+		if (qx_hunter_name == "GuroFighter")
+			return QX_PERFECT_GURO;
+		return QX_PERFECT_MID;
+	}
 	return QX_DUEL_SCORE;
 };
 

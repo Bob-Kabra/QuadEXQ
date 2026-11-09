@@ -11,7 +11,7 @@ QuadEXQ map report
   are counted by the engine cvar qx_mapdeaths, which survives the restart.
 
   Score:  kill 10 / scout 20 / elite 30 / boss +300
-          secret 100, death -200, no-death clear +300
+          secret 100, death -200, no-death clear +3000
 ==============================================================================
 */
 
@@ -21,7 +21,7 @@ float	QX_SC_ELITE	= 30;
 float	QX_SC_BOSS	= 300;
 float	QX_SC_SECRET	= 100;
 float	QX_SC_DEATH	= 200;
-float	QX_SC_NODEATH	= 300;
+float	QX_SC_NODEATH	= 3000;	// (was 300)
 
 // QuadEXQ / Mark V engines concatenate up to 8 strings and keep 16 ftos results
 void(entity client, string s1, string s2, string s3, string s4, string s5, string s6, string s7, string s8) qx_cprint8 = #73;
