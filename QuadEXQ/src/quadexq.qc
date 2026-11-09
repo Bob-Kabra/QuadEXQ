@@ -1026,7 +1026,11 @@ void() QX_AutoDeflect =
 		if (vlen (e.velocity) > 50)
 		{
 			d = self.origin - e.origin;
+			makevectors ('0 1 0' * self.v_angle_y);	// facing, level
+			dir = e.origin - self.origin;
+			dir_z = 0;
 			if (e.velocity * d > 0)			// coming at you
+			if (normalize (dir) * v_forward > QX_DEFLECT_FRONT)	// and you can see it coming
 			{
 				mon = e.owner;
 				sp = vlen (e.velocity) * 1.3;

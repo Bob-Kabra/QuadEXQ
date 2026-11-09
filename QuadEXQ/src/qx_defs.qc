@@ -302,6 +302,7 @@ void() QX_RevengeGo;
 float	qx_arena_title_at;
 float	qx_back_ckpt_at;		// just back from the arena: write the checkpoint at this time
 float	QX_DEFLECT_ADREN	= 75;	// adrenaline gauge for deflecting (75 = 250%), or Quad
+float	QX_DEFLECT_FRONT	= 0;	// only shots in front of you (cos of the half-angle: 0 = the front half)
 float	QX_DEFLECT_RANGE	= 110;	// enemy shots this close get swatted back
 float	QX_W_FIST		= -1;	// the Golden Left Hand, for the map report
 .float	qx_deflect_msg;			// last "DEFLECT!" banner
