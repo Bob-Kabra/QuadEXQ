@@ -86,6 +86,63 @@ R_DrawSpriteModel
  -- johnfitz -- rewritten: now supports all orientations
 =================
 */
+// QuadEXQ: one sprite quad (as R_DrawSpriteModel draws it), scaled
+static void R_DrawSprite_QXQuad (entity_t *e, mspriteframe_t *sp_frame, float *s_up, float *s_right, float scale)
+{
+	vec3_t point;
+
+	eglBegin (GL_TRIANGLE_FAN);
+
+	eglTexCoord2f (0, sp_frame->tmax);
+	VectorMA (e->origin, sp_frame->down * scale, s_up, point);
+	VectorMA (point, sp_frame->left * scale, s_right, point);
+	eglVertex3fv (point);
+
+	eglTexCoord2f (0, 0);
+	VectorMA (e->origin, sp_frame->up * scale, s_up, point);
+	VectorMA (point, sp_frame->left * scale, s_right, point);
+	eglVertex3fv (point);
+
+	eglTexCoord2f (sp_frame->smax, 0);
+	VectorMA (e->origin, sp_frame->up * scale, s_up, point);
+	VectorMA (point, sp_frame->right * scale, s_right, point);
+	eglVertex3fv (point);
+
+	eglTexCoord2f (sp_frame->smax, sp_frame->tmax);
+	VectorMA (e->origin, sp_frame->down * scale, s_up, point);
+	VectorMA (point, sp_frame->right * scale, s_right, point);
+	eglVertex3fv (point);
+
+	eglEnd ();
+}
+
+// QuadEXQ: QX_COLORMAP_GREEN -- tinted green, a soft green halo, a white-hot core
+static void R_DrawSprite_QXGreen (entity_t *e, mspriteframe_t *sp_frame, float *s_up, float *s_right)
+{
+	eglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	eglEnable (GL_ALPHA_TEST);
+	eglColor3f (0.30f, 1.0f, 0.35f);
+	R_DrawSprite_QXQuad (e, sp_frame, s_up, s_right, 1.0f);
+	eglDisable (GL_ALPHA_TEST);
+
+	eglDepthMask (GL_FALSE);
+	eglEnable (GL_BLEND);
+	eglBlendFunc (GL_SRC_ALPHA, GL_ONE);	// (by alpha: the clear texels around the ball add nothing -- GL_ONE drew a square)
+	Fog_StartAdditive ();
+	eglColor3f (0.05f, 0.30f, 0.08f);			// halo
+	R_DrawSprite_QXQuad (e, sp_frame, s_up, s_right, 1.6f);
+	eglColor3f (0.35f, 0.40f, 0.35f);			// core
+	R_DrawSprite_QXQuad (e, sp_frame, s_up, s_right, 0.6f);
+	Fog_StopAdditive ();
+	eglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	eglDisable (GL_BLEND);
+	eglDepthMask (GL_TRUE);
+
+	eglColor3f (1, 1, 1);
+	eglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+}
+
 void R_DrawSpriteModel (entity_t *e)
 {
 	vec3_t			point, v_forward, v_right, v_up;
@@ -168,6 +225,13 @@ void R_DrawSpriteModel (entity_t *e)
 
     GL_Bind(sp_frame->gltexture);
 
+	if (e->colormap == QX_COLORMAP_GREEN)
+	{	// QuadEXQ: the BFG ball -- a grey sprite drawn glowing green (the
+		// Quake palette has no real green): tinted, then its light added on top
+		R_DrawSprite_QXGreen (e, sp_frame, s_up, s_right);
+		goto qx_done;
+	}
+
 	eglEnable (GL_ALPHA_TEST);
 	eglBegin (GL_TRIANGLE_FAN); //was GL_QUADS, but changed to support r_showtris
 
@@ -194,6 +258,7 @@ void R_DrawSpriteModel (entity_t *e)
 	eglEnd ();
 	eglDisable (GL_ALPHA_TEST);
 
+qx_done:
 	//johnfitz: offset decals
 #ifndef DIRECT3D9_WRAPPER // Per mh as workaround for hipnotic decals rendering through walls April 25 2018
 	if (psprite->type == SPR_ORIENTED)

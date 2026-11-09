@@ -719,6 +719,7 @@ extern build_t build;
 // (QX_COLORMAP_BASE + shirt * 14 + pants), for monsters that use player.mdl
 #define QX_COLORMAP_BASE 32
 #define QX_COLORMAP_RED 255		// QuadEXQ: a non-player model drawn blood red (the Vore Lord)
+#define QX_COLORMAP_GREEN 254	// QuadEXQ: a sprite drawn glowing green (the BFG ball)
 
 #endif // ! __QUAKEDEF_H__
 
