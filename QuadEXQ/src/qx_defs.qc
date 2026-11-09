@@ -297,6 +297,7 @@ void() QX_RevengeGo;
 .float	qx_safe_next;
 .float	qx_back_prot;
 .float	qx_delta;			// Delta team member 1..3 (an ally, qx_hunter.qc)
+.entity	qx_chainfrom;			// BFG/plasma chain lightning: who fired it (no jumping to friends)
 .float	qx_dl_lost;			// last time it saw what it was after
 .float	qx_dl_look;			// next target search
 float	qx_arena_title_at;

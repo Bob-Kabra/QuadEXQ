@@ -86,11 +86,13 @@ void() MakeChainBFG =
 {
 local entity	head;
 
-
-  	
+	if (!self.qx_chainfrom)
+		self.qx_chainfrom = self.owner.owner;	// QuadEXQ: who fired the shot this came from
  	head = findradius(self.origin, 200 + self.dmg * 5);   //this is how far it will chain
 	while (head)
 	{
+	// QuadEXQ: a player's BFG lightning never jumps to Delta Team (or another player)
+	if (!((self.qx_chainfrom.flags & FL_CLIENT) && (head.qx_delta || (head.flags & FL_CLIENT))))
 	if( (head.health > 1) && (head != self) && (head != self.owner) && (head != self.owner.owner) && !(head.items & IT_INVISIBILITY) ){
 			if (visible(head))
 			{
@@ -208,7 +210,9 @@ void(float se, float orz) Dshot =
 		rocket.nextthink = time + 0.1 ;		//次回thinkで指定された関数を呼び出すタイミングを指定
 		rocket.think =Dshot_Fly;		//nextthinkで指定したタイミングで呼び出す関数名
 
-		setmodel (rocket, "progs/s_light.spr");		//ロケットのmodel指定
+		setmodel (rocket, "progs/bfgball.spr");	// QuadEXQ: the same big green ball as your BFG (was progs/s_light.spr)
+		if (cvar ("qx_colormap_ok") >= 2)
+			rocket.colormap = 254;
 		setsize (rocket, '0 0 0', '0 0 0');		//ロケットのサイズ指定
 		setorigin (rocket, self.origin + v_forward*8 + '0 0 1' * orz);
 
@@ -317,6 +321,7 @@ void() monster_demon2 =
 	precache_model ("progs/demon2.mdl");
 	precache_model ("progs/h_demon.mdl");
 	precache_model ("progs/s_bfg.spr");
+	precache_model ("progs/bfgball.spr");	// QuadEXQ
    	precache_model ("progs/s_light.spr");
 	precache_sound ("weapons/zap.wav");
 	precache_sound ("demon/dshot1.wav");

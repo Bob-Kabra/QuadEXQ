@@ -1367,6 +1367,7 @@ l_chain.t_width = self.t_width;
 l_chain.dmg = self.dmg;
 l_chain.nextthink = time + 0.1;
 l_chain.think = MakeChainBFG;
+l_chain.qx_chainfrom = self.owner;	// QuadEXQ: the shooter (friendly lightning check)
 
 vel = normalize(self.velocity);
 self.velocity = vel * 1000;
@@ -1492,6 +1493,7 @@ local float	damage,rand,tmp;
 	  l_chain.dmg = damage;
 	  l_chain.nextthink = time + 1*random();
 	  l_chain.think = MakeChainBFG;
+	  l_chain.qx_chainfrom = self.owner;	// QuadEXQ: the shooter
 	  tmp=tmp+1;
 	}
 	
