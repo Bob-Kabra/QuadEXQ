@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v0.95 beta
+  QuadEXQ  v0.96 beta
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -585,7 +585,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
  13. Version history
 ==============================================================================
 
-  v0.95 beta
+  v0.96 beta
     Game:
     - The end map has a story of its own now. Play it to the end.
       (It needs maps/ender.bsp and music/track12.mp3, both in the zip.)
