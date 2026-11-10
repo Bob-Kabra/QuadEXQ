@@ -34,6 +34,8 @@ void(entity e, string a, string b, string c, string d) QX_Msg =
 
 void(entity e, string a, string b, string c, string d) QX_Center =
 {
+	if (qx_finale)
+		return;			// the end text is on screen (a centerprint would replace it)
 	if (e.ishuman)
 		qx_cprint4 (e, a, b, c, d);
 };
@@ -2307,6 +2309,12 @@ void() QX_ReviveThink =
 	local entity m, p, oself;
 	local float ok;
 
+	if (intermission_running)
+	{	// the level is over (the end text, a score card): no more comebacks
+		remove (self);
+		return;
+	}
+
 	// don't pop up inside a player: wait
 	p = findradius (self.qx_home, 80);
 	while (p)
@@ -2418,6 +2426,11 @@ void() QX_RiftCrackle =
 
 void() QX_RiftWarn =
 {
+	if (intermission_running)
+	{
+		remove (self);
+		return;
+	}
 	self.ltime = time + QX_REV_WARN;
 	setorigin (self, self.qx_home);
 	setmodel (self, "progs/s_light.spr");

@@ -113,6 +113,7 @@ void() finale_1 =
 
 	intermission_exittime = time + 10000000;	// never allow exit
 	intermission_running = 1;
+	qx_finale = TRUE;		// QuadEXQ: nothing may print over the end text now
 
 	// find the intermission spot
 	pos = find (world, classname, "info_intermission");
@@ -180,12 +181,12 @@ void() finale_3 =
 
 // QuadEXQ: THE ENDER -- once the stock text has typed out, the screen
 // turns over to a second page: what became of Delta Team
-float	QX_FINALE_PAGE2	= 42;	// seconds (the stock text types at 8 a second)
+float	QX_FINALE_PAGE2	= 52;	// seconds (the first page types at 8 characters a second)
 
 void() qx_finale_page2 =
 {
 	WriteByte (MSG_ALL, SVC_FINALE);
-	WriteString (MSG_ALL, "\n\nAnd Delta Team?\n\n\nFour of you brought it down together.\n\nThat's no Delta any more.\n\n\nCall it what it is:\n\nQUAD!");
+	WriteString (MSG_ALL, "\n\nAnd Delta Team?\n\nFour of you brought it down together.\nThat's no Delta any more.\nCall it what it is:\n\nQUAD!\n\n(Quad Damage -- just as id intended.)\n\n\nThank you for playing!!\n\nQuadEXQ, built on Quake.\nThank you, id Software --\n30 years on, we're still fragging.");
 	remove (self);
 };
 
@@ -229,6 +230,9 @@ void() finale_4 =
 	}
 	// start the end text
 	WriteByte (MSG_ALL, SVC_FINALE);
+	if (serverflags & QX_ENDER_WON)	// QuadEXQ: THE ENDER -- the Lord is down, with Delta Team
+		WriteString (MSG_ALL, "Congratulations and well done -- again!\nThe Shub-Niggurath Lord is no more.\n\nThe Cyber Delta threw everything it had\nat you. You took it all, and blew it to\npieces with the BFG. That is courage.\n\nThe raging slipgates fall silent. No\nmore of Shub's spawn will come through.\n\nYou are the master now -- again.\nThe creator of EXQ salutes you.\n\nAnd you did not fight alone...");
+	else
 	WriteString (MSG_ALL, "Congratulations and well done! You have\nbeaten the hideous Shub-Niggurath, and\nher hundreds of ugly changelings and\nmonsters. You have proven that your\nskill and your cunning are greater than\nall the powers of Quake. You are the\nmaster now. Id Software salutes you.");
 
 	if (serverflags & QX_ENDER_WON)	// QuadEXQ: THE ENDER -- a second page for Delta Team

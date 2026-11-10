@@ -346,6 +346,7 @@ void() QX_ChallengeTest;
 float	QX_ENDER_WON		= 16384;	// serverflags: the Cyberdemon boss is down (end.bsp goes to the finale)
 float	QX_ENDER_MODE		= 5;		// scratch1: off to ender.bsp for the Cyberdemon boss
 float	qx_ender_go;			// 1: the gate turned on you, respawn goes to ender.bsp (2: on the way)
+float	qx_finale;				// end.bsp's end text is up: no centerprints, no rifts
 float	qx_ender_arena;			// this is the Cyberdemon boss fight
 .float	qx_ender_boss;			// the Cyberdemon boss (only your BFG's direct hits hurt it)
 .float	qx_ender_scout;			// one of its scouts
