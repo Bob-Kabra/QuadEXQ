@@ -263,216 +263,484 @@ void() CyberhMissileTouch =
 };
 
 
-void() cyber_missile21; // To make jumping to last frames possible
+// ============================================================================
+// QuadEXQ: the Cyberdemon, reworked as the CYBER DELTA -- THE ENDER's boss
+// (ender.bsp only: anywhere else monster_cyber turns into a BFG fiend)
+//
+//  * moves like Delta Team: runs fast and circle-strafes, even while shooting
+//  * three weapons, saturation fire: 16 QUTF Ogre rockets, 256 Ogre
+//    chaingun rounds (twice the Ogre's rate), 64 Mega Enforcer homing
+//    (drunk) rockets
+//  * no more sky-high jump: a jetpack instead -- up to QX_CY_JETS full
+//    jumps in mid-air
+//  * BFG dodge: a BFG ball coming its way -> it jumps (or jets) aside,
+//    fires two rockets as it goes, and lobs an Ogre lava-ball grenade
+//    when it lands (one time in five: four thunderbolts, 120 damage each,
+//    then it stands frozen for QX_CY_STUN seconds)
+//  * your BFG's lightning fries its jetpack for QX_CY_JETLOCK seconds
+//  * now and then the jet knight's rocket-propelled body slam (QX_JetStart)
+//  * up close: a punch, QX_CY_PUNCH damage
+// ============================================================================
 
-void() cyber_missile1  =[ $shoot1,     cyber_missile2  ] {ai_face();
-if(random()<0.5)
+float	QX_CY_RUN		= 24;	// run speed per frame (Delta Team: 24; was 12-15)
+float	QX_CY_STRAFE	= 14;	// sideways per frame while running / shooting
+float	QX_CY_JETS		= 3;	// jetpack jumps in mid-air
+float	QX_CY_JUMP		= 420;	// a jump / jet: upward speed
+float	QX_CY_SIDE		= 450;	// a dodge: sideways speed
+float	QX_CY_DODGE_GAP	= 0.6;	// seconds between BFG dodges
+float	QX_CY_DODGE_CHANCE = 0.8;	// how often it sees a BFG ball in time
+// saturation fire
+float	QX_CY_ROCKETS	= 16;	// QUTF Ogre rockets, one a frame
+float	QX_CY_CG_SHOTS	= 256;	// chaingun rounds, at twice the Ogre's rate (0.05 s)
+float	QX_CY_DRUNK		= 64;	// homing rockets, two a frame
+float	QX_CY_BOLTS		= 4;	// thunderbolts, one a frame
+float	QX_CY_PUNCH		= 70;	// melee: a punch when you get close
+float	QX_CY_PUNCH_RANGE	= 110;	// how close is close
+float	QX_CY_BOLT_CHANCE	= 0.2;	// landing after a BFG dodge: the thunderbolts instead of the lava grenade
+
+float() QX_F;
+void() FireDrunkMissile;
+void() DrunkExplode;
+void() drunkthink;
+void() QOgreFireTGrenade;
+void() QOgreGrenadeExplode;
+void() QOgreGrenadeTouch;
+
+void() cyber_run1;
+void() cyber_punch1;
+
+// frozen for a moment after its thunderbolts: no moving, no dodging
+void() cyber_stun =[ $stand1, cyber_stun ]
 {
-ai_face();
-	sound (self, CHAN_VOICE, "cyber/cyjump.wav", 1, ATTN_NORM);
-	 
-	 makevectors (self.angles);
-	 self.origin_z = self.origin_z + 1;
-	 self.velocity = v_forward * 500 + '0 0 1000';
-	 if (self.flags & FL_ONGROUND)
- self.flags = self.flags - FL_ONGROUND;
-}		
-};
-void() cyber_missile2  =[ $shoot2,     cyber_missile3  ] {ai_face();CyberFireRLG();};
-void() cyber_missile3  =[ $shoot3,     cyber_missile4  ]
-{
-   ai_face();
-   makevectors (self.angles);
-   traceline (self.origin + '0 0 30' + v_right * -22, self.enemy.origin + '0 0 20', FALSE, self);
-   if (trace_ent != self.enemy)
-      cyber_missile21 ();
-   if (self.enemy.health <= 0)
-      cyber_missile21 ();
-};
-void() cyber_missile4  =[ $shoot4,     cyber_missile5  ] {ai_face();CyberDemonFireMissile();};
-void() cyber_missile5  =[ $shoot5,     cyber_missile6  ] {ai_face();CyberMissile(0);};
-void() cyber_missile6  =[ $shoot6,     cyber_missile7  ] {ai_face();CyberMissile(2);CyberMissile(-2);CyberMissile(1);CyberMissile(-1);};
-void() cyber_missile7  =[ $shoot7,     cyber_missile8  ] {ai_face();CyberMissile(8);CyberMissile(-8);CyberMissile(3);CyberMissile(-3);};
-void() cyber_missile8  =[ $shoot8,     cyber_missile9  ] {ai_face();};
-void() cyber_missile9  =[ $shoot3,     cyber_missile10 ] 
-{
-   ai_face();
-   makevectors (self.angles);
-   traceline (self.origin + '0 0 30' + v_right * -22, self.enemy.origin + '0 0 20', FALSE, self);
-   if (trace_ent != self.enemy)
-      cyber_missile21 ();
-   if (self.enemy.health <= 0)
-      cyber_missile21 ();
-};
-void() cyber_missile10 =[ $shoot4,     cyber_missile11 ] {ai_face();CyberDemonFireMissile();};
-void() cyber_missile11 =[ $shoot5,     cyber_missile12 ] {ai_face();CyberMissile(1);CyberMissile(-1);};
-void() cyber_missile12 =[ $shoot6,     cyber_missile13 ] {ai_face();CyberMissile(-2);CyberMissile(2);CyberMissile(0);CyberMissile(-1);};
-void() cyber_missile13 =[ $shoot7,     cyber_missile14 ] {ai_face();CyberMissile(-4);CyberMissile(4);CyberMissile(2);CyberMissile(-2);};
-void() cyber_missile14 =[ $shoot8,     cyber_missile15 ] {ai_face();};
-void() cyber_missile15 =[ $shoot3,     cyber_missile16 ]
-{
-   ai_face();
-   makevectors (self.angles);
-   traceline (self.origin + '0 0 30' + v_right * -22, self.enemy.origin + '0 0 20', FALSE, self);
-   if (trace_ent != self.enemy)
-      cyber_missile21 ();
-   if (self.enemy.health <= 0)
-      cyber_missile21 ();
-};
-void() cyber_missile16 =[ $shoot4,     cyber_missile17 ] {ai_face();CyberDemonFireMissile();};
-void() cyber_missile17 =[ $shoot5,     cyber_missile18 ] {ai_face();CyberMissile(5);CyberMissile(-5);};
-void() cyber_missile18 =[ $shoot6,     cyber_missile19 ] {ai_face();CyberMissile(-3);CyberMissile(3);CyberMissile(1);CyberMissile(-1);};
-void() cyber_missile19 =[ $shoot7,     cyber_missile20 ] {ai_face();CyberMissile(10);CyberMissile(-10);CyberMissile(2);CyberMissile(-2);};
-void() cyber_missile20 =[ $shoot8,     cyber_missile21 ] {ai_face();CyberMissile(-10);CyberMissile(10);};
-void() cyber_missile21 =[ $shoot3,     cyber_missile22 ] {ai_face();CyberMissile(0);};
-void() cyber_missile22 =[ $shoot2,     cyber_missile23 ] {ai_face();};
-void() cyber_missile23 =[ $shoot1,     cyber_run1 ]
-{
-   ai_face();
+	if (time > self.qx_cy_stun)
+		self.think = cyber_run1;
 };
 
-void() cyber_hmissile1  =[ $shoot1,     cyber_hmissile2  ] {ai_face();
-if(random()<0.5)
+// all the extra models and sounds (shambler.qc calls this too: it can turn
+// into a Cyberdemon after the map has loaded)
+void() cyber_precache =
 {
-ai_face();
-	sound (self, CHAN_VOICE, "cyber/cyjump.wav", 1, ATTN_NORM);
-	 
-	 makevectors (self.angles);
-	 self.origin_z = self.origin_z + 1;
-	 self.velocity = v_forward * 500 + '0 0 1000';
-	 if (self.flags & FL_ONGROUND)
- self.flags = self.flags - FL_ONGROUND;
-}		
-};
-void() cyber_hmissile2  =[ $shoot2,     cyber_hmissile3  ] {ai_face();};
-void() cyber_hmissile3  =[ $shoot3,     cyber_hmissile4  ]
-{
-   ai_face();
-   makevectors (self.angles);
-   traceline (self.origin + '0 0 30' + v_right * -22, self.enemy.origin + '0 0 20', FALSE, self);
-   if (trace_ent != self.enemy)
-      cyber_missile21 ();
-   if (self.enemy.health <= 0)
-      cyber_missile21 ();
-};
-void() cyber_hmissile4  =[ $shoot4,     cyber_hmissile5  ] {ai_face();};
-void() cyber_hmissile5  =[ $shoot5,     cyber_hmissile6  ] {ai_face();CyberhMissile();};
-void() cyber_hmissile6  =[ $shoot6,     cyber_hmissile7  ] {ai_face();CyberhMissile();CyberhMissile();};
-void() cyber_hmissile7  =[ $shoot7,     cyber_hmissile8  ] {ai_face();CyberhMissile();CyberhMissile();};
-void() cyber_hmissile8  =[ $shoot8,     cyber_hmissile9  ] {ai_face();};
-void() cyber_hmissile9  =[ $shoot3,     cyber_hmissile10 ] 
-{
-   ai_face();
-   makevectors (self.angles);
-   traceline (self.origin + '0 0 30' + v_right * -22, self.enemy.origin + '0 0 20', FALSE, self);
-   if (trace_ent != self.enemy)
-      cyber_missile21 ();
-   if (self.enemy.health <= 0)
-      cyber_missile21 ();
-};
-void() cyber_hmissile10 =[ $shoot4,     cyber_hmissile11 ] {ai_face();};
-void() cyber_hmissile11 =[ $shoot5,     cyber_hmissile12 ] {ai_face();CyberhMissile();CyberhMissile();};
-void() cyber_hmissile12 =[ $shoot6,     cyber_hmissile13 ] {ai_face();CyberhMissile();CyberhMissile();};
-void() cyber_hmissile13 =[ $shoot7,     cyber_hmissile14 ] {ai_face();CyberhMissile();CyberhMissile();};
-void() cyber_hmissile14 =[ $shoot8,     cyber_hmissile15 ] {ai_face();};
-void() cyber_hmissile15 =[ $shoot3,     cyber_hmissile16 ]
-{
-   ai_face();
-   makevectors (self.angles);
-   traceline (self.origin + '0 0 30' + v_right * -22, self.enemy.origin + '0 0 20', FALSE, self);
-   if (trace_ent != self.enemy)
-      cyber_missile21 ();
-   if (self.enemy.health <= 0)
-      cyber_missile21 ();
-};
-void() cyber_hmissile16 =[ $shoot4,     cyber_hmissile17 ] {ai_face();};
-void() cyber_hmissile17 =[ $shoot5,     cyber_hmissile18 ] {ai_face();CyberhMissile();CyberhMissile();};
-void() cyber_hmissile18 =[ $shoot6,     cyber_hmissile19 ] {ai_face();CyberhMissile();CyberhMissile();};
-void() cyber_hmissile19 =[ $shoot7,     cyber_hmissile20 ] {ai_face();};
-void() cyber_hmissile20 =[ $shoot8,     cyber_hmissile21 ] {ai_face();};
-void() cyber_hmissile21 =[ $shoot3,     cyber_hmissile22 ] {ai_face();};
-void() cyber_hmissile22 =[ $shoot2,     cyber_hmissile23 ] {ai_face();};
-void() cyber_hmissile23 =[ $shoot1,     cyber_run1 ]
-{
-   ai_face();
+	precache_model ("progs/missile.mdl");
+	precache_model ("progs/lavaball.mdl");
+	precache_model ("progs/memissil.mdl");
+	precache_model ("progs/s_explod.spr");
+	precache_sound ("weapons/sgun1.wav");		// QUTF Ogre rocket
+	precache_sound ("weapons/cg_strt.wav");		// chaingun
+	precache_sound ("weapons/cgshot2.wav");
+	precache_sound ("me/me_fire2.wav");			// drunk rocket
+	precache_sound ("weapons/grenade.wav");		// lava-ball grenade
+	precache_sound ("weapons/r_exp3.wav");
+	precache_sound ("weapons/rocket1i.wav");	// jetpack
+	precache_sound ("knight/ksight.wav");		// the jet knight's body slam (QX_JetStart / QX_JetTouch)
+	precache_sound ("knight/sword2.wav");
+	precache_sound ("player/land2.wav");
+	precache_sound ("shambler/smack.wav");		// the punch
 };
 
-void() cyber_lmissile1  =[ $shoot1,     cyber_lmissile2  ] {ai_face();
-if(random()<0.5)
+// the gun arm
+vector() CyberMuzzle =
 {
-ai_face();
-	sound (self, CHAN_VOICE, "cyber/cyjump.wav", 1, ATTN_NORM);
-	 
-	 makevectors (self.angles);
-	 self.origin_z = self.origin_z + 1;
-	 self.velocity = v_forward * 500 + '0 0 1000';
-	 if (self.flags & FL_ONGROUND)
- self.flags = self.flags - FL_ONGROUND;
-}		
-};
-void() cyber_lmissile2  =[ $shoot2,     cyber_lmissile3  ] {ai_face();};
-void() cyber_lmissile3  =[ $shoot3,     cyber_lmissile4  ]
-{
-   ai_face();
-   makevectors (self.angles);
-   traceline (self.origin + '0 0 30' + v_right * -22, self.enemy.origin + '0 0 20', FALSE, self);
-   if (trace_ent != self.enemy)
-      cyber_missile21 ();
-   if (self.enemy.health <= 0)
-      cyber_missile21 ();
-};
-void() cyber_lmissile4  =[ $shoot4,     cyber_lmissile5  ] {ai_face();hknightMissile();};
-void() cyber_lmissile5  =[ $shoot5,     cyber_lmissile6  ] {ai_face();hknight_shot(-5);hknight_shot(-10);hknight_shot(-15);hknight_shot(-20);hknight_shot(-25);hknight_shot(-30);hknight_shot(-35);hknight_shot(-40);hknight_shot(35);hknight_shot(30);hknight_shot(25);hknight_shot(20);hknight_shot(15);hknight_shot(10);hknight_shot(5);hknight_shot(0);};
-void() cyber_lmissile6  =[ $shoot6,     cyber_lmissile7  ] {ai_face();hknight_shot(-3);hknight_shot(-7);hknight_shot(-13);hknight_shot(-17);hknight_shot(-23);hknight_shot(-27);hknight_shot(-33);hknight_shot(-37);hknight_shot(32);hknight_shot(28);hknight_shot(22);hknight_shot(18);hknight_shot(12);hknight_shot(8);hknight_shot(3);hknight_shot(1);};
-void() cyber_lmissile7  =[ $shoot7,     cyber_lmissile8  ] {ai_face();hknight_shot(-5);hknight_shot(-10);hknight_shot(-15);hknight_shot(-20);hknight_shot(-25);hknight_shot(-30);hknight_shot(-35);hknight_shot(-40);hknight_shot(35);hknight_shot(30);hknight_shot(25);hknight_shot(20);hknight_shot(15);hknight_shot(10);hknight_shot(5);hknight_shot(0);};
-void() cyber_lmissile8  =[ $shoot8,     cyber_lmissile9  ] {ai_face();};
-void() cyber_lmissile9  =[ $shoot3,     cyber_lmissile10 ] 
-{
-   ai_face();
-   makevectors (self.angles);
-   traceline (self.origin + '0 0 30' + v_right * -22, self.enemy.origin + '0 0 20', FALSE, self);
-   if (trace_ent != self.enemy)
-      cyber_missile21 ();
-   if (self.enemy.health <= 0)
-      cyber_missile21 ();
-};
-void() cyber_lmissile10 =[ $shoot4,     cyber_lmissile11 ] {ai_face();hknightMissile();};
-void() cyber_lmissile11 =[ $shoot5,     cyber_lmissile12 ] {ai_face();hknight_shot(-3);hknight_shot(-7);hknight_shot(-13);hknight_shot(-17);hknight_shot(-23);hknight_shot(-27);hknight_shot(-33);hknight_shot(-37);hknight_shot(32);hknight_shot(28);hknight_shot(22);hknight_shot(18);hknight_shot(12);hknight_shot(8);hknight_shot(3);hknight_shot(1);};
-void() cyber_lmissile12 =[ $shoot6,     cyber_lmissile13 ] {ai_face();hknightMissile();};
-void() cyber_lmissile13 =[ $shoot7,     cyber_lmissile14 ] {ai_face();hknight_shot(-3);hknight_shot(-7);hknight_shot(-13);hknight_shot(-17);hknight_shot(-23);hknight_shot(-27);hknight_shot(-33);hknight_shot(-37);hknight_shot(32);hknight_shot(28);hknight_shot(22);hknight_shot(18);hknight_shot(12);hknight_shot(8);hknight_shot(3);hknight_shot(1);};
-void() cyber_lmissile14 =[ $shoot8,     cyber_lmissile15 ] {ai_face();};
-void() cyber_lmissile15 =[ $shoot3,     cyber_lmissile16 ]
-{
-   ai_face();
-   makevectors (self.angles);
-   traceline (self.origin + '0 0 30' + v_right * -22, self.enemy.origin + '0 0 20', FALSE, self);
-   if (trace_ent != self.enemy)
-      cyber_missile21 ();
-   if (self.enemy.health <= 0)
-      cyber_missile21 ();
-};
-void() cyber_lmissile16 =[ $shoot4,     cyber_lmissile17 ] {ai_face();};
-void() cyber_lmissile17 =[ $shoot5,     cyber_lmissile18 ] {ai_face();hknightMissile();};
-void() cyber_lmissile18 =[ $shoot6,     cyber_lmissile19 ] {ai_face();hknight_shot(-3);hknight_shot(-7);hknight_shot(-13);hknight_shot(-17);hknight_shot(-23);hknight_shot(-27);hknight_shot(-33);hknight_shot(-37);hknight_shot(32);hknight_shot(28);hknight_shot(22);hknight_shot(18);hknight_shot(12);hknight_shot(8);hknight_shot(3);hknight_shot(1);};
-void() cyber_lmissile19 =[ $shoot7,     cyber_lmissile20 ] {ai_face();hknight_shot(-5);hknight_shot(-10);hknight_shot(-15);hknight_shot(-20);hknight_shot(-25);hknight_shot(-30);hknight_shot(-35);hknight_shot(-40);hknight_shot(35);hknight_shot(30);hknight_shot(25);hknight_shot(20);hknight_shot(15);hknight_shot(10);hknight_shot(5);hknight_shot(0);};
-void() cyber_lmissile20 =[ $shoot8,     cyber_lmissile21 ] {ai_face();hknight_shot(-3);hknight_shot(-7);hknight_shot(-13);hknight_shot(-17);hknight_shot(-23);hknight_shot(-27);hknight_shot(-33);hknight_shot(-37);hknight_shot(32);hknight_shot(28);hknight_shot(22);hknight_shot(18);hknight_shot(12);hknight_shot(8);hknight_shot(3);hknight_shot(1);};
-void() cyber_lmissile21 =[ $shoot3,     cyber_lmissile22 ] {ai_face();hknightMissile();};
-void() cyber_lmissile22 =[ $shoot2,     cyber_lmissile23 ] {ai_face();};
-void() cyber_lmissile23 =[ $shoot1,     cyber_run1 ]
-{
-   ai_face();
+	makevectors (self.angles);
+	return self.origin + '0 0 30' + v_right * -22;
 };
 
+// QUTF Ogre rocket (qogre_MissileTouch: 40 +- 60 damage), from the arm
+void(float spread) CyberQRocket =
+{
+	local entity en, rocket;
+	local vector dir, org;
+
+	en = self.enemy;
+	org = CyberMuzzle ();
+	dir = normalize (en.origin - en.velocity * 0.2 - org);
+	if (spread)
+	{
+		dir = vectoangles (dir);
+		dir_x = 0 - dir_x;
+		dir_y = dir_y + spread;
+		makevectors (dir);
+		dir = v_forward;
+	}
+	self.effects = self.effects | EF_MUZZLEFLASH;
+	sound (self, CHAN_WEAPON, "weapons/sgun1.wav", 1, ATTN_NORM);
+
+	rocket = spawn ();
+	rocket.owner = self;
+	rocket.movetype = MOVETYPE_FLYMISSILE;
+	rocket.solid = SOLID_BBOX;
+	rocket.enemy = en;
+	rocket.classname = "main";
+	rocket.velocity = dir * 500;
+	rocket.angles = vectoangles (rocket.velocity);
+	rocket.touch = qogre_MissileTouch;
+	rocket.qx_nodeflect = self.qx_ender_boss;	// the boss's rockets can't be swatted back
+	rocket.nextthink = time + 6;
+	rocket.think = SUB_Remove;
+	setmodel (rocket, "progs/missile.mdl");
+	setsize (rocket, '0 0 0', '0 0 0');
+	setorigin (rocket, org);
+};
+
+// Ogre chaingun round, from the arm (aims behind a moving target, 10 damage)
+void() CyberChaingun =
+{
+	local entity en;
+	local vector dir, org, vel;
+
+	en = self.enemy;
+	org = CyberMuzzle ();
+	self.effects = self.effects | EF_MUZZLEFLASH;
+	sound (self, CHAN_WEAPON, "weapons/cgshot2.wav", 1, ATTN_NORM);
+
+	dir = normalize (en.origin - en.velocity * 0.7 - org);
+	FireTracer (dir);
+	traceline (org, org + dir * 2048, FALSE, self);
+	vel = (dir + 2 * trace_plane_normal) * 200;
+	if (trace_ent.takedamage)
+		T_Damage (trace_ent, self, self, 10);
+	CG_puff (trace_endpos - dir * 4, vel, 20, 0.3);
+};
+
+// Mega Enforcer drunk rocket, from the arm
+void() CyberDrunk =
+{
+	local entity missile;
+	local vector org;
+
+	org = CyberMuzzle ();
+	self.effects = self.effects | EF_MUZZLEFLASH;
+	sound (self, CHAN_WEAPON, "me/me_fire2.wav", 1, ATTN_NORM);
+
+	missile = spawn ();
+	missile.owner = self;
+	missile.enemy = self.enemy;
+	missile.movetype = MOVETYPE_FLYMISSILE;
+	missile.solid = SOLID_BBOX;
+	missile.velocity = normalize (self.enemy.origin - org) * (450 + random () * 50);
+	makevectors (missile.velocity);
+	missile.velocity = missile.velocity + v_up * (random () * 20 - 10) + v_right * (random () * 80 - 40);
+	missile.angles = vectoangles (missile.velocity);
+	missile.touch = DrunkExplode;
+	missile.cnt = 1;
+	missile.nextthink = time + 0.25;
+	missile.think = drunkthink;
+	setmodel (missile, "progs/memissil.mdl");
+	setsize (missile, '0 0 0', '0 0 0');
+	setorigin (missile, org);
+};
+
+// ---------------------------------------------------------------- movement
+
+void() CyberJetPuff =
+{
+	sound (self, CHAN_BODY, "weapons/rocket1i.wav", 1, ATTN_NORM);
+	particle (self.origin + '0 0 -20', '0 0 -120', 230, 40);
+	particle (self.origin + '0 0 -20', '0 0 -80', 233, 30);
+};
+
+// one jump: on the ground a plain jump, in the air a jetpack jump (if any left)
+float(vector side) CyberJump =
+{
+	if (self.flags & FL_ONGROUND)
+	{
+		self.qx_cy_jets = QX_CY_JETS;
+		sound (self, CHAN_VOICE, "cyber/cyjump.wav", 1, ATTN_NORM);
+	}
+	else
+	{
+		if (self.qx_cy_jets < 1)
+			return FALSE;
+		if (time < self.qx_cy_jetlock)
+			return FALSE;			// fried by your BFG's lightning
+		self.qx_cy_jets = self.qx_cy_jets - 1;
+		CyberJetPuff ();
+	}
+	self.origin_z = self.origin_z + 1;
+	self.velocity = side;
+	self.velocity_z = QX_CY_JUMP;
+	self.flags = self.flags - (self.flags & FL_ONGROUND);
+	self.qx_dodging = 1;			// (QX_AIHook stops the slide on landing)
+	return TRUE;
+};
+
+// a BFG ball that will pass close to us?
+float() CyberBFGThreat =
+{
+	local entity e;
+	local vector to, v;
+	local float d, miss;
+
+	e = findradius (self.origin, 520);
+	while (e)
+	{
+		if (e.classname == "b1")
+		if (e.owner != self)
+		{
+			v = normalize (e.velocity);
+			to = self.origin - e.origin;
+			d = v * to;				// how far ahead of the ball we are
+			if (d > 0)
+			{
+				miss = vlen (to - v * d);	// how close it passes
+				if (miss < 90)
+					return TRUE;
+			}
+		}
+		e = e.chain;
+	}
+	return FALSE;
+};
+
+// called every run / attack frame
+void() CyberAct =
+{
+	local vector a, side;
+	local float yaw, s;
+
+	if (self.health <= 0)
+		return;
+
+	// landed after a BFG dodge: the lava-ball grenade
+	if (self.flags & FL_ONGROUND)
+	{
+		self.qx_cy_jets = QX_CY_JETS;
+		if (self.qx_cy_lava)
+		{
+			self.qx_cy_lava = 0;
+			if (self.enemy.health > 0)
+			{
+				ai_face ();
+				if (random () < QX_CY_BOLT_CHANCE)
+					self.qx_cy_bolts = QX_CY_BOLTS;	// now and then thunderbolts instead (120 damage each)
+				else
+					QOgreFireTGrenade ();
+			}
+		}
+	}
+
+	// too close: it drops whatever it is doing and punches
+	if (self.think != cyber_punch1)
+	if (self.qx_cy_bolts < 1)
+	if (time > self.qx_cy_punch_next)
+	if (self.enemy.health > 0)
+	if (vlen (self.enemy.origin - self.origin) < QX_CY_PUNCH_RANGE)
+	{
+		self.qx_cy_punch_next = time + 1;
+		self.think = cyber_punch1;
+		self.nextthink = time + 0.05;
+		return;
+	}
+
+	// thunderbolts still to fire, one a frame; after the last one it freezes
+	if (self.qx_cy_bolts > 0)
+	{
+		self.qx_cy_bolts = self.qx_cy_bolts - 1;
+		if (self.enemy.health > 0)
+		{
+			ai_face ();
+			CyberFireRLG ();
+		}
+		if (self.qx_cy_bolts < 1)
+		{
+			self.qx_cy_stun = time + QX_CY_STUN;
+			self.think = cyber_stun;
+			self.nextthink = time + 0.1;
+			return;
+		}
+	}
+
+	// BFG dodge: aside (jump or jet), two rockets on the way
+	if (time > self.qx_cy_dodge_next)
+	if (CyberBFGThreat ())
+	{
+		self.qx_cy_dodge_next = time + QX_CY_DODGE_GAP;
+		if (random () < QX_CY_DODGE_CHANCE)
+		{
+			a = '0 0 0';
+			a_y = vectoyaw (self.enemy.origin - self.origin);
+			makevectors (a);
+			s = 1;
+			if (random () < 0.5)
+				s = -1;
+			side = v_right * s * QX_CY_SIDE;
+			if (CyberJump (side))
+			{
+				if (self.enemy.health > 0)
+				{
+					CyberQRocket (-4);
+					CyberQRocket (4);
+				}
+				self.qx_cy_lava = 1;
+			}
+		}
+	}
+
+	if (self.enemy.health <= 0)
+		return;
+
+	// circle-strafe like Delta Team
+	if (time > self.qx_strafe_next)
+	{
+		self.lefty = 1 - self.lefty;
+		self.qx_strafe_next = time + 0.6 + random () * 0.9;
+	}
+	yaw = vectoyaw (self.enemy.origin - self.origin);
+	if (self.lefty)
+		yaw = yaw - 90;
+	else
+		yaw = yaw + 90;
+	if (self.flags & FL_ONGROUND)
+	if (!walkmove (yaw, QX_CY_STRAFE))
+		self.lefty = 1 - self.lefty;
+
+	// a hop now and then, sometimes topped up with the jetpack
+	if (self.flags & FL_ONGROUND)
+	{
+		if (random () < 0.03)
+		{
+			a = '0 0 0';
+			a_y = yaw;
+			makevectors (a);
+			CyberJump (v_forward * 260);
+		}
+	}
+	else if (self.velocity_z < 0)
+	if (self.qx_cy_jets > 0)
+	if (random () < 0.04)
+	{
+		a = '0 0 0';
+		a_y = yaw;
+		makevectors (a);
+		CyberJump (v_forward * 200);
+	}
+};
+
+// ---------------------------------------------------------------- attacks
+
+// melee: one big punch (QX_CY_PUNCH damage), it sends you flying
+void() CyberPunch =
+{
+	local vector d;
+
+	if (self.enemy.health <= 0)
+		return;
+	d = self.enemy.origin - self.origin;
+	if (vlen (d) > QX_CY_PUNCH_RANGE + 30)
+		return;					// you got away
+	if (!infront (self.enemy))
+		return;
+	sound (self, CHAN_WEAPON, "shambler/smack.wav", 1, ATTN_NORM);
+	T_Damage (self.enemy, self, self, QX_CY_PUNCH);
+	d_z = 0;
+	self.enemy.velocity = self.enemy.velocity + normalize (d) * 450 + '0 0 250';
+	self.enemy.flags = self.enemy.flags - (self.enemy.flags & FL_ONGROUND);
+	SpawnBlood (self.enemy.origin, '0 0 0', QX_CY_PUNCH);
+};
+
+void() cyber_punch1 =[ $shoot1, cyber_punch2 ] {ai_face(); self.qx_cy_punch_next = time + 1;};
+void() cyber_punch2 =[ $walk2,  cyber_punch3 ] {ai_charge (12); CyberPunch();};
+void() cyber_punch3 =[ $walk3,  cyber_punch4 ] {ai_face();};
+void() cyber_punch4 =[ $walk4,  cyber_run1   ] {ai_face(); SUB_AttackFinished (0.3);};
+
+
+// (a long burst stops when the target is dead or out of sight)
+float() CyberKeepFiring =
+{
+	if (self.enemy.health <= 0)
+		return FALSE;
+	if (!visible (self.enemy))
+		return FALSE;
+	return TRUE;
+};
+
+// QUTF Ogre rockets: 16, one a frame, a little spread
+void() cyber_rock2;
+void() cyber_rock1 =[ $shoot1, cyber_rock2 ] {ai_face(); CyberAct(); self.cnt = 0;};
+void() cyber_rock2 =[ $shoot3, cyber_rock3 ] {ai_face(); CyberAct(); CyberQRocket (random () * 12 - 6); self.cnt = self.cnt + 1;};
+void() cyber_rock3 =[ $shoot6, cyber_rock2 ]
+{
+	ai_face(); CyberAct(); CyberQRocket (random () * 12 - 6);
+	self.cnt = self.cnt + 1;
+	if (self.cnt >= QX_CY_ROCKETS || !CyberKeepFiring ())
+	{
+		SUB_AttackFinished (0.4 + random () * 0.6);
+		self.think = cyber_run1;
+	}
+};
+
+// Ogre chaingun: 256 rounds at twice the Ogre's rate
+void() cyber_cg2;
+void() cyber_cg1 =[ $shoot1, cyber_cg2 ]
+{
+	ai_face(); CyberAct();
+	sound (self, CHAN_WEAPON, "weapons/cg_strt.wav", 1, ATTN_NORM);
+	self.cnt = 0;
+	self.nextthink = time + 0.3;
+};
+void() cyber_cg2 =[ $shoot2, cyber_cg3 ]
+{
+	ai_face(); CyberChaingun();
+	self.cnt = self.cnt + 1;
+	self.nextthink = time + 0.05;
+};
+void() cyber_cg3 =[ $shoot3, cyber_cg2 ]
+{
+	ai_face(); CyberAct(); CyberChaingun();		// (it moves every other round)
+	self.cnt = self.cnt + 1;
+	self.nextthink = time + 0.05;
+	if (self.cnt >= QX_CY_CG_SHOTS || !CyberKeepFiring ())
+	{
+		SUB_AttackFinished (0.4 + random () * 0.6);
+		self.think = cyber_run1;
+		self.nextthink = time + 0.1;
+	}
+};
+
+// Mega Enforcer drunk rockets: 64, two a frame
+void() cyber_drunk2;
+void() cyber_drunk1 =[ $shoot1, cyber_drunk2 ] {ai_face(); CyberAct(); self.cnt = 0;};
+void() cyber_drunk2 =[ $shoot4, cyber_drunk3 ] {ai_face(); CyberAct(); CyberDrunk(); CyberDrunk(); self.cnt = self.cnt + 2;};
+void() cyber_drunk3 =[ $shoot5, cyber_drunk2 ]
+{
+	ai_face(); CyberAct(); CyberDrunk(); CyberDrunk();
+	self.cnt = self.cnt + 2;
+	if (self.cnt >= QX_CY_DRUNK || !CyberKeepFiring ())
+	{
+		SUB_AttackFinished (0.5 + random () * 0.7);
+		self.think = cyber_run1;
+	}
+};
 
 void() cyber_attack =
- {      
-       if(random()>0.7)
-               cyber_missile1 ();
-       else if(random()>0.4)
-               cyber_hmissile1 ();
-         else
-               cyber_lmissile1 ();
- };
+{
+	local float d, r;
+
+	d = vlen (self.enemy.origin - self.origin);
+	r = random ();
+	if (d > 900)
+	{	// far: the homing rockets find their way
+		if (r < 0.6)
+			cyber_drunk1 ();
+		else
+			cyber_rock1 ();
+	}
+	else if (d > 350)
+	{
+		if (r < 0.4)
+			cyber_cg1 ();
+		else if (r < 0.7)
+			cyber_rock1 ();
+		else
+			cyber_drunk1 ();
+	}
+	else
+	{	// close: the chaingun
+		if (r < 0.65)
+			cyber_cg1 ();
+		else
+			cyber_rock1 ();
+	}
+};
 
 
 //=============================================================================
@@ -497,20 +765,20 @@ void() cyber_walk7 =[ $walk7,     cyber_walk1  ] {ai_walk(8);};
 
 // run (same as walk really, just a little faster)
 
-void() cyber_run1 =[ $walk1,     cyber_run2  ] {ai_run(13);};
-void() cyber_run2 =[ $walk2,     cyber_run3  ] {ai_run(12);};
+void() cyber_run1 =[ $walk1,     cyber_run2  ] {ai_run(QX_CY_RUN); CyberAct();};
+void() cyber_run2 =[ $walk2,     cyber_run3  ] {ai_run(QX_CY_RUN); CyberAct();};
 void() cyber_run3 =[ $walk3,     cyber_run4  ] 
-   {  ai_run(12);
+   {  ai_run(QX_CY_RUN); CyberAct();
       sound (self, CHAN_WEAPON, "cyber/cybmet.wav", 1, ATTN_NORM);
    };
-void() cyber_run4 =[ $walk4,     cyber_run5  ] {ai_run(12);};
+void() cyber_run4 =[ $walk4,     cyber_run5  ] {ai_run(QX_CY_RUN); CyberAct();};
 void() cyber_run5 =[ $walk5,     cyber_run6  ] 
    {
       sound (self, CHAN_WEAPON, "cyber/cybhoof.wav", 1, ATTN_NORM);
-      ai_run(12);
+      ai_run(QX_CY_RUN); CyberAct();
    };
-void() cyber_run6 =[ $walk6,     cyber_run7  ] {ai_run(15);};
-void() cyber_run7 =[ $walk7,     cyber_run1  ] {ai_run(13);};
+void() cyber_run6 =[ $walk6,     cyber_run7  ] {ai_run(QX_CY_RUN); CyberAct();};
+void() cyber_run7 =[ $walk7,     cyber_run1  ] {ai_run(QX_CY_RUN); CyberAct();};
 
 
 // void() cyber_pain1;
@@ -624,6 +892,14 @@ void() monster_cyber =
           remove(self);
           return;
          }
+   // QuadEXQ: the Cyber Delta is THE ENDER's alone (too much for the rest of
+   // the game): anywhere else it comes as a BFG fiend
+   if (!qx_ender_arena)
+   {
+      self.classname = "monster_demon2";
+      monster_demon2 ();
+      return;
+   }
    precache_model ("progs/cyber.mdl");
    precache_model ("progs/h_cyber.mdl");
    precache_model ("progs/missile.mdl");
@@ -644,6 +920,7 @@ void() monster_cyber =
    precache_sound ("cyber/cyjump.wav");
    precache_sound ("weapons/rail.wav");
    precache_sound ("boss1/throw.wav");		// QuadEXQ: hknight_shot (the fan of lava balls)
+   cyber_precache ();						// QuadEXQ: the reworked weapons and jetpack
 
 
    self.solid    = SOLID_SLIDEBOX;
@@ -663,9 +940,12 @@ void() monster_cyber =
    self.th_walk    = cyber_walk1;
    self.th_run     = cyber_run1;
    self.th_die     = cyber_die;
-   self.th_melee = cyber_attack;
+   self.th_melee = cyber_punch1;		// QuadEXQ: a punch up close
    self.th_missile = cyber_attack;
    self.th_pain    = cyber_pain;
+   self.netname    = "Cyber Delta";
+   self.qx_jet     = 1;						// QuadEXQ: the jet knight's body slam, now and then
+   self.qx_jet_next = time + 2 + random () * 3;
    
    walkmonster_start();
 };

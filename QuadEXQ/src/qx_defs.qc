@@ -180,6 +180,16 @@ string	qx_st_bossname;
 .float	qx_dodge_next;
 .float	qx_dodging;
 .float	qx_strafe_next;
+.float	qx_cy_jets;				// Cyberdemon: jetpack jumps left in this jump
+.float	qx_cy_lava;				// Cyberdemon: lob a lava-ball grenade on landing (after a BFG dodge)
+.float	qx_cy_dodge_next;		// Cyberdemon: next BFG dodge allowed
+.float	qx_cy_bolts;			// Cyberdemon: thunderbolts still to fire (one a frame)
+.float	qx_nodeflect;			// a shot the Golden Left Hand can't swat (the Cyber Delta boss's rockets)
+.float	qx_cy_jetlock;			// Cyberdemon: jetpack out until then (your BFG's lightning fried it)
+.float	qx_cy_punch_next;		// Cyberdemon: next punch allowed
+.float	qx_cy_stun;				// Cyberdemon: frozen until then (after its thunderbolts)
+float	QX_CY_JETLOCK	= 4;	// seconds without the jetpack after a BFG zap
+float	QX_CY_STUN		= 1.5;	// seconds frozen after its thunderbolts
 .float	qx_announced;
 .vector	qx_home;			// spawn origin   (revenant)
 .vector	qx_homeang;		// spawn angles   (revenant)

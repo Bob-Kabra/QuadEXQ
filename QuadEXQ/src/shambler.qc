@@ -327,6 +327,7 @@ void() sham_die =
 /*QUAKED monster_shambler (1 0 0) (-32 -32 -24) (32 32 64) Ambush
 */
 void() monster_cyber;
+void() cyber_precache;
 void() monster_bdaikon;
 void() monster_demon2;
 void() monster_shambler_QUTF;
@@ -403,6 +404,7 @@ void() monster_shambler =
 	precache_sound ("cyber/cyjump.wav");
 	precache_sound ("weapons/rail.wav");
 	precache_sound ("boss1/throw.wav");	// QuadEXQ: a Cyberdemon swap fires hknight_shot
+	cyber_precache ();				// QuadEXQ: and the reworked Cyberdemon's weapons
 
 
 	self.solid = SOLID_SLIDEBOX;
@@ -435,14 +437,11 @@ void() monster_shambler =
 			return;
 		}
 		else {
-		if(spawncont > 1.4)
-		{
-			monster_cyber();
-			return;
-		}
+		// QuadEXQ: no Cyberdemon swap any more (the Cyber Delta is THE ENDER's
+		// boss alone): the top of the roll is a BFG fiend too
 	//	else if(spawncont > 1.0)
 	//		monster_bdaikon();
-		else if(spawncont > 0.9)
+		if(spawncont > 0.9)
 		{
 			monster_demon2();
 			return;

@@ -7,7 +7,7 @@ QuadEXQ: THE ENDER -- the end map's own story
      and the slipgates rage all the way to her: monsters keep coming through.
   2. Right before her gate: "Ummm... Something's wrong!?" -- and the gate
      telefrags YOU. The slipgate spits you out on ender.bsp.
-  3. ender.bsp (QuadEXQ's own arena: a big hall with pillars): the CYBERDEMON BOSS and two Cyberdemon scouts. Here your
+  3. ender.bsp (QuadEXQ's own arena: a big hall with pillars): the CYBER DELTA (the reworked Cyberdemon) and two Cyber Delta scouts. Here your
      only weapon is the BFG, with endless cells; only its direct hits hurt the
      boss (QX_ENDER_HITS of them). When it goes badly,
      DELTA TEAM drops in ("Sorry we're late! This one's our job.", music track
@@ -94,7 +94,6 @@ void() QX_EnderWorldSpawn =
 	QX_PrecacheMonster ("monster_demon2");
 	QX_PrecacheMonster ("monster_shambler");
 	QX_PrecacheMonster ("monster_shambler_QUTF");
-	QX_PrecacheMonster ("monster_cyber");
 	QX_PrecacheMonster ("monster_bdaikon");
 	QX_PrecacheMonster ("monster_enforcer");
 	QX_PrecacheMonster ("monster_enforcertank");
@@ -499,8 +498,9 @@ void() QX_EnderArenaStart =
 	qx_respawning = FALSE;
 	self = oself;
 	m.qx_ender_boss = 1;
-	m.netname = "CYBERDEMON BOSS";
+	m.netname = "CYBER DELTA";
 	m.effects = m.effects | EF_BRIGHTFIELD;
+	m.skin = 1;				// the boss's green paint (progs/cyber.mdl skin 1)
 	spawn_tfog (m.origin);
 	qx_ender_boss_e = m;
 
@@ -512,6 +512,7 @@ void() QX_EnderArenaStart =
 		if (e.qx_leader == m)
 		{
 			e.qx_ender_scout = 1;
+			e.skin = 0;			// (the scouts keep the stock colours)
 			e.health = e.health * QX_ENDER_SCOUT_HP;	// tough enough to last until Delta Team comes
 			e.max_health = e.health;
 		}
@@ -521,10 +522,10 @@ void() QX_EnderArenaStart =
 	qx_ender_t0 = time;
 	qx_ender_hits = 0;
 	QX_EnderBFG (p);
-	QX_Center (p, "THE SLIPGATE SPAT YOU OUT\n\n!!! CYBERDEMON BOSS !!!\nand two of its scouts\n\nall you've got: the BFG", "", "", "");
+	QX_Center (p, "THE SLIPGATE SPAT YOU OUT\n\n!!! CYBER DELTA !!!\nand two of its scouts\n\nall you've got: the BFG", "", "", "");
 	stuffcmd (p, "bf\n");
 	QX_LB ();
-	QX_LS ("    THE ENDER: Cyberdemon boss on ");
+	QX_LS ("    THE ENDER: Cyber Delta on ");
 	QX_LS (mapname);
 	QX_LE ();
 };
@@ -636,9 +637,9 @@ void(entity p) QX_EnderArenaThink =
 	if (qx_ender_boss_e.health <= 0 || qx_ender_boss_e.classname != "monster_cyber")
 	{
 		qx_ender_won_at = time + 5;
-		QX_Center (p, "!!! CYBERDEMON BOSS DOWN !!!\n\nDELTA TEAM:\nNice shot. Now let's finish this.", "", "", "");
+		QX_Center (p, "!!! CYBER DELTA DOWN !!!\n\nDELTA TEAM:\nNice shot. Now let's finish this.", "", "", "");
 		QX_LB ();
-		QX_LS ("    THE ENDER: Cyberdemon boss down");
+		QX_LS ("    THE ENDER: Cyber Delta down");
 		QX_LE ();
 		return;
 	}
@@ -689,7 +690,7 @@ float(entity targ, entity inflictor, entity attacker, float damage) QX_EnderDama
 		return targ.health * 10 + 1000;		// down it goes
 
 	targ.health = targ.qx_ender_hp0 * (QX_ENDER_HITS - qx_ender_hits) / QX_ENDER_HITS;
-	QX_Center (attacker, "CYBERDEMON BOSS\n\nHIT  ", ftos (qx_ender_hits), " / 10", "");	// (one ftos per call: a shared buffer)
+	QX_Center (attacker, "CYBER DELTA\n\nHIT  ", ftos (qx_ender_hits), " / 10", "");	// (one ftos per call: a shared buffer)
 	if (targ.th_pain)
 	{
 		oself = self;

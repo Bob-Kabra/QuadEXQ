@@ -133,9 +133,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
   Quake's own skill also follows PlayerSkill: PlayerSkill / 32, so
   0-31 Easy, 32-63 Normal, 64-95 Hard, 96+ Nightmare. It is set when a map
   loads (and worked out again after a death), and it decides EXQ's monster
-  swaps too: the higher it is, the more Shamblers turn into Juggernauts,
-  Vores or (Nightmare only) the Cyberdemon, Ogres into QUTF Ogres, Zombies
-  into Mummies, and so on.
+  swaps too: the higher it is, the more Shamblers turn into Juggernauts
+  or Vores, Ogres into QUTF Ogres, Zombies into Mummies, and so on.
 
   Milestones:
     above 50   the Super Nailgun fires homing nails
@@ -159,7 +158,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
   Fills when:
     - you take enemy damage: about +18% per 30 damage
     - you kill something: +40% per kill
-    - you just SEE a Shambler, a Vore, a Cyberdemon or a BFG fiend: it
+    - you just SEE a Shambler, a Vore, a BFG fiend or the Cyber Delta: it
       climbs while one is in sight, and never stays under 200%
 
   Drains:
@@ -594,10 +593,12 @@ fork), which adds the HUD, music switching, checkpoints and more.
       is the Thunderbolt's bonus now (PlayerSkill above 50 and 300%
       adrenaline); the BFG turns up somewhere special, as a big green ball.
     - The BFG fiend (demon2) and the Juggernaut fire the same green ball.
-    - The sight of a Shambler, a Vore, a Cyberdemon or a BFG fiend gets
-      the adrenaline going; Shub-Niggurath in sight means 300% at once.
+    - The sight of a Shambler, a Vore or a BFG fiend gets the adrenaline
+      going; Shub-Niggurath in sight means 300% at once.
     - The Golden Left Hand only swats shots coming from in front of you.
     - The Vore Lord no longer swats plasma back.
+    - The Cyberdemon has left the main game: Shamblers no longer turn into
+      one (that roll gives a BFG fiend now).
     - BFG chain lightning never jumps to Delta Team.
     - Score: a clear without dying is +3000 (was +300). An arena win is
       scored as the arena map's own clear, not added to the map you came

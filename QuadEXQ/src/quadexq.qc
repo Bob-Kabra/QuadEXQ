@@ -1021,6 +1021,7 @@ void() QX_AutoDeflect =
 	while (e)
 	{
 		if (e.owner.flags & FL_MONSTER)
+		if (!e.qx_nodeflect)			// (the Cyber Delta boss's rockets)
 		if (!(e.flags & (FL_MONSTER | FL_CLIENT | FL_ITEM)))
 		if (e.movetype == MOVETYPE_FLYMISSILE || e.movetype == MOVETYPE_BOUNCE || e.movetype == MOVETYPE_FLY || e.movetype == MOVETYPE_TOSS)
 		if (e.touch)
@@ -2074,6 +2075,9 @@ void() QX_JetEnd =
 	if (!self.qx_elite)
 		self.effects = self.effects - (self.effects & EF_DIMLIGHT);
 	self.velocity = '0 0 0';
+	self.avelocity = '0 0 0';		// (a shotgun / BFG zap mid-flight set it spinning)
+	self.angles_x = 0;
+	self.angles_z = 0;
 	self.flags = self.flags - (self.flags & FL_ONGROUND);	// fall to the floor
 	if (self.health > 0)
 	{
@@ -2121,6 +2125,11 @@ void() QX_JetThink =
 		self.velocity = normalize (v) * spd;
 	}
 	self.angles_y = vectoyaw (self.velocity);
+	// upright: shotgun knockback and BFG zaps set avelocity, and MOVETYPE_FLY
+	// turns it -- the charger ended up flat on its face
+	self.avelocity = '0 0 0';
+	self.angles_x = 0;
+	self.angles_z = 0;
 
 	// jet flame
 	particle (self.origin - normalize (self.velocity) * 24, '0 0 0' - self.velocity * 0.1, 230, 12);
@@ -2666,7 +2675,7 @@ float(entity p) QX_ExitBlocked =
 		{
 			qx_exitmsg_time = time + 2;
 			if (qx_ender_arena)
-				QX_Center (p, "THE EXITS ARE SEALED\n\nkill the CYBERDEMON BOSS", "", "", "");
+				QX_Center (p, "THE EXITS ARE SEALED\n\nkill the CYBER DELTA", "", "", "");
 			else
 				QX_Center (p, "THE EXITS ARE SEALED\n\nbeat the RUNE HUNTER first", "", "", "");
 		}
@@ -2752,6 +2761,9 @@ void(entity targ, entity attacker) QX_OnKilled =
 		targ.qx_charging = 0;
 		targ.movetype = MOVETYPE_STEP;
 		targ.velocity = '0 0 0';
+		targ.avelocity = '0 0 0';
+		targ.angles_x = 0;
+		targ.angles_z = 0;
 		targ.flags = targ.flags - (targ.flags & FL_ONGROUND);
 		if (targ.qx_savepain)
 			targ.th_pain = targ.qx_savepain;

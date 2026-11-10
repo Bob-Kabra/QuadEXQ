@@ -64,6 +64,16 @@ local float dist;
 
 	sound (self, CHAN_WEAPON, "weapons/zap.wav", 1, ATTN_NORM);
 	particle (zapped.origin, '0 0 100', 225, 120);
+	// QuadEXQ: your BFG's lightning fries the Cyber Delta's jetpack for a while
+	if (zapped.classname == "monster_cyber")
+	if (self.qx_chainfrom.flags & FL_CLIENT)
+	{
+		zapped.qx_cy_jetlock = time + QX_CY_JETLOCK;
+		zapped.qx_cy_jets = 0;
+		if (zapped.qx_jet_next < zapped.qx_cy_jetlock)
+			zapped.qx_jet_next = zapped.qx_cy_jetlock;	// no body slam either
+		particle (zapped.origin + '0 0 -20', '0 0 -40', 15, 40);	// smoke from the pack
+	}
 	T_Damage (zapped, self.owner, self.owner, self.dmg);
 	
 	
