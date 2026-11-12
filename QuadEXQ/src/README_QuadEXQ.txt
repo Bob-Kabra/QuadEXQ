@@ -289,3 +289,14 @@ PlayerSkill(0〜100)
   music/track01.mp3(ボス戦BGM)
 
 調整したい数値は qx_defs.qc 冒頭の QX_* 定数と quadexq.qc 内の確率式。
+
+実績と通算成績(qx_achieve.qc、QuadEXQ エンジン専用)
+  通算の数値はすべて保存されるエンジン cvar に書く(マップ移動・死亡・セーブ・終了をまたいで残る)。New Game でもリセットしない(実績と同じく通算)。手で消すときは qx_runreset(実績は残る)。
+    qx_rs1〜22 / qx_rd1〜22   モンスター種別ごとの撃破数 / その種別にやられた回数(通算なので4096で詰めずに別 cvar。種別は QX_RsType、名前の表はエンジン sv_main.c の qx_rs_names、順番をそろえること)。22 はジェット体当たりでの死亡だけ
+    qx_run_kills / deaths / time / score / maps   通算(time と score はマップクリア時に QX_AchMapEnd、アリーナ勝利のスコアは QX_AchDuelWin で加算)
+    qx_ach       解除した実績のビット(QX_ACH_*、名前と説明の表は sv_main.c の qx_achs、順番をそろえること)
+    qx_life_*    実績のためのカウンタ(リセットしない): kills / shamblers / swats / jetdeaths / deltadeaths / quadkills
+  実績(17): Century(100体)、Body Count(1000体)、Shambler Shredder(シャンブラー100体)、Juggernaut Down(ジャガーノート初撃破)、Death Fiend Down(デーモン2撃破)、GuroFighter Down(アリーナで勝つ)、K4B, 10 - 0、G, 10 - 0、Just as id intended(Tres に 10-0)、Rune Thief(ルーンを取られる)、True Cyber(Cyber Delta 撃破)、Packet Overflow(768連射を最後まで生き延びる)、QUAD!(ENDER クリア、finale_1)、Return to Sender(打ち返し100発)、Face, Meet Jet(ジェット体当たりで10回死ぬ)、Join the Delta Team(Delta が通算100人やられる)、Quad King(クアッド中に1000体)。
+  解除時は QX_Ach が画面中央に「ACHIEVEMENT UNLOCKED」、talk.wav、統計ファイルに1行。ENDER の3つは未解除だと qx_achievements で ??? 表示(ネタバレ防止)。
+  フックの場所: QX_StatKill → QX_AchKill、QX_StatDeath → QX_AchDeath、QX_StatMapEnd → QX_AchMapEnd、QX_DuelEnd → QX_AchDuelWin / QX_AchRuneLost、QX_AutoDeflect → QX_AchSwat、dl_die → QX_AchDeltaLost、cyber_cg3 → QX_AchOverflow。
+  ENDER のエンディング3ページ目(qx_finale_page3、2ページ目の34秒後): localcmd qx_runpage でエンジンが通算成績(撃破上位7種、ジェット死、天敵 = 一番やられた種別、実績数)を SVC_FINALE で出し、qx_runstats で全表をコンソールと統計ファイルへ。

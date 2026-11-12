@@ -1057,6 +1057,7 @@ void() QX_AutoDeflect =
 				sound (e, CHAN_AUTO, "weapons/ric2.wav", 1, ATTN_NORM);
 				particle (e.origin, '0 0 0', 111, 30);
 				qx_st_deflects = qx_st_deflects + 1;
+				QX_AchSwat ();
 
 				if (time > self.qx_deflect_msg)
 				{

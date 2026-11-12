@@ -553,6 +553,17 @@ fork), which adds the HUD, music switching, checkpoints and more.
                            resolution (only the 256 colours)
   qx_checkpoints 0         plain Quake / other mods: restart the map on
                            death instead of loading the checkpoint
+  qx_centerscale 0.5-4     size of the messages in the middle of the
+                           screen and of the end text (default 1.5,
+                           1 = stock)
+  qx_centerreadtime <s>    a longer message stays up this much longer for
+                           each line (default 0.6, 0 = stock)
+  qx_achievements          list the achievements (the ones still to find
+                           about THE ENDER show as ???)
+  qx_runstats              your stats over every game: kills and deaths
+                           by monster, time, score (also written to
+                           quadexq_stats.txt)
+  qx_runreset              start the stats over (the achievements stay)
   sv_protocol 999          network protocol (default 999, as QuakeSpasm:
                            big maps past +-4096; 666 = FitzQuake)
 
@@ -604,7 +615,13 @@ fork), which adds the HUD, music switching, checkpoints and more.
       scored as the arena map's own clear, not added to the map you came
       from; a PERFECT 10 - 0 is worth the hunter (Tres 10000, K4B / G
       5000, GuroFighter 2000).
+    - Achievements (17, a few of them not exactly flattering) and stats:
+      kills and deaths by monster, time and score, adding up over every
+      game you play. qx_achievements and qx_runstats in the console.
+      (QuadEXQ engine)
     QuadEXQ engine:
+    - Bigger messages in the middle of the screen (and the end text), and
+      longer ones stay up longer: qx_centerscale, qx_centerreadtime.
     - Frame interpolation in the menu, one by one: model animation,
       movement and stairs. Effects get "QMB + Classic Bolt".
     - The BFG glows green: its ball, and the gun in your hands (a new

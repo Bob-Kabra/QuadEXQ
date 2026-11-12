@@ -113,6 +113,8 @@ void() finale_1 =
 
 	intermission_exittime = time + 10000000;	// never allow exit
 	intermission_running = 1;
+	if (serverflags & QX_ENDER_WON)
+		QX_AchQuad ();		// QuadEXQ: (its banner is lost under the end text; the run page counts it)
 	qx_finale = TRUE;		// QuadEXQ: nothing may print over the end text now
 
 	// find the intermission spot
@@ -182,12 +184,22 @@ void() finale_3 =
 // QuadEXQ: THE ENDER -- once the stock text has typed out, the screen
 // turns over to a second page: what became of Delta Team
 float	QX_FINALE_PAGE2	= 52;	// seconds (the first page types at 8 characters a second)
+float	QX_FINALE_PAGE3	= 34;	// seconds after page 2 (the run's stats)
+
+void() qx_finale_page3 =
+{
+	if (qx_newengine)
+		localcmd ("qx_runpage\n");	// (the engine writes the page from the run stats)
+	remove (self);
+};
 
 void() qx_finale_page2 =
 {
 	WriteByte (MSG_ALL, SVC_FINALE);
 	WriteString (MSG_ALL, "\n\nAnd Delta Team?\n\nFour of you brought it down together.\nThat's no Delta any more.\nCall it what it is:\n\nQUAD!\n\n(Quad Damage -- just as id intended.)\n\n\nThank you for playing!!\n\nQuadEXQ, built on Quake.\nThank you, id Software --\n30 years on, we're still fragging.");
-	remove (self);
+	// QuadEXQ engine: then a page with the run's stats
+	self.think = qx_finale_page3;
+	self.nextthink = time + QX_FINALE_PAGE3;
 };
 
 void() finale_4 =

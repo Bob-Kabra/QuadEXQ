@@ -355,6 +355,16 @@ float	qx_ender_arena;			// this is the Cyberdemon boss fight
 .float	qx_ender_counted;		// (a BFG ball) already counted as a hit
 .float	qx_ender_hp0;			// the boss's health before the first hit
 void() QX_EnderWorldSpawn;
+// qx_achieve.qc
+void(entity targ, entity attacker) QX_AchKill;
+void() QX_AchDeath;
+void(float runtime, float score) QX_AchMapEnd;
+void(float pts, string hunter, float perfect) QX_AchDuelWin;
+void() QX_AchRuneLost;
+void() QX_AchSwat;
+void() QX_AchDeltaLost;
+void() QX_AchOverflow;
+void() QX_AchQuad;
 void() QX_EnderArenaInit;
 void() QX_EnderArenaStart;
 void() QX_EnderThink;

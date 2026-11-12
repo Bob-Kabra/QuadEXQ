@@ -1298,6 +1298,7 @@ void(float won) QX_DuelEnd =
 		// don't pounce again right away at the new, lower count
 		serverflags = serverflags | QX_DuelDoneBit (QX_RuneCount (serverflags));
 		QX_CenterAll ("YOU LOSE\n\n", qx_hunter_name, " took the rune of episode ", ftos (n));
+		QX_AchRuneLost ();
 		QX_LS ("    RUNE HUNTER ");
 		QX_LS (qx_hunter_name);
 		QX_LS (" won, took the rune of episode ");
@@ -1315,6 +1316,7 @@ void(float won) QX_DuelEnd =
 	// from gets nothing: a 10 - 0 there used to dwarf the map's own score)
 	if (qx_duel_pts > 0)
 	{
+		QX_AchDuelWin (qx_duel_pts, qx_hunter_name, qx_duel_hf == 0);
 		qx_rep_to = find (world, classname, "player");
 		QX_LB ();
 		QX_LS ("=== ");
@@ -2395,6 +2397,7 @@ void() dl_die =
 	local entity t, p;
 
 	qx_delta_losses = qx_delta_losses + 1;
+	QX_AchDeltaLost ();
 	p = QX_FindLivePlayer ();
 	if (p)
 	{

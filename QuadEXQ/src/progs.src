@@ -69,6 +69,7 @@ bd.qc
 
 qx_stats.qc		// QuadEXQ map report
 quadexq.qc		// QuadEXQ core
+qx_achieve.qc		// QuadEXQ: run stats and achievements
 qx_hunter.qc		// QuadEXQ: the Rune Hunter
 qx_ender.qc		// QuadEXQ: the end map story
 //goarc1.qc

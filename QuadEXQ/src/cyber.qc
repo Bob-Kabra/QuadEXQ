@@ -928,7 +928,11 @@ void() cyber_cg3 =[ $shoot3, cyber_cg2 ]
 {
 	ai_face(); CyberActTick(); CyberChaingun();
 	self.cnt = self.cnt + 1;
-	self.nextthink = time + 0.05;
+	self.nextthink = time + QX_CY_CG_RATE;
+	if (self.cnt >= QX_CY_CG_SHOTS)
+	if (self.enemy.flags & FL_CLIENT)
+	if (self.enemy.health > 0)
+		QX_AchOverflow ();		// you lived through all of it
 	if (self.cnt >= QX_CY_CG_SHOTS || !CyberKeepFiring ())
 	{
 		SUB_AttackFinished (0.4 + random () * 0.6);

@@ -309,6 +309,7 @@ void(entity targ, entity attacker) QX_StatKill =
 	qx_st_axehit = FALSE;
 	e.qx_ws_kills = e.qx_ws_kills + 1;
 	qx_st_kills = qx_st_kills + 1;
+	QX_AchKill (targ, attacker);		// the run stats, achievements
 
 	if (targ.qx_isboss)
 		qx_st_points = qx_st_points + QX_SC_ELITE + QX_SC_BOSS;
@@ -333,6 +334,7 @@ void(float oldskill) QX_StatDeath =
 		return;
 	if (qx_persist)
 		cvar_set ("qx_mapdeaths", ftos (QX_MapDeaths () + 1));
+	QX_AchDeath ();						// the run stats, achievements
 
 	qx_rep_to = world;
 	QX_LB ();
@@ -386,6 +388,7 @@ void(entity p) QX_StatMapEnd =
 	qx_st_ended = 1;
 	qx_st_endt = QX_RunTime (time);
 	qx_st_score = QX_StatScore ();
+	QX_AchMapEnd (qx_st_endt, qx_st_score);	// the run stats
 
 	qx_rep_to = p;
 	QX_LB (); QX_LE ();
