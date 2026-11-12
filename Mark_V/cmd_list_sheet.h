@@ -162,6 +162,10 @@ CMD_DEF (M_Init      , DEP_CLIENT  , "togglemenu"                , M_ToggleMenu_
 CMD_DEF (M_Init      , DEP_NONE    , "help"                      , _Help_f						, "Display the help screen."			)
 
 CMD_DEF (SV_Init     , DEP_HOST__  , "qx_statlog"                , SV_QX_StatLog_f		, "QuadEXQ: append one line to quadexq_stats.txt (used by the progs for the map report)."			)
+CMD_DEF (SV_Init     , DEP_HOST__  , "qx_runreset"               , SV_QX_RunReset_f		, "QuadEXQ: start the stats over -- kills, deaths, time and score go back to zero (the achievements stay)."			)
+CMD_DEF (SV_Init     , DEP_HOST__  , "qx_runstats"               , SV_QX_RunStats_f		, "QuadEXQ: print the stats of all your games (kills and deaths by monster) and write them to quadexq_stats.txt."			)
+CMD_DEF (SV_Init     , DEP_HOST__  , "qx_runpage"                , SV_QX_RunPage_f		, "QuadEXQ: show your stats as the end text (the progs calls it after THE ENDER's ending)."			)
+CMD_DEF (SV_Init     , DEP_HOST__  , "qx_achievements"           , SV_QX_Achievements_f	, "QuadEXQ: list the achievements, unlocked and not."			)
 CMD_DEF (Host_Init   , DEP_HOST__  , "qx_respawn"                , Host_QX_Respawn_f		, "QuadEXQ: after a death, load this map's latest autosave (or restart the map if there is none)."			)
 CMD_DEF (Host_Init   , DEP_HOST__  , "qx_arena"                  , Host_QX_Arena_f		, "QuadEXQ: Rune Hunter duel: changelevel to a random arena (maps with dm in the name, q1edge, towersp)."			)
 CMD_DEF (Host_Init   , DEP_HOST__  , "qx_return"                 , Host_QX_Return_f		, "QuadEXQ: after a revenge match, back to <map> at its checkpoint (or its start)."			)

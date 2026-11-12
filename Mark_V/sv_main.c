@@ -1454,6 +1454,204 @@ void SV_QX_StatLog_f (lparse_t *line)
 	FS_fclose (f);
 }
 
+// ============================================================================
+// QuadEXQ: run stats and achievements
+//
+// The progs counts (into archived cvars, so a run survives maps, deaths,
+// saves and quitting): qx_rs<type> kills and qx_rd<type> deaths for each
+// monster type below, qx_run_* totals, qx_ach = the achievements unlocked (bits) and
+// the qx_life_* counters behind them.  It all adds up over every game you
+// play (qx_runreset starts the stats over by hand).  The engine only has the
+// names, and puts the numbers on screen.
+// ============================================================================
+
+// the progs' QX_RsType numbers -- keep the two lists in step
+static const char *qx_rs_names[] = { "",
+	"Grunt", "Enforcer", "Ogre", "Tyrant Ogre", "Knight", "Death Knight",
+	"Fiend", "Death Fiend", "Shambler", "Juggernaut", "Vore", "Scrag",
+	"Zombie", "Spawn", "Rottweiler", "Rotfish", "Rune Hunter",
+	"Cyber Delta", "Shub-Niggurath", "Daikon", "Other"
+};
+#define QX_RS_TYPES	21
+#define QX_RS_JET	22		// (deaths only) a jet charge to the face
+
+// the progs' QX_ACH_* bits -- keep the two lists in step
+typedef struct { const char *name, *desc; int hidden; } qx_ach_t;
+static const qx_ach_t qx_achs[] = {
+	{ "Century",				"Kill 100 enemies",							0 },	// 1
+	{ "Body Count",				"Kill 1000 enemies",						0 },	// 2
+	{ "Shambler Shredder",		"Kill 100 Shamblers",						0 },	// 4
+	{ "Juggernaut Down",		"Kill your first Juggernaut",				0 },	// 8
+	{ "Death Fiend Down",		"Kill a Death Fiend",						0 },	// 16
+	{ "GuroFighter Down",		"Beat GuroFighter in the arena",			0 },	// 32
+	{ "K4B, 10 - 0",			"Beat K4B without dying",					0 },	// 64
+	{ "G, 10 - 0",				"Beat G without dying",						0 },	// 128
+	{ "Just as id intended",	"Beat Tres 10 - 0",							0 },	// 256
+	{ "Rune Thief",				"Lose a rune to a Rune Hunter",				0 },	// 512
+	{ "True Cyber",				"Destroy the Cyber Delta",					1 },	// 1024
+	{ "Packet Overflow",		"Live through a whole Cyber Delta chaingun burst", 1 },	// 2048
+	{ "QUAD!",					"Finish THE ENDER",							1 },	// 4096
+	{ "Return to Sender",		"Swat back 100 shots",						0 },	// 8192
+	{ "Face, Meet Jet",			"Die to a jet charge 10 times",				0 },	// 16384
+	{ "Join the Delta Team",	"Delta Team loses 100 men (they need you)",	0 },	// 32768
+	{ "Quad King",				"Kill 1000 enemies with Quad Damage",		0 },	// 65536
+};
+#define QX_ACH_COUNT	((int)(sizeof(qx_achs) / sizeof(qx_achs[0])))
+
+static int SV_QX_Rs (int t, cbool deaths)
+{
+	return (int) Cvar_VariableValue (va (deaths ? "qx_rd%d" : "qx_rs%d", t));
+}
+
+static int SV_QX_Achs (void)
+{
+	int a = (int) Cvar_VariableValue ("qx_ach"), i, n = 0;
+	for (i = 0; i < QX_ACH_COUNT; i++)
+		if (a & (1 << i))
+			n++;
+	return n;
+}
+
+static void SV_QX_HMS (char *buf, size_t bufsize, int t)
+{
+	c_snprintfc (buf, bufsize, "%d:%02d:%02d", t / 3600, (t / 60) % 60, t % 60);
+}
+
+void SV_QX_RunReset_f (lparse_t *line)
+{
+	int t;
+	for (t = 1; t <= QX_RS_JET; t++)
+	{
+		Cvar_SetValueByName (va ("qx_rs%d", t), 0);
+		Cvar_SetValueByName (va ("qx_rd%d", t), 0);
+	}
+	Cvar_SetValueByName ("qx_run_kills", 0);
+	Cvar_SetValueByName ("qx_run_deaths", 0);
+	Cvar_SetValueByName ("qx_run_time", 0);
+	Cvar_SetValueByName ("qx_run_score", 0);
+	Cvar_SetValueByName ("qx_run_maps", 0);
+}
+
+// the whole table: console, and quadexq_stats.txt
+void SV_QX_RunStats_f (lparse_t *line)
+{
+	char path[MAX_OSPATH], hms[32], row[128];
+	FILE *f;
+	int t, a = (int) Cvar_VariableValue ("qx_ach"), i;
+
+	FS_FullPath_From_QPath (path, "quadexq_stats.txt");
+	f = FS_fopen_write (path, "a");
+
+	SV_QX_HMS (hms, sizeof(hms), (int) Cvar_VariableValue ("qx_run_time"));
+	c_snprintf5 (row, "RUN STATS   time %s   maps %d   kills %d   deaths %d   score %d", hms,
+		(int) Cvar_VariableValue ("qx_run_maps"), (int) Cvar_VariableValue ("qx_run_kills"),
+		(int) Cvar_VariableValue ("qx_run_deaths"), (int) Cvar_VariableValue ("qx_run_score"));
+	Con_PrintLinef ("%s", row);
+	if (f) fprintf (f, "%s\n", row);
+
+	for (t = 1; t <= QX_RS_TYPES; t++)
+	{
+		int k = SV_QX_Rs (t, false), d = SV_QX_Rs (t, true);
+		if (!k && !d)
+			continue;
+		c_snprintf3 (row, "    %-15s %5d kills %4d deaths", qx_rs_names[t], k, d);
+		Con_PrintLinef ("%s", row);
+		if (f) fprintf (f, "%s\n", row);
+	}
+	if (SV_QX_Rs (QX_RS_JET, true))
+	{
+		c_snprintf1 (row, "    (a jet charge to the face: %d deaths)", SV_QX_Rs (QX_RS_JET, true));
+		Con_PrintLinef ("%s", row);
+		if (f) fprintf (f, "%s\n", row);
+	}
+	c_snprintf2 (row, "ACHIEVEMENTS %d / %d", SV_QX_Achs (), QX_ACH_COUNT);
+	Con_PrintLinef ("%s", row);
+	if (f) fprintf (f, "%s\n", row);
+	for (i = 0; i < QX_ACH_COUNT; i++)
+		if (a & (1 << i))
+		{
+			c_snprintf2 (row, "    %s -- %s", qx_achs[i].name, qx_achs[i].desc);
+			Con_PrintLinef ("%s", row);
+			if (f) fprintf (f, "%s\n", row);
+		}
+	if (f) FS_fclose (f);
+}
+
+void SV_QX_Achievements_f (lparse_t *line)
+{
+	int a = (int) Cvar_VariableValue ("qx_ach"), i;
+
+	Con_PrintLinef ("ACHIEVEMENTS %d / %d", SV_QX_Achs (), QX_ACH_COUNT);
+	for (i = 0; i < QX_ACH_COUNT; i++)
+	{
+		if (a & (1 << i))
+			Con_PrintLinef ("  [X] %s -- %s", qx_achs[i].name, qx_achs[i].desc);
+		else if (qx_achs[i].hidden)
+			Con_PrintLinef ("  [ ] ???");
+		else
+			Con_PrintLinef ("  [ ] %s -- %s", qx_achs[i].name, qx_achs[i].desc);
+	}
+}
+
+// a page of end text: the run in 40-column lines
+void SV_QX_RunPage_f (lparse_t *line)
+{
+	char text[1400], row[64], hms[32];
+	int order[QX_RS_TYPES + 1], n = 0, i, j, t, nemesis = 0, shown;
+
+	if (!sv.active)
+		return;
+
+	text[0] = 0;
+	SV_QX_HMS (hms, sizeof(hms), (int) Cvar_VariableValue ("qx_run_time"));
+	c_strlcat (text, "RUN STATS\n\n");
+	c_snprintf2 (row, "Time %s   Maps %d\n", hms, (int) Cvar_VariableValue ("qx_run_maps"));
+	c_strlcat (text, row);
+	c_snprintf2 (row, "Kills %d   Deaths %d\n", (int) Cvar_VariableValue ("qx_run_kills"), (int) Cvar_VariableValue ("qx_run_deaths"));
+	c_strlcat (text, row);
+	c_snprintf1 (row, "Score %d\n\n", (int) Cvar_VariableValue ("qx_run_score"));
+	c_strlcat (text, row);
+
+	// the top kills
+	for (t = 1; t <= QX_RS_TYPES; t++)
+	{
+		if (SV_QX_Rs (t, false) || SV_QX_Rs (t, true))
+			order[n++] = t;
+		if (SV_QX_Rs (t, true) > (nemesis ? SV_QX_Rs (nemesis, true) : 0))
+			nemesis = t;
+	}
+	for (i = 0; i < n; i++)
+		for (j = i + 1; j < n; j++)
+			if (SV_QX_Rs (order[j], false) > SV_QX_Rs (order[i], false))
+				{ int x = order[i]; order[i] = order[j]; order[j] = x; }
+	for (i = 0, shown = 0; i < n && shown < 7; i++, shown++)
+	{
+		int k = SV_QX_Rs (order[i], false), d = SV_QX_Rs (order[i], true);
+		if (d)
+			c_snprintf3 (row, "%-14s%5d  %3d deaths\n", qx_rs_names[order[i]], k, d);
+		else
+			c_snprintf2 (row, "%-14s%5d\n", qx_rs_names[order[i]], k);
+		c_strlcat (text, row);
+	}
+	if (SV_QX_Rs (QX_RS_JET, true))
+	{
+		c_snprintf1 (row, "(%d of you: a jet to the face)\n", SV_QX_Rs (QX_RS_JET, true));
+		c_strlcat (text, row);
+	}
+	if (nemesis)
+	{
+		c_snprintf1 (row, "\nYour nemesis: the %s\n", qx_rs_names[nemesis]);
+		c_strlcat (text, row);
+	}
+	c_snprintf2 (row, "\nAchievements %d / %d", SV_QX_Achs (), QX_ACH_COUNT);
+	c_strlcat (text, row);
+
+	MSG_WriteByte (&sv.reliable_datagram, svc_finale);
+	MSG_WriteString (&sv.reliable_datagram, text);
+
+	Cbuf_AddTextLine ("qx_runstats");		// and the whole table to the console and the log
+}
+
 // QuadEXQ: save on the way out. Opening the menu from the game, or quitting,
 // autosaves right away if now is safe (the same rules as the timed autosave:
 // the QuadEXQ progs judges it, or the engine for any other mod). So stopping
