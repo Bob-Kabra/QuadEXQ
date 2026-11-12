@@ -142,7 +142,6 @@ for a few moments
 void SCR_CenterPrint (const char *str) //update centerprint data
 {
 	c_strlcpy (scr_centerstring, str);
-	cl.scr_centertime_off = cl.time + scr_centertime.value;
 	scr_centertime_start = cl.time;
 
 // count the number of lines for centering
@@ -154,7 +153,66 @@ void SCR_CenterPrint (const char *str) //update centerprint data
 			scr_center_lines++;
 		str++;
 	}
+
+	// QuadEXQ: a longer message stays up longer (qx_centerreadtime a line)
+	cl.scr_centertime_off = cl.time + scr_centertime.value
+		+ c_max (0, qx_centerreadtime.value) * (scr_center_lines - 1);
 }
+
+#ifdef GLQUAKE_RENDERER_SUPPORT
+extern canvastype currentcanvas;
+
+// QuadEXQ: centerprints and the end text, bigger (qx_centerscale).  The
+// text is scaled about (cx, cy); the end text's canvas is a 320-wide strip,
+// so it is first widened to the whole window (same scale and placement) or
+// the bigger lines would be cut off at its edges.
+static cbool SCR_QX_CenterScale_Begin (float cx, float cy)
+{
+	float k = qx_centerscale.value;
+
+	if (k < 0.5 || k > 4 || k == 1)
+		return false;
+	if (!cl.intermission)
+		k = c_min (k, vid.conwidth / 320.0f);		// a 40-character line still fits
+	if (k == 1)
+		return false;
+
+	if (cl.intermission)
+	{
+		float s = c_min ((float)clwidth / 320.0, (float)clheight / 200.0);
+		int y_height_scaled;
+		float x_off, y_off;
+
+		s = CLAMP (1.0, vid.menu_scale, s);
+		k = c_min (k, (float)clwidth / (320 * s));	// a 40-character line still fits the window
+		if (k <= 1)
+			return false;
+		y_height_scaled = c_min (300, clheight / s);
+		x_off = (clwidth - 320 * s) / 2;
+		y_off = (clheight - y_height_scaled * s) / 2;
+
+		eglMatrixMode (GL_PROJECTION);
+		eglLoadIdentity ();
+		eglOrtho (-x_off / s, 320 + x_off / s, y_height_scaled + y_off / s, -y_off / s, -99999, 99999);
+		eglViewport (clx, cly, clwidth, clheight);
+		eglMatrixMode (GL_MODELVIEW);
+	}
+
+	eglPushMatrix ();
+	eglTranslatef (cx, cy, 0);
+	eglScalef (k, k, 1);
+	eglTranslatef (-cx, -cy, 0);
+	return true;
+}
+
+static void SCR_QX_CenterScale_End (cbool scaled)
+{
+	if (!scaled)
+		return;
+	eglPopMatrix ();
+	currentcanvas = CANVAS_INVALID;	// (the canvas was changed under Draw_SetCanvas)
+}
+#endif // GLQUAKE_RENDERER_SUPPORT
 
 void SCR_DrawCenterString (void) //actually do the drawing
 {
@@ -166,6 +224,7 @@ void SCR_DrawCenterString (void) //actually do the drawing
 	float 	sbscale = 1;
 	float	conheight_ratio = 1;
 	float	sb_lines_translated_to_conheight;
+	cbool	qx_scaled = false;
 
 	if (cl.intermission) // Note: cl.intermission 1 never hits here (Monsters X/Y, Secrets, etc.)
 		Draw_SetCanvas (CANVAS_MENU_INTERMISSION_TEXT); //johnfitz
@@ -222,6 +281,15 @@ void SCR_DrawCenterString (void) //actually do the drawing
 		}
 	}
 
+#ifdef GLQUAKE_RENDERER_SUPPORT
+	// QuadEXQ: bigger -- the end text grows down from its first line, a
+	// centerprint about its middle
+	if (cl.intermission)
+		qx_scaled = SCR_QX_CenterScale_Begin (160, y);
+	else
+		qx_scaled = SCR_QX_CenterScale_Begin (vid.conwidth / 2.0f, y + scr_center_lines * 4);
+#endif // GLQUAKE_RENDERER_SUPPORT
+
 	do
 	{
 	// scan the width of the line
@@ -240,7 +308,7 @@ void SCR_DrawCenterString (void) //actually do the drawing
 		{
 			Draw_Character (x, y, start[j]);
 			if (!remaining--)
-				return;
+				goto qx_done;
 		}
 
 		y += 8;
@@ -252,6 +320,12 @@ void SCR_DrawCenterString (void) //actually do the drawing
 			break;
 		start++;		// skip the \n
 	} while (1);
+
+qx_done:
+#ifdef GLQUAKE_RENDERER_SUPPORT
+	SCR_QX_CenterScale_End (qx_scaled);
+#endif // GLQUAKE_RENDERER_SUPPORT
+	return;
 }
 
 void SCR_CheckDrawCenterString (void)
