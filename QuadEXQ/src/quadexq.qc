@@ -1356,7 +1356,10 @@ void() QX_PlayerFrame =
 		{
 			if (step >= 4)
 			{
-				QX_Center (self, "!! ADRENALINE MAX 300% !!\n[############]\nBULLET TIME", "", "", "");
+				if (qx_newengine)	// (the ADR bar on the HUD shows the gauge)
+					QX_Center (self, "!! ADRENALINE MAX 300% !!\nBULLET TIME", "", "", "");
+				else
+					QX_Center (self, "!! ADRENALINE MAX 300% !!\n[############]\nBULLET TIME", "", "", "");
 				stuffcmd (self, "bf\n");
 			}
 			// the QuadEXQ engine shows 150-250% on the ADR bar: only BULLET TIME gets a banner
