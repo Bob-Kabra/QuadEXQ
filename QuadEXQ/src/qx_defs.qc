@@ -187,6 +187,8 @@ string	qx_st_bossname;
 .float	qx_nodeflect;			// a shot the Golden Left Hand can't swat (the Cyber Delta boss's rockets)
 .float	qx_cy_jetlock;			// Cyberdemon: jetpack out until then (your BFG's lightning fried it)
 .float	qx_cy_punch_next;		// Cyberdemon: next punch allowed
+.float	qx_cy_cgn;				// Cyberdemon: chaingun bursts since the last one that hurt
+.float	qx_cy_act_next;			// Cyberdemon: next move / dodge check while the fast chaingun runs
 .float	qx_cy_stun;				// Cyberdemon: frozen until then (after its thunderbolts)
 float	QX_CY_JETLOCK	= 4;	// seconds without the jetpack after a BFG zap
 float	QX_CY_STUN		= 1.5;	// seconds frozen after its thunderbolts

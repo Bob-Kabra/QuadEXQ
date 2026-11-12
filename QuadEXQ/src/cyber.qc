@@ -75,35 +75,57 @@ void() hknightMissile =
 	missile.touch = qogre_MissileTouch;
 };
 
-void() CyberFireRLG =
-{
- local vector org,dir;
-local	entity	en;
- 		
-self.effects = self.effects | EF_MUZZLEFLASH;
-org = self.origin + '0 0 16';
-en = self.enemy;
-	sound (self, CHAN_WEAPON, "weapons/lstart.wav", 1, ATTN_NORM);
-	dir = en.origin - en.velocity*0.2;
-	
-	dir = normalize (dir - org);
+float	QX_CY_BOLT_FAN	= 12;	// degrees between the three thunderbolts
+float	QX_CY_BOLT_DMG	= 60;	// each thunderbolt (was 120: three at once were too much)
 
-	traceline (org, self.origin + dir*6000, TRUE, self);
+// QuadEXQ: the thunderbolt, three of them in a fan (each a real bolt).
+// A beam belongs to an entity -- a new beam from the same entity replaces
+// the old one -- so the two side bolts come from short-lived helpers.
+void(vector org, vector dir, entity beament) CyberBolt =
+{
+	traceline (org, org + dir * 6000, TRUE, self);
 
 	WriteByte (MSG_BROADCAST, SVC_TEMPENTITY);
 	WriteByte (MSG_BROADCAST, TE_LIGHTNING3);
-	WriteEntity (MSG_BROADCAST, self);
+	WriteEntity (MSG_BROADCAST, beament);
 	WriteCoord (MSG_BROADCAST, org_x);
 	WriteCoord (MSG_BROADCAST, org_y);
 	WriteCoord (MSG_BROADCAST, org_z);
 	WriteCoord (MSG_BROADCAST, trace_endpos_x);
 	WriteCoord (MSG_BROADCAST, trace_endpos_y);
 	WriteCoord (MSG_BROADCAST, trace_endpos_z);
-   
-	LightningDamage (org, trace_endpos, self, 120);
-  
+
+	LightningDamage (org, trace_endpos, self, QX_CY_BOLT_DMG);
 };
 
+void() CyberFireRLG =
+{
+	local vector org, dir, a;
+	local entity en, h;
+	local float side;
+
+	self.effects = self.effects | EF_MUZZLEFLASH;
+	org = self.origin + '0 0 16';
+	en = self.enemy;
+	sound (self, CHAN_WEAPON, "weapons/lstart.wav", 1, ATTN_NORM);
+	dir = normalize (en.origin - en.velocity * 0.2 - org);
+	CyberBolt (org, dir, self);
+
+	a = vectoangles (dir);
+	a_x = 0 - a_x;
+	side = -1;
+	while (side < 2)
+	{
+		dir = a;
+		dir_y = dir_y + side * QX_CY_BOLT_FAN;
+		makevectors (dir);
+		h = spawn ();
+		h.think = SUB_Remove;
+		h.nextthink = time + 0.3;
+		CyberBolt (org, v_forward, h);
+		side = side + 2;
+	}
+};
 
 void(float xco, float yco, float zco) SpawnExplosion;
 
@@ -271,12 +293,13 @@ void() CyberhMissileTouch =
 //  * three weapons, a bullet storm to show off the QuadEXQ engine: 64 QUTF
 //    Ogre rockets in fans, 256 four-barrel chaingun bursts (twice the
 //    Ogre's rate), 256 Mega Enforcer homing (drunk) rockets in swarms
-//    (a quarter of it on other engines)
+//    (a quarter of it on other engines), and 32 QUTF Ogre lava-ball
+//    grenades that burst into five more each
 //  * no more sky-high jump: a jetpack instead -- up to QX_CY_JETS full
 //    jumps in mid-air
 //  * BFG dodge: a BFG ball coming its way -> it jumps (or jets) aside,
 //    fires two rockets as it goes, and lobs an Ogre lava-ball grenade
-//    when it lands (one time in five: four thunderbolts, 120 damage each,
+//    when it lands (one time in five: four fans of three thunderbolts, 60 damage each,
 //    then it stands frozen for QX_CY_STUN seconds)
 //  * your BFG's lightning fries its jetpack for QX_CY_JETLOCK seconds
 //  * now and then the jet knight's rocket-propelled body slam (QX_JetStart)
@@ -293,12 +316,16 @@ float	QX_CY_DODGE_CHANCE = 0.8;	// how often it sees a BFG ball in time
 // saturation fire
 // (on the QuadEXQ engine; other engines get a quarter, see CyberMass --
 //  the full storm is more than their packets and entity lists can carry)
-float	QX_CY_ROCKETS	= 64;	// QUTF Ogre rockets: a fan of 4 a frame
-float	QX_CY_CG_SHOTS	= 256;	// chaingun bursts at twice the Ogre's rate (0.05 s),
-float	QX_CY_CG_BARRELS = 4;	//   each this many tracers (one of them aimed: 10 damage)
-float	QX_CY_DRUNK		= 256;	// homing rockets: 8 a frame
+float	QX_CY_ROCKETS	= 128;	// QUTF Ogre rockets: a fan of 4 a frame (3.2 s)
+float	QX_CY_CG_SHOTS	= 768;	// chaingun bursts at six times the Ogre's rate (1/60 s),
+float	QX_CY_CG_BARRELS = 4;	//   each this many tracers (one aimed round in three bursts: 10 damage)
+float	QX_CY_CG_RATE	= 0.0167;
+float	QX_CY_DRUNK		= 512;	// homing rockets: 16 a frame; they drift, then lock on and shoot in
+float	QX_CY_DRUNK_BOOST = 2000;	// (like the old Daikon's PoaRail)
 float	QX_CY_ROCK_FAN	= 4;
-float	QX_CY_DRUNK_FAN	= 8;
+float	QX_CY_DRUNK_FAN	= 16;
+float	QX_CY_LAVA		= 32;	// QUTF Ogre lava-ball grenades (five little ones each): 2 a frame
+float	QX_CY_LAVA_FAN	= 2;
 float	QX_CY_BOLTS		= 4;	// thunderbolts, one a frame
 float	QX_CY_PUNCH		= 70;	// melee: a punch when you get close
 float	QX_CY_PUNCH_RANGE	= 110;	// how close is close
@@ -335,6 +362,7 @@ void() cyber_precache =
 	precache_sound ("weapons/cgshot2.wav");
 	precache_sound ("me/me_fire2.wav");			// drunk rocket
 	precache_sound ("weapons/grenade.wav");		// lava-ball grenade
+	precache_sound ("weapons/dx.wav");			// its little lava balls
 	precache_sound ("weapons/r_exp3.wav");
 	precache_sound ("weapons/rocket1i.wav");	// jetpack
 	precache_sound ("knight/ksight.wav");		// the jet knight's body slam (QX_JetStart / QX_JetTouch)
@@ -342,6 +370,7 @@ void() cyber_precache =
 	precache_sound ("player/land2.wav");
 	precache_sound ("shambler/smack.wav");		// the punch
 	precache_model ("progs/tracer.mdl");
+	precache_sound ("daikon/poarail.wav");	// a homing rocket locks on
 };
 
 // the bullet storm, sized for the engine: everything on the QuadEXQ engine,
@@ -398,6 +427,98 @@ void(float spread) CyberQRocket =
 };
 
 // Ogre chaingun round, from the arm (aims behind a moving target, 10 damage)
+// QUTF Ogre lava-ball grenades, rapid fire: each bursts into five little
+// lava balls (QOgreFireTGrenade, quieter -- dozens of them go off).
+// SOLID_TRIGGER so a volley from one muzzle doesn't blow itself up.
+void() CyberLavaBit =
+{
+	T_RadiusDamage (self, self.owner, 30, world);
+	sound (self, CHAN_VOICE, "weapons/dx.wav", 0.3, ATTN_NORM);
+	self.velocity = '0 0 0';
+	self.touch = SUB_Null;
+	setmodel (self, "progs/s_explod.spr");
+	self.solid = SOLID_NOT;
+	s_explode1 ();
+};
+
+void() CyberLavaBurst =
+{
+	local entity g;
+	local float n;
+
+	T_RadiusDamage (self, self.owner, 30, world);
+	sound (self, CHAN_VOICE, "weapons/r_exp3.wav", 0.5, ATTN_NORM);
+	WriteByte (MSG_BROADCAST, SVC_TEMPENTITY);
+	WriteByte (MSG_BROADCAST, TE_EXPLOSION);
+	WriteCoord (MSG_BROADCAST, self.origin_x);
+	WriteCoord (MSG_BROADCAST, self.origin_y);
+	WriteCoord (MSG_BROADCAST, self.origin_z);
+	n = 0;
+	while (n < 5)
+	{
+		g = spawn ();
+		g.owner = self.owner;
+		g.movetype = MOVETYPE_BOUNCE;
+		g.solid = SOLID_NOT;
+		g.classname = "cluster";
+		g.think = CyberLavaBit;
+		g.nextthink = time + random () * 0.5;
+		g.velocity_z = 800 * random () - 200;
+		g.velocity_x = 600 * random () - 300;
+		g.velocity_y = 600 * random () - 300;
+		g.avelocity = '300 300 300';
+		g.angles = vectoangles (g.velocity);
+		setmodel (g, "progs/lavaball.mdl");
+		setsize (g, '0 0 0', '0 0 0');
+		setorigin (g, self.origin);
+		n = n + 1;
+	}
+	self.velocity = '0 0 0';
+	self.touch = SUB_Null;
+	setmodel (self, "progs/s_explod.spr");
+	self.solid = SOLID_NOT;
+	s_explode1 ();
+};
+
+void() CyberLavaTouch =
+{
+	if (other == self.owner)
+		return;
+	CyberLavaBurst ();
+};
+
+void(float loud) CyberLava =
+{
+	local entity m;
+	local vector org, dir;
+	local float d;
+
+	org = CyberMuzzle ();
+	self.effects = self.effects | EF_MUZZLEFLASH;
+	if (loud)
+		sound (self, CHAN_WEAPON, "weapons/grenade.wav", 0.6, ATTN_NORM);
+
+	d = vlen (self.enemy.origin - org);
+	dir = normalize (self.enemy.origin - org);
+	makevectors (vectoangles (dir));
+	dir = normalize (dir + v_right * (random () - 0.5) * 0.35);
+
+	m = spawn ();
+	m.owner = self;
+	m.movetype = MOVETYPE_BOUNCE;
+	m.solid = SOLID_TRIGGER;
+	m.velocity = dir * (600 + d * (0.6 + random () * 0.6));
+	m.velocity_z = m.velocity_z + d / 3 + random () * 120;
+	m.avelocity = '300 300 300';
+	m.angles = vectoangles (m.velocity);
+	m.touch = CyberLavaTouch;
+	m.nextthink = time + 1 + random () * 0.4;
+	m.think = CyberLavaBurst;
+	setmodel (m, "progs/lavaball.mdl");
+	setsize (m, '0 0 0', '0 0 0');
+	setorigin (m, org);
+};
+
 // a chaingun tracer: SOLID_TRIGGER so a spray of them from one muzzle
 // doesn't collide with itself
 void(vector org, vector dir) CyberTracer =
@@ -428,7 +549,7 @@ void() CyberChaingun =
 	en = self.enemy;
 	org = CyberMuzzle ();
 	self.effects = self.effects | EF_MUZZLEFLASH;
-	sound (self, CHAN_WEAPON, "weapons/cgshot2.wav", 1, ATTN_NORM);
+	sound (self, CHAN_WEAPON, "weapons/cgshot2.wav", 0.5, ATTN_NORM);	// (half: at 60 a second it was deafening)
 
 	dir = normalize (en.origin - en.velocity * 0.7 - org);
 	CyberTracer (org, dir);
@@ -441,12 +562,60 @@ void() CyberChaingun =
 	}
 	traceline (org, org + dir * 2048, FALSE, self);
 	vel = (dir + 2 * trace_plane_normal) * 200;
-	if (trace_ent.takedamage)
-		T_Damage (trace_ent, self, self, 10);
+	self.qx_cy_cgn = self.qx_cy_cgn + 1;
+	if (self.qx_cy_cgn >= 3)
+	{	// (three times the rate, the same damage: one burst in three hurts)
+		self.qx_cy_cgn = 0;
+		if (trace_ent.takedamage)
+			T_Damage (trace_ent, self, self, 10);
+	}
 	CG_puff (trace_endpos - dir * 4, vel, 20, 0.3);
 };
 
 // Mega Enforcer drunk rocket, from the arm
+// the Mega Enforcer's DrunkExplode, at half volume (hundreds of them go off)
+void() CyberDrunkExplode =
+{
+	T_RadiusDamage (self, self.owner, 30, world);
+	sound (self, CHAN_VOICE, "weapons/r_exp3.wav", 0.5, ATTN_NORM);
+	self.velocity = '0 0 0';
+	self.touch = SUB_Null;
+	setmodel (self, "progs/s_explod.spr");
+	self.movetype = MOVETYPE_FLYMISSILE;
+	self.solid = SOLID_NOT;
+	s_explode1 ();
+};
+
+// a homing rocket: drifts like the Mega Enforcer's, then locks on and
+// shoots straight in (the old Daikon's PoaRail)
+void() CyberDrunkThink =
+{
+	local vector dir;
+
+	if (time >= self.ltime)
+	{
+		dir = normalize (self.enemy.origin - self.origin);
+		self.velocity = dir * QX_CY_DRUNK_BOOST;
+		self.angles = vectoangles (self.velocity);
+		if (self.lip)
+			sound (self, CHAN_WEAPON, "daikon/poarail.wav", 0.3, ATTN_NORM);
+		self.think = SUB_Remove;
+		self.nextthink = time + 6;
+		return;
+	}
+	if (infront (self.enemy))
+	{
+		self.velocity = normalize (self.enemy.origin - self.origin) * (450 + random () * 50);
+		makevectors (self.velocity);
+		self.velocity = self.velocity + v_right * ((random () * 100 + 100) * self.cnt);
+		self.angles = vectoangles (self.velocity);
+		self.cnt = 0 - self.cnt;
+	}
+	self.nextthink = time + 0.25;
+	if (self.nextthink > self.ltime)
+		self.nextthink = self.ltime;
+};
+
 void(float loud) CyberDrunk =
 {
 	local entity missile;
@@ -455,7 +624,7 @@ void(float loud) CyberDrunk =
 	org = CyberMuzzle ();
 	self.effects = self.effects | EF_MUZZLEFLASH;
 	if (loud)
-		sound (self, CHAN_WEAPON, "me/me_fire2.wav", 1, ATTN_NORM);
+		sound (self, CHAN_WEAPON, "me/me_fire2.wav", 0.5, ATTN_NORM);
 
 	missile = spawn ();
 	missile.owner = self;
@@ -466,10 +635,12 @@ void(float loud) CyberDrunk =
 	makevectors (missile.velocity);
 	missile.velocity = missile.velocity + v_up * (random () * 20 - 10) + v_right * (random () * 80 - 40);
 	missile.angles = vectoangles (missile.velocity);
-	missile.touch = DrunkExplode;
+	missile.touch = CyberDrunkExplode;
 	missile.cnt = 1;
 	missile.nextthink = time + 0.25;
-	missile.think = drunkthink;
+	missile.think = CyberDrunkThink;
+	missile.ltime = time + 0.9 + random () * 0.9;	// when it locks on
+	missile.lip = (random () < 0.15);				// (only a few make the lock-on sound)
 	setmodel (missile, "progs/memissil.mdl");
 	setsize (missile, '0 0 0', '0 0 0');
 	setorigin (missile, org + v_right * (random () * 16 - 8) + v_up * (random () * 16 - 8));
@@ -739,15 +910,23 @@ void() cyber_cg1 =[ $shoot1, cyber_cg2 ]
 	self.cnt = 0;
 	self.nextthink = time + 0.3;
 };
+// (moving and dodging stay at the normal 10 a second)
+void() CyberActTick =
+{
+	if (time < self.qx_cy_act_next)
+		return;
+	self.qx_cy_act_next = time + 0.1;
+	CyberAct ();
+};
 void() cyber_cg2 =[ $shoot2, cyber_cg3 ]
 {
-	ai_face(); CyberChaingun();
+	ai_face(); CyberActTick(); CyberChaingun();
 	self.cnt = self.cnt + 1;
-	self.nextthink = time + 0.05;
+	self.nextthink = time + QX_CY_CG_RATE;
 };
 void() cyber_cg3 =[ $shoot3, cyber_cg2 ]
 {
-	ai_face(); CyberAct(); CyberChaingun();		// (it moves every other round)
+	ai_face(); CyberActTick(); CyberChaingun();
 	self.cnt = self.cnt + 1;
 	self.nextthink = time + 0.05;
 	if (self.cnt >= QX_CY_CG_SHOTS || !CyberKeepFiring ())
@@ -789,6 +968,36 @@ void() cyber_drunk3 =[ $shoot5, cyber_drunk2 ]
 	}
 };
 
+// QUTF Ogre lava balls, rapid fire: 32, two a frame
+void() CyberLavaVolley =
+{
+	local float n, k;
+
+	n = floor (QX_CY_LAVA_FAN * CyberMass ());
+	if (n < 1)
+		n = 1;
+	k = 0;
+	while (k < n)
+	{
+		CyberLava (k == 0);
+		k = k + 1;
+	}
+	self.cnt = self.cnt + n;
+};
+
+void() cyber_lava2;
+void() cyber_lava1 =[ $shoot1, cyber_lava2 ] {ai_face(); CyberAct(); self.cnt = 0;};
+void() cyber_lava2 =[ $shoot3, cyber_lava3 ] {ai_face(); CyberAct(); CyberLavaVolley();};
+void() cyber_lava3 =[ $shoot6, cyber_lava2 ]
+{
+	ai_face(); CyberAct(); CyberLavaVolley();
+	if (self.cnt >= QX_CY_LAVA * CyberMass () || !CyberKeepFiring ())
+	{
+		SUB_AttackFinished (0.5 + random () * 0.7);
+		self.think = cyber_run1;
+	}
+};
+
 void() cyber_attack =
 {
 	local float d, r;
@@ -797,26 +1006,32 @@ void() cyber_attack =
 	r = random ();
 	if (d > 900)
 	{	// far: the homing rockets find their way
-		if (r < 0.6)
+		if (r < 0.45)
 			cyber_drunk1 ();
-		else
+		else if (r < 0.75)
 			cyber_rock1 ();
+		else
+			cyber_lava1 ();
 	}
 	else if (d > 350)
 	{
-		if (r < 0.4)
+		if (r < 0.3)
 			cyber_cg1 ();
-		else if (r < 0.7)
+		else if (r < 0.55)
 			cyber_rock1 ();
-		else
+		else if (r < 0.75)
 			cyber_drunk1 ();
+		else
+			cyber_lava1 ();
 	}
 	else
 	{	// close: the chaingun
-		if (r < 0.65)
+		if (r < 0.5)
 			cyber_cg1 ();
-		else
+		else if (r < 0.75)
 			cyber_rock1 ();
+		else
+			cyber_lava1 ();
 	}
 };
 
