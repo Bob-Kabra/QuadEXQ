@@ -46,8 +46,9 @@ typedef enum { ENUM_FORCE_INT_GCC_ (opt)
 	opt_lerpmodels_13,		// QuadEXQ: the frame interpolation pieces, each on its own (was "Effects")
 	opt_lerpmove_14,
 	opt_stairs_15,
-	opt_set_fitz_16,
-	opt_set_mark_v_17,
+	opt_retro_16,			// QuadEXQ: qx_retro, the 1996 look
+	opt_set_fitz_17,
+	opt_set_mark_v_18,
 	opt_COUNT
 } opt_e;
 
@@ -106,10 +107,11 @@ static mnu_ent_t mnu_ent_table[] = { //                                         
 	{ opt_effects_12,		QCTRL(labeltoggle), "     Effects", "QMB: JoeQuake-style particle effects",     0, 13,  0,  0, "Normal,JoeQuake (QMB),QMB + Classic Bolt", "Normal"		},
 	{ opt_lerpmodels_13,	QCTRL(labeltoggle), "  Model Anim", "Monster/weapon frames (r_lerpmodels)",      0, 14,  0,  0, "Smooth,Jerky (Original)"										},
 	{ opt_lerpmove_14,		QCTRL(labeltoggle), "    Movement", "Monster/item movement (r_lerpmove)",        0, 15,  0,  0, "Smooth,Jerky (Original)"										},
-	{ opt_stairs_15,		QCTRL(labeltoggle), "      Stairs", "Your view on stairs (v_smoothstairs)",      1, 16,  0,  0, "Smooth,Jerky (Original)"										},
+	{ opt_stairs_15,		QCTRL(labeltoggle), "      Stairs", "Your view on stairs (v_smoothstairs)",      0, 16,  0,  0, "Smooth,Jerky (Original)"										},
+	{ opt_retro_16,			QCTRL(labeltoggle), "  Retro 1996", "The DOS Quake look (qx_retro)",             0, 17,  1,  1, "Off,In Bullet Time,Bullet Time Plain,Always (WinQuake),Always 256 Colors", "(GL Only)"	},
 
-	{ opt_set_fitz_16,		QCTRL(labelbutton), "Set To FitzQuake", "Set FitzQuake 0.85 default settings",	0,  0, 112, -1, ""																	},
-	{ opt_set_mark_v_17,	QCTRL(labelbutton), "Set To Mark V", "Set Mark V revised settings",				0,  0, 124, -1, ""																	},
+	{ opt_set_fitz_17,		QCTRL(labelbutton), "Set To FitzQuake", "Set FitzQuake 0.85 default settings",	0,  0, 112, -1, ""																	},
+	{ opt_set_mark_v_18,	QCTRL(labelbutton), "Set To Mark V", "Set Mark V revised settings",				0,  0, 124, -1, ""																	},
 }; const int mnu_ent_table_count = ARRAY_COUNT(mnu_ent_table);
 
 
@@ -136,6 +138,7 @@ static int Mnu_Preferences_Get_Basket_Value_ (const opt_e option_idx)
 	case_break opt_lerpmodels_13:	return !r_lerpmodels.value;
 	case_break opt_lerpmove_14:		return !r_lerpmove.value;
 	case_break opt_stairs_15:		return !v_smoothstairs.value;
+	case_break opt_retro_16:		return 0;
 #else
 	case_break opt_flashblend_5:	return CONVBOOL gl_flashblend.value;                                                                                    // Flash Blends
 	case_break opt_autoscale_10:	return CLAMP(0, (int)scr_scaleauto.value + 1, 5);                                                                       // Autoscale
@@ -143,6 +146,8 @@ static int Mnu_Preferences_Get_Basket_Value_ (const opt_e option_idx)
 	case_break opt_lerpmodels_13:	return !r_lerpmodels.value;
 	case_break opt_lerpmove_14:		return !r_lerpmove.value;
 	case_break opt_stairs_15:		return !v_smoothstairs.value;
+	case_break opt_retro_16:		{	int r = (int) qx_retro.value;							// 0, 1, 2, 4, 5 -> rows 0..4
+										return r >= 5 ? 4 : r == 4 ? 3 : r == 2 ? 2 : r >= 1 ? 1 : 0; }
 #endif
 
     case_break opt_status_bar_11:	return Choose123(scr_viewsize.value == 110, scr_sbaralpha.value < 1, scr_sbarcentered.value);                           // Status bar
@@ -194,7 +199,10 @@ static cbool Mnu_Preferences_Set_Basket_Value_ (const opt_e option_idx, const in
     case_break opt_stairs_15:		Cvar_SetValueQuick (&v_smoothstairs, iif (newval == 1, 0, 1) );								// Stairs
 #ifdef WINQUAKE_RENDERER_SUPPORT
     case_break opt_effects_12:		break;																							// Effects (no QMB)
+    case_break opt_retro_16:		break;																							// (GL only)
 #else
+    case_break opt_retro_16:		{	static const int retro_vals[5] = { 0, 1, 2, 4, 5 };					// Retro 1996 (qx_retro)
+										Cvar_SetValueQuick (&qx_retro, retro_vals[CLAMP(0, newval, 4)]); }
     case_break opt_effects_12:		Cvar_SetValueQuick (&qmb_active,     iif (newval >= 1, 1, 0) );									// Effects
 									Cvar_SetValueQuick (&qmb_lightning,  iif (newval == 2, 0, 1) );								// 2: QMB, but the classic bolt
 #endif 
@@ -303,7 +311,7 @@ LOCAL_EVENT (KeyPress) (key_scancode_e key, int hotspot)
 								{ int row_px = 32; int n; for (n = 0; n < local_menu->cursor_solid_count; n ++) {
 									mnu_ent_t *e = &mnu_ent_table[n];
 									if (e->q_control == q_control_labeltoggle) {
-										int newval = local_menu->cursor == opt_set_fitz_16 ? e->fitz_num : e->markv_num;
+										int newval = local_menu->cursor == opt_set_fitz_17 ? e->fitz_num : e->markv_num;
 										Mnu_Preferences_Set_Basket_Value_ (e->opt_idx, newval);
 										MENU_TOGGLE_SOFT_SOUND();
 									}
@@ -331,7 +339,7 @@ LOCAL_EVENT (Enter_f) (lparse_t *unused)
 
 LOCAL_EVENT (InitOnce) (menux_t *self)
 {
-	DEBUG_COMPILE_TIME_ASSERT (/*hint word*/ opt_COUNT, opt_COUNT == 18);   // QuadEXQ: 18 (Model Anim, Movement, Stairs rows)
+	DEBUG_COMPILE_TIME_ASSERT (/*hint word*/ opt_COUNT, opt_COUNT == 19);   // QuadEXQ: 19 (Model Anim, Movement, Stairs, Retro 1996 rows)
 	self->cursor_solid_count = opt_COUNT; // Immutable - let's do this and check cursor against disabled attribute
 
 	{ int row_px = 32; int n; for (n = 0; n < self->cursor_solid_count; n ++) {
