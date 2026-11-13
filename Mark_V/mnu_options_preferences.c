@@ -108,7 +108,7 @@ static mnu_ent_t mnu_ent_table[] = { //                                         
 	{ opt_lerpmodels_13,	QCTRL(labeltoggle), "  Model Anim", "Monster/weapon frames (r_lerpmodels)",      0, 14,  0,  0, "Smooth,Jerky (Original)"										},
 	{ opt_lerpmove_14,		QCTRL(labeltoggle), "    Movement", "Monster/item movement (r_lerpmove)",        0, 15,  0,  0, "Smooth,Jerky (Original)"										},
 	{ opt_stairs_15,		QCTRL(labeltoggle), "      Stairs", "Your view on stairs (v_smoothstairs)",      0, 16,  0,  0, "Smooth,Jerky (Original)"										},
-	{ opt_retro_16,			QCTRL(labeltoggle), "  Retro 1996", "The DOS Quake look (qx_retro)",             0, 17,  1,  1, "Off,In Bullet Time,Bullet Time Plain,Always (WinQuake),Always 256 Colors", "(GL Only)"	},
+	{ opt_retro_16,			QCTRL(labeltoggle), "  Retro 1996", "The DOS Quake look (qx_retro)",             0, 17,  1,  1, "Off,In Bullet Time,Bullet Time Plain,Always (DOSQuake),Always 256 Colors", "(GL Only)"	},
 
 	{ opt_set_fitz_17,		QCTRL(labelbutton), "Set To FitzQuake", "Set FitzQuake 0.85 default settings",	0,  0, 112, -1, ""																	},
 	{ opt_set_mark_v_18,	QCTRL(labelbutton), "Set To Mark V", "Set Mark V revised settings",				0,  0, 124, -1, ""																	},
