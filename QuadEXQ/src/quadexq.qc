@@ -699,14 +699,25 @@ float(float a, float q) QX_TimescaleFor =
 	return s;
 };
 
+float	qx_nots;		// this engine has no host_timescale: no bullet time
+
 void(float s) QX_SetTimescale =
 {
 	local entity p;
 
+	if (qx_nots)
+		return;				// (qx_timescale stays 1: no slow world, no boost)
 	if (s == qx_timescale)
 		return;
 	qx_timescale = s;
 	cvar_set ("host_timescale", ftos (s));
+	if (cvar ("host_timescale") != s)
+	{	// not there (DarkPlaces-family engines such as Zircon): the world can't
+		// slow down, so the player mustn't be sped up either
+		qx_nots = TRUE;
+		qx_timescale = 1;
+		s = 1;
+	}
 	cvar_set ("sv_accelerate", ftos (10 / s));
 	cvar_set ("sv_friction", ftos (4 / s));
 	if (s >= 1)
@@ -1109,7 +1120,10 @@ void() QX_AutoDeflect =
 
 // ---------------------------------------------------------------- engine HUD
 // The QuadEXQ engine (quadexq.exe / patched Mark V) draws a HUD from client
-// stats 20..26. Other engines just store them and ignore them.
+// stats 20..27. They go to the QuadEXQ engine only: other engines give these
+// numbers their own meaning (DarkPlaces-family engines such as Zircon, and
+// QuakeSpasm-Spiked: 21 = STAT_VIEWZOOM -- the adrenaline gauge zoomed the
+// view in -- and 25 = STAT_MOVEFLAGS).
 
 void(float idx, float val) QX_Stat =
 {
@@ -1124,6 +1138,8 @@ void() QX_SendHUD =
 	local float full, fl, v;
 	local entity tgt;
 
+	if (!qx_newengine)
+		return;
 	full = FALSE;
 	if (time >= self.qx_hs_full)
 	{
