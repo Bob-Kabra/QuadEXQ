@@ -131,6 +131,20 @@ void R_RenderDlight (dlight_t *light)
 
 /*
 =============
+R_QX_Flashblend -- QuadEXQ: gl_flashblend, but never in the 1996 look
+(qx_retro): the software renderer lit the walls with its dynamic lights,
+it had no glowing balls
+=============
+*/
+cbool R_QX_Flashblend (void)
+{
+	float QX_Retro_Level (void);
+
+	return gl_flashblend.value && QX_Retro_Level () <= 0;
+}
+
+/*
+=============
 R_RenderDlights_Flashblend
 =============
 */
@@ -139,7 +153,7 @@ void R_RenderDlights_Flashblend (void)
 	int		i;
 	dlight_t	*l;
 
-	if (!gl_flashblend.value)
+	if (!R_QX_Flashblend ())
 		return;
 
 	eglDepthMask (0);
@@ -304,7 +318,7 @@ void R_PushDlights (entity_t *ent)
 #ifdef GLQUAKE_RENDERER_SUPPORT
 void R_PushDlights_World (void)
 {
-	if (gl_flashblend.value) // Non-flashblend dlights
+	if (R_QX_Flashblend ()) // Non-flashblend dlights
 		return;
 
 	R_PushDlights (NULL);

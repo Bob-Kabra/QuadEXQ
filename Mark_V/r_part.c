@@ -877,7 +877,11 @@ void Classic_DrawParticles (void)
 	VectorScale (vup, 1.5, up);
 	VectorScale (vright, 1.5, right);
 
-    GL_Bind(particletexture);
+	{	// QuadEXQ: in the 1996 look (qx_retro) particles are square, like the
+		// software renderer's -- r_particles itself is left alone
+		float QX_Retro_Level (void);
+		GL_Bind (QX_Retro_Level () > 0 && particletexture2 ? particletexture2 : particletexture);
+	}
 	eglEnable (GL_BLEND);
 	eglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 

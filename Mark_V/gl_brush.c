@@ -667,7 +667,7 @@ void R_DrawBrushModel (entity_t *e)
 
 // calculate dynamic lighting for bmodel if it's not an
 // instanced model (like a healthbox ... external brush models supply their own lighting)
-	if (clmodel->firstmodelsurface != 0 && !gl_flashblend.value)
+	if (clmodel->firstmodelsurface != 0 && !R_QX_Flashblend ())	// QuadEXQ: (not in the 1996 look)
 	{
 		// calculate entity local space for dlight transforms
 		Mat4_Identity_Set (&e->gl_matrix); // GL_IdentityMatrix

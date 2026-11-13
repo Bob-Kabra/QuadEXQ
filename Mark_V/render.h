@@ -445,6 +445,7 @@ int R_LightPoint (vec3_t p);
 
 #ifdef GLQUAKE_RENDERER_SUPPORT
 void R_PushDlights_World (void);
+cbool R_QX_Flashblend (void);		// QuadEXQ: gl_flashblend, off in the 1996 look
 void R_RenderDlights_Flashblend (void);
 #endif // GLQUAKE_RENDERER_SUPPORT
 
