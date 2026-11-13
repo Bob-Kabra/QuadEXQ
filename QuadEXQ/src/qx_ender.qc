@@ -29,7 +29,7 @@ float	QX_ENDER_HITS		= 10;		// BFG hits that bring the Cyberdemon boss down
 float	QX_ENDER_DELTA_HP	= 0.4;		// Delta Team drops in when your health is this low (of 100) ...
 float	QX_ENDER_DELTA_TIME	= 30;		// ... or this many seconds into the fight
 float	QX_ENDER_SCOUT_HURT	= 8;		// Delta Team's hits on the scouts count this many times
-float	QX_ENDER_SCOUT_HP	= 3;		// the scouts' health, times this
+float	QX_ENDER_SCOUT_HP	= 3;		// the scouts' health, times this (and times 1 + PlayerSkill / 100)
 float	QX_ENDER_RAGE_MAX	= 12;		// raging-slipgate monsters alive at once (at most)
 float	QX_ENDER_REGEN		= 20;		// ender.bsp: health and armor come back after this many seconds
 float	QX_ENDER_TRACK		= 12;		// music/track12.mp3: Delta Team's song
@@ -513,7 +513,9 @@ void() QX_EnderArenaStart =
 		{
 			e.qx_ender_scout = 1;
 			e.skin = 0;			// (the scouts keep the stock colours)
-			e.health = e.health * QX_ENDER_SCOUT_HP;	// tough enough to last until Delta Team comes
+			// tough enough to last until Delta Team comes, and tougher still
+			// for a skilled player: PlayerSkill 100 doubles it again
+			e.health = e.health * QX_ENDER_SCOUT_HP * (1 + qx_pskill / 100);
 			e.max_health = e.health;
 		}
 		e = nextent (e);
