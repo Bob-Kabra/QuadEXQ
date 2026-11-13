@@ -354,6 +354,7 @@ void() cyber_stun =[ $stand1, cyber_stun ]
 void() cyber_precache =
 {
 	precache_model ("progs/missile.mdl");
+	precache_model ("progs/cymissile.mdl");		// the Cyber Delta's own rockets
 	precache_model ("progs/lavaball.mdl");
 	precache_model ("progs/memissil.mdl");
 	precache_model ("progs/s_explod.spr");
@@ -421,7 +422,10 @@ void(float spread) CyberQRocket =
 	rocket.qx_nodeflect = self.qx_ender_boss;	// the boss's rockets can't be swatted back
 	rocket.nextthink = time + 6;
 	rocket.think = SUB_Remove;
-	setmodel (rocket, "progs/missile.mdl");
+	if (self.qx_ender_boss)
+		setmodel (rocket, "progs/cymissile.mdl");	// the boss's: a big one (no swatting it back)
+	else
+		setmodel (rocket, "progs/missile.mdl");
 	setsize (rocket, '0 0 0', '0 0 0');
 	setorigin (rocket, org);
 };

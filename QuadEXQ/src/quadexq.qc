@@ -1029,6 +1029,15 @@ void() QX_AutoDeflect =
 	e = findradius (self.origin, QX_DEFLECT_RANGE);
 	while (e)
 	{
+		if (e.qx_nodeflect)				// the Cyber Delta's big rockets: say so
+		if (e.owner.flags & FL_MONSTER)
+		if (e.velocity * (self.origin - e.origin) > 0)
+		if (time > self.qx_deflect_msg)
+		{
+			self.qx_deflect_msg = time + 1.5;
+			QX_Center (self, "TOO HEAVY TO DEFLECT!!", "", "", "");
+			sound (self, CHAN_AUTO, "weapons/tink1.wav", 1, ATTN_NORM);
+		}
 		if (e.owner.flags & FL_MONSTER)
 		if (!e.qx_nodeflect)			// (the Cyber Delta boss's rockets)
 		if (!(e.flags & (FL_MONSTER | FL_CLIENT | FL_ITEM)))
