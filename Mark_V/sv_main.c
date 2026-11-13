@@ -1495,8 +1495,42 @@ static const qx_ach_t qx_achs[] = {
 	{ "Face, Meet Jet",			"Die to a jet charge 10 times",				0 },	// 16384
 	{ "Join the Delta Team",	"Delta Team loses 100 men (they need you)",	0 },	// 32768
 	{ "Quad King",				"Kill 1000 enemies with Quad Damage",		0 },	// 65536
+	{ "Lava Dive!",				"Die in lava",								0 },	// 131072
+	{ "1st Frag!",				"Get blown to bits",						0 },	// 262144
+	{ "Humiliation!",			"Get axed by a Rune Hunter",				0 },	// 524288
+	{ "Mars Mission!",			"Delta Team pulls out with heavy losses",	0 },	// 1048576
+	{ "Elite Delta!",			"Delta Team kills 1000 enemies",			0 },	// 2097152
+	// from here on: qx_ach2 (QX_A2_*), bit = entry - QX_ACH_WORD
+	{ "Bullet Time Junkie",		"Spend 10 minutes in bullet time",			0 },	// 1
+	{ "Max Skill",				"Reach PlayerSkill 100",					0 },	// 2
+	{ "Elite Hunter",			"Kill 100 elite enemies",					0 },	// 4
+	{ "Plasma Storm",			"Kill 100 enemies with plasma",				0 },	// 8
+	{ "No Delta Needed",		"Finish an episode without Delta Team",		0 },	// 16
+	{ "Untouchable",			"Clear 5 maps in a row without dying",		0 },	// 32
+	{ "Rift Walker",			"Kill 100 monsters that came through a rift", 0 },	// 64
+	{ "Home Run",				"Kill a monster with its own shot, swatted back", 0 },	// 128
+	{ "Lord of the Swat",		"Swat back a shot a Vore Lord swatted at you", 0 },	// 256
+	{ "Friendly Fire?",			"Kill yourself",							0 },	// 512
+	{ "Sorry We're Late",		"Die while Delta Team is on the way",		0 },	// 1024
+	{ "Shub's Revenge",			"Get telefragged by Shub-Niggurath's gate",	1 },	// 2048
+	{ "Telefragged",			"Get telefragged",							0 },	// 4096
+	{ "Rocket Jumper",			"Rocket jump 100 times",					0 },	// 8192
+	{ "Quad Fail",				"Die with Quad Damage running",				0 },	// 16384
+	{ "Shub Lord at 300%",		"Finish off Shub-Niggurath at 300% adrenaline", 1 },	// 32768
+	{ "BFG Sniper",				"Land all 10 BFG hits on the Cyber Delta in midair", 1 },	// 65536
+	{ "Delta's Pride",			"Down the Cyber Delta with Delta Team, and lose no man", 1 },	// 131072
+	{ "It's alright! No friendly fire!", "Hit Delta Team with the BFG 10 times", 1 },	// 262144
+	{ "Kill block!",			"Kill an Ogre with its own shot, swatted back", 0 },	// 524288
 };
 #define QX_ACH_COUNT	((int)(sizeof(qx_achs) / sizeof(qx_achs[0])))
+#define QX_ACH_WORD		22		// entries in qx_ach; the rest are in qx_ach2 (a float holds 24 bits)
+
+static cbool SV_QX_Has (int i)
+{
+	if (i < QX_ACH_WORD)
+		return ((int) Cvar_VariableValue ("qx_ach") >> i) & 1;
+	return ((int) Cvar_VariableValue ("qx_ach2") >> (i - QX_ACH_WORD)) & 1;
+}
 
 static int SV_QX_Rs (int t, cbool deaths)
 {
@@ -1505,9 +1539,9 @@ static int SV_QX_Rs (int t, cbool deaths)
 
 static int SV_QX_Achs (void)
 {
-	int a = (int) Cvar_VariableValue ("qx_ach"), i, n = 0;
+	int i, n = 0;
 	for (i = 0; i < QX_ACH_COUNT; i++)
-		if (a & (1 << i))
+		if (SV_QX_Has (i))
 			n++;
 	return n;
 }
@@ -1537,7 +1571,7 @@ void SV_QX_RunStats_f (lparse_t *line)
 {
 	char path[MAX_OSPATH], hms[32], row[128];
 	FILE *f;
-	int t, a = (int) Cvar_VariableValue ("qx_ach"), i;
+	int t, i;
 
 	FS_FullPath_From_QPath (path, "quadexq_stats.txt");
 	f = FS_fopen_write (path, "a");
@@ -1568,7 +1602,7 @@ void SV_QX_RunStats_f (lparse_t *line)
 	Con_PrintLinef ("%s", row);
 	if (f) fprintf (f, "%s\n", row);
 	for (i = 0; i < QX_ACH_COUNT; i++)
-		if (a & (1 << i))
+		if (SV_QX_Has (i))
 		{
 			c_snprintf2 (row, "    %s -- %s", qx_achs[i].name, qx_achs[i].desc);
 			Con_PrintLinef ("%s", row);
@@ -1579,12 +1613,12 @@ void SV_QX_RunStats_f (lparse_t *line)
 
 void SV_QX_Achievements_f (lparse_t *line)
 {
-	int a = (int) Cvar_VariableValue ("qx_ach"), i;
+	int i;
 
 	Con_PrintLinef ("ACHIEVEMENTS %d / %d", SV_QX_Achs (), QX_ACH_COUNT);
 	for (i = 0; i < QX_ACH_COUNT; i++)
 	{
-		if (a & (1 << i))
+		if (SV_QX_Has (i))
 			Con_PrintLinef ("  [X] %s -- %s", qx_achs[i].name, qx_achs[i].desc);
 		else if (qx_achs[i].hidden)
 			Con_PrintLinef ("  [ ] ???");
