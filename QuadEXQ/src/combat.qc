@@ -117,7 +117,11 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 		return;
 	if (targ.qx_delta)
 	if (attacker.flags & FL_CLIENT)
+	{
+		if (inflictor.classname == "b1")
+			QX_AchBFGDelta (inflictor);	// (achievement)
 		return;
+	}
 
 // QuadEXQ: the Cyberdemon boss fight (only your BFG hurts the boss)
 	if (qx_ender_arena)

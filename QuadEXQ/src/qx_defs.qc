@@ -365,6 +365,29 @@ void() QX_AchSwat;
 void() QX_AchDeltaLost;
 void() QX_AchOverflow;
 void() QX_AchQuad;
+void() QX_AchHumiliation;
+void() QX_AchMars;
+void() QX_AchDeltaKill;
+void() QX_AchTick;
+void() QX_AchMaxSkill;
+void(float sflags) QX_AchSigil;
+void() QX_AchDeltaHere;
+void(entity e) QX_AchSwatShot;
+void(entity targ, entity attacker) QX_AchRJump;
+void(entity inflictor) QX_AchBFGDelta;
+void() QX_AchShubGate;
+void() QX_AchShubLord;
+void() QX_AchBFGSniper;
+void(float deltahere) QX_AchDeltaPride;
+void() QX_AchMapStart;
+.float	qx_ach_vlord;		// a shot a Vore Lord swatted back at you
+.entity	qx_ach_swatfrom;	// a shot you swatted: the monster that fired it
+.float	qx_ach_ff;			// a BFG ball that already counted a Delta Team hit
+.float	qx_ach_rjt;			// last rocket jump counted
+entity	qx_ach_infl;		// what dealt your last hit on a monster (QX_StatHit)
+float	qx_ach_inflt;		// ... and when
+float	qx_ach_bt;			// bullet time not yet added to qx_life_bttime
+float	qx_ach_bfgground;	// THE ENDER: a BFG hit landed on the Cyber Delta on the ground
 void() QX_EnderArenaInit;
 void() QX_EnderArenaStart;
 void() QX_EnderThink;

@@ -113,6 +113,7 @@ void() finale_1 =
 
 	intermission_exittime = time + 10000000;	// never allow exit
 	intermission_running = 1;
+	QX_AchShubLord ();		// QuadEXQ
 	if (serverflags & QX_ENDER_WON)
 		QX_AchQuad ();		// QuadEXQ: (its banner is lost under the end text; the run page counts it)
 	qx_finale = TRUE;		// QuadEXQ: nothing may print over the end text now

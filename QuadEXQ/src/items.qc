@@ -1040,6 +1040,7 @@ local float		best;
 	self.solid = SOLID_NOT;
 	self.model = string_null;
 	serverflags = serverflags | (self.spawnflags & 15);
+	QX_AchSigil (self.spawnflags);	// QuadEXQ: No Delta Needed
 	self.classname = "";		// so rune doors won't find it
 	
 	activator = other;

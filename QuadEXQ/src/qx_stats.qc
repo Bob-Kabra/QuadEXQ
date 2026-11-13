@@ -194,6 +194,7 @@ void() QX_StatStart =
 	qx_st_init = 1;
 	qx_st_t0 = time;
 	qx_st_skill0 = qx_pskill;
+	QX_AchMapStart ();
 	if (world.model == "maps/start.bsp")
 		return;
 
@@ -233,6 +234,7 @@ void() QX_StatTick =
 		e.qx_ws_fire = e.qx_ws_fire + frametime;
 	if (qx_timescale < 1)
 		qx_st_slow = qx_st_slow + frametime;
+	QX_AchTick ();
 };
 
 // player damages a monster (before the health is taken)
@@ -244,6 +246,8 @@ void(entity attacker, entity inflictor, entity targ, float take) QX_StatHit =
 	if (deathmatch)
 		return;
 	qx_st_axehit = (attacker.qx_meleeing && inflictor == attacker);
+	qx_ach_infl = inflictor;		// (for the achievements, if this hit kills)
+	qx_ach_inflt = time;
 	real = take;
 	if (targ.health < real)
 		real = targ.health;
@@ -267,6 +271,7 @@ void(entity targ, entity attacker, float take) QX_StatHurt =
 	targ.qx_st_lastatk = attacker;
 	targ.qx_st_lastclass = attacker.classname;
 	targ.qx_st_lastelite = attacker.qx_elite;
+	QX_AchRJump (targ, attacker);
 };
 
 void(entity targ, entity attacker) QX_StatKill =
@@ -297,6 +302,7 @@ void(entity targ, entity attacker) QX_StatKill =
 	{
 		qx_st_delta = qx_st_delta + 1;
 		qx_delta_kills = qx_delta_kills + 1;
+		QX_AchDeltaKill ();
 		return;
 	}
 	if (!(attacker.flags & FL_CLIENT))

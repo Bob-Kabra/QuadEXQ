@@ -2402,6 +2402,7 @@ void() QX_DeltaWithdrawThink =
 	if (p)
 	{
 		QX_Center (p, "DELTA TEAM TAKING HEAVY LOSSES\n\n!! DELTA LABS !!\nurgent support request\n\nDelta team pulls out", "", "", "");
+		QX_AchMars ();
 		sound (p, CHAN_AUTO, "misc/talk.wav", 1, ATTN_NONE);
 	}
 	e = nextent (world);
@@ -2532,6 +2533,7 @@ void() QX_DeltaArrive =
 		return;
 	qx_delta_losses = 0;
 	qx_delta_kills = 0;
+	QX_AchDeltaHere ();
 	e = find (world, classname, "qx_delta_out");	// a withdrawal on its way: called off
 	while (e)
 	{

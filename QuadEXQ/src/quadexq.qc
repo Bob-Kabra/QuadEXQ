@@ -92,6 +92,8 @@ void(float v) QX_SetSkill =
 	if (v > QX_SNG_HOMING_SKILL)
 		QX_MsgAll ("Super Nailgun: HOMING NAILS online\n", "", "", "");
 	qx_pskill = v;				// fractions are kept (log-like curve)
+	if (v >= QX_SKILL_MAX)
+		QX_AchMaxSkill ();
 	if (!qx_skillvar)
 		qx_skillvar = "temp1";
 	cvar_set (qx_skillvar, ftos (qx_pskill + 1));	// survives death-restart, changelevel (and restarts on QuadEXQ engine)
@@ -645,6 +647,10 @@ void() QX_PlayerDied =
 	if (!self.ishuman)
 		return;
 
+	if (self.qx_st_lastatk.classname == "monster_runehunter")
+	if (self.qx_st_lastatk.weapon == IT_AXE)
+		QX_AchHumiliation ();		// a hunter's axe
+
 	if (qx_duel)
 	{	// Rune Hunter duel: just a frag for the hunter, no penalty
 		QX_HunterScored ();
@@ -987,6 +993,7 @@ void() QX_VoreDeflect =
 					e.velocity_z = e.velocity_z + 200;
 				e.angles = vectoangles (e.velocity);
 				e.owner = self;
+				e.qx_ach_vlord = 1;		// (Lord of the Swat, if you swat it again)
 				if (e.enemy == self)
 					e.enemy = p;			// homing nails home in on you
 				sound (e, CHAN_AUTO, "weapons/ric2.wav", 1, ATTN_NORM);
@@ -1051,6 +1058,7 @@ void() QX_AutoDeflect =
 				if (e.movetype == MOVETYPE_BOUNCE || e.movetype == MOVETYPE_TOSS)
 					e.velocity_z = e.velocity_z + 200;
 				e.angles = vectoangles (e.velocity);
+				QX_AchSwatShot (e);
 				e.owner = self;
 				if (e.enemy == self)
 					e.enemy = mon;			// homing shots go home

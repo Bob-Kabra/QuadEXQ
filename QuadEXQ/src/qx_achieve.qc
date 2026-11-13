@@ -9,6 +9,7 @@ QuadEXQ: run stats and achievements (needs the QuadEXQ engine)
     qx_rd<type>   times that monster type killed you
     qx_run_*      kills, deaths, time, score, maps
     qx_ach        achievements unlocked (QX_ACH_* bits)
+    qx_ach2       ... and the rest (QX_A2_* bits: a float holds 24 bits)
     qx_life_*     counters behind the achievements (never reset)
   The engine has the names and draws the tables: qx_runstats,
   qx_achievements, qx_runpage (the third page of THE ENDER's end text).
@@ -33,6 +34,33 @@ float	QX_ACH_SWATS		= 8192;
 float	QX_ACH_JET			= 16384;
 float	QX_ACH_DELTA		= 32768;
 float	QX_ACH_QUADKING		= 65536;
+float	QX_ACH_LAVADIVE		= 131072;
+float	QX_ACH_1STFRAG		= 262144;
+float	QX_ACH_HUMILIATION	= 524288;
+float	QX_ACH_MARS			= 1048576;
+float	QX_ACH_ELITEDELTA	= 2097152;
+
+// qx_ach2 (in the engine's table these follow on, from entry 22)
+float	QX_A2_BTJUNKIE		= 1;
+float	QX_A2_MAXSKILL		= 2;
+float	QX_A2_ELITES		= 4;
+float	QX_A2_PLASMA		= 8;
+float	QX_A2_NODELTA		= 16;
+float	QX_A2_UNTOUCHABLE	= 32;
+float	QX_A2_RIFTS			= 64;
+float	QX_A2_HOMERUN		= 128;
+float	QX_A2_LORDSWAT		= 256;
+float	QX_A2_SELFKILL		= 512;
+float	QX_A2_LATE			= 1024;
+float	QX_A2_SHUBGATE		= 2048;
+float	QX_A2_TELEFRAG		= 4096;
+float	QX_A2_RJUMP			= 8192;
+float	QX_A2_QUADFAIL		= 16384;
+float	QX_A2_SHUBLORD		= 32768;
+float	QX_A2_BFGSNIPER		= 65536;
+float	QX_A2_DELTAPRIDE	= 131072;
+float	QX_A2_NOFF			= 262144;
+float	QX_A2_KILLBLOCK		= 524288;
 
 float	QX_RS_JET			= 22;	// (deaths only) a jet charge to the face
 
@@ -119,17 +147,17 @@ float(string name, float add) QX_CvAdd =
 	return v;
 };
 
-void(float bit, string name, string desc) QX_Ach =
+void(string cv, float bit, string name, string desc) QX_AchIn =
 {
 	local float a;
 	local entity p;
 
 	if (!qx_newengine || deathmatch)
 		return;
-	a = cvar ("qx_ach");
+	a = cvar (cv);
 	if (a & bit)
 		return;
-	cvar_set ("qx_ach", ftos (a | bit));
+	cvar_set (cv, ftos (a | bit));
 
 	QX_CenterAll ("ACHIEVEMENT UNLOCKED\n\n", name, "\n", desc);
 	p = find (world, classname, "player");
@@ -142,6 +170,16 @@ void(float bit, string name, string desc) QX_Ach =
 	QX_LS (" -- ");
 	QX_LS (desc);
 	QX_LE ();
+};
+
+void(float bit, string name, string desc) QX_Ach =
+{
+	QX_AchIn ("qx_ach", bit, name, desc);
+};
+
+void(float bit, string name, string desc) QX_Ach2 =
+{
+	QX_AchIn ("qx_ach2", bit, name, desc);
 };
 
 // ---------------------------------------------------------------- the hooks
@@ -174,6 +212,26 @@ void(entity targ, entity attacker) QX_AchKill =
 	if (targ.classname == "monster_cyber")
 	if (targ.qx_ender_boss)
 		QX_Ach (QX_ACH_TRUECYBER, "True Cyber", "Destroy the Cyber Delta");
+
+	if (targ.qx_elite)
+	if (QX_CvAdd ("qx_life_elites", 1) >= 100)
+		QX_Ach2 (QX_A2_ELITES, "Elite Hunter", "Kill 100 elite enemies");
+	if (targ.qx_gen > 0)
+	if (QX_CvAdd ("qx_life_rifts", 1) >= 100)
+		QX_Ach2 (QX_A2_RIFTS, "Rift Walker", "Kill 100 monsters that came through a rift");
+	if (qx_ach_inflt == time)
+	if (qx_ach_infl)
+	{
+		if (qx_ach_infl.think == Plasma_Fly)
+		if (QX_CvAdd ("qx_life_plasma", 1) >= 100)
+			QX_Ach2 (QX_A2_PLASMA, "Plasma Storm", "Kill 100 enemies with plasma");
+		if (qx_ach_infl.qx_ach_swatfrom == targ)
+		{
+			QX_Ach2 (QX_A2_HOMERUN, "Home Run", "Kill a monster with its own shot, swatted back");
+			if (QX_RsType (targ.classname) == 3 || QX_RsType (targ.classname) == 4)
+				QX_Ach2 (QX_A2_KILLBLOCK, "Kill block!", "Kill an Ogre with its own shot, swatted back");
+		}
+	}
 };
 
 // you died (from QX_StatDeath, self = the player)
@@ -182,7 +240,22 @@ void() QX_AchDeath =
 	local float t;
 
 	QX_CvAdd ("qx_run_deaths", 1);
-	if (self.qx_st_lastatk == self || self.qx_st_lastclass == "" || self.qx_st_lastclass == "worldspawn")
+	if (qx_newengine && !deathmatch)
+		cvar_set ("qx_ach_streak", "0");	// Untouchable starts over
+	if (self.super_damage_finished > time)
+		QX_Ach2 (QX_A2_QUADFAIL, "Quad Fail", "Die with Quad Damage running");
+	if (qx_delta_call || find (world, classname, "qx_delta_wait"))
+		QX_Ach2 (QX_A2_LATE, "Sorry We're Late", "Die while Delta Team is on the way");
+	if (self.qx_st_lastclass == "teledeath")
+		QX_Ach2 (QX_A2_TELEFRAG, "Telefragged", "Get telefragged");
+	if (self.qx_st_lastatk == self)
+		QX_Ach2 (QX_A2_SELFKILL, "Friendly Fire?", "Kill yourself");
+	if (self.watertype == CONTENT_LAVA)
+		QX_Ach (QX_ACH_LAVADIVE, "Lava Dive!", "Die in lava");
+	if (self.health < -40)
+		QX_Ach (QX_ACH_1STFRAG, "1st Frag!", "Get blown to bits");
+	if (self.qx_st_lastatk == self || self.qx_st_lastclass == "" || self.qx_st_lastclass == "worldspawn"
+	 || self.qx_st_lastclass == "teledeath")
 		return;			// (yourself, a fall, lava: no monster to blame)
 	t = QX_RsType (self.qx_st_lastclass);
 	QX_CvAdd (QX_RdCvar (t), 1);
@@ -200,6 +273,9 @@ void(float runtime, float score) QX_AchMapEnd =
 	QX_CvAdd ("qx_run_time", runtime);
 	QX_CvAdd ("qx_run_score", score);
 	QX_CvAdd ("qx_run_maps", 1);
+	if (QX_MapDeaths () == 0)
+	if (QX_CvAdd ("qx_ach_streak", 1) >= 5)
+		QX_Ach2 (QX_A2_UNTOUCHABLE, "Untouchable", "Clear 5 maps in a row without dying");
 };
 
 // an arena win (from QX_DuelEnd): its score, and the hunter achievements
@@ -243,4 +319,135 @@ void() QX_AchOverflow =
 void() QX_AchQuad =
 {
 	QX_Ach (QX_ACH_QUAD, "QUAD!", "Finish THE ENDER");
+};
+
+void() QX_AchHumiliation =
+{
+	QX_Ach (QX_ACH_HUMILIATION, "Humiliation!", "Get axed by a Rune Hunter");
+};
+
+void() QX_AchMars =
+{
+	QX_Ach (QX_ACH_MARS, "Mars Mission!", "Delta Team pulls out with heavy losses");
+};
+
+void() QX_AchDeltaKill =
+{
+	if (QX_CvAdd ("qx_life_deltakills", 1) >= 1000)
+		QX_Ach (QX_ACH_ELITEDELTA, "Elite Delta!", "Delta Team kills 1000 enemies");
+};
+
+// ---------------------------------------------------------------- qx_ach2
+
+// every frame, from QX_StatTick (self = the living player)
+void() QX_AchTick =
+{
+	if (qx_timescale < 1 && qx_timescale > 0)
+		qx_ach_bt = qx_ach_bt + frametime / qx_timescale;	// (real seconds)
+	if (qx_ach_bt >= 5)
+	{
+		if (QX_CvAdd ("qx_life_bttime", floor (qx_ach_bt)) >= 600)
+			QX_Ach2 (QX_A2_BTJUNKIE, "Bullet Time Junkie", "Spend 10 minutes in bullet time");
+		qx_ach_bt = qx_ach_bt - floor (qx_ach_bt);
+	}
+};
+
+void() QX_AchMaxSkill =
+{
+	QX_Ach2 (QX_A2_MAXSKILL, "Max Skill", "Reach PlayerSkill 100");
+};
+
+// a map starts (QX_StatStart): the first map of an episode starts the
+// No Delta Needed run (qx_ach_ep = the episode, 0 = Delta Team came)
+void() QX_AchMapStart =
+{
+	if (!qx_newengine || deathmatch)
+		return;
+	if (mapname == "e1m1")	cvar_set ("qx_ach_ep", "1");
+	if (mapname == "e2m1")	cvar_set ("qx_ach_ep", "2");
+	if (mapname == "e3m1")	cvar_set ("qx_ach_ep", "3");
+	if (mapname == "e4m1")	cvar_set ("qx_ach_ep", "4");
+};
+
+void() QX_AchDeltaHere =
+{
+	if (qx_newengine && !deathmatch)
+		cvar_set ("qx_ach_ep", "0");
+};
+
+// a rune picked up (sigil_touch: its spawnflags 1, 2, 4, 8)
+void(float sflags) QX_AchSigil =
+{
+	local float ep;
+
+	ep = 0;
+	if (sflags & 1) ep = 1;
+	if (sflags & 2) ep = 2;
+	if (sflags & 4) ep = 3;
+	if (sflags & 8) ep = 4;
+	if (ep)
+	if (cvar ("qx_ach_ep") == ep)
+		QX_Ach2 (QX_A2_NODELTA, "No Delta Needed", "Finish an episode without Delta Team");
+};
+
+// you swatted e back (QX_AutoDeflect, before e.owner is you)
+void(entity e) QX_AchSwatShot =
+{
+	if (e.qx_ach_vlord)
+		QX_Ach2 (QX_A2_LORDSWAT, "Lord of the Swat", "Swat back a shot a Vore Lord swatted at you");
+	e.qx_ach_vlord = 0;
+	e.qx_ach_swatfrom = e.owner;
+};
+
+// you hurt yourself (QX_StatHurt): a rocket jump if it sends you up
+void(entity targ, entity attacker) QX_AchRJump =
+{
+	if (attacker != targ || targ.velocity_z < 200)
+		return;
+	if (time < targ.qx_ach_rjt + 0.5)
+		return;
+	targ.qx_ach_rjt = time;
+	if (QX_CvAdd ("qx_life_rjumps", 1) >= 100)
+		QX_Ach2 (QX_A2_RJUMP, "Rocket Jumper", "Rocket jump 100 times");
+};
+
+// your BFG ball hit a Delta Team man (T_Damage; it does him no harm)
+void(entity inflictor) QX_AchBFGDelta =
+{
+	if (inflictor.qx_ach_ff)
+		return;
+	inflictor.qx_ach_ff = 1;
+	if (QX_CvAdd ("qx_life_bfgdelta", 1) >= 10)
+		QX_Ach2 (QX_A2_NOFF, "It's alright! No friendly fire!", "Hit Delta Team with the BFG 10 times");
+};
+
+void() QX_AchShubGate =
+{
+	QX_Ach2 (QX_A2_SHUBGATE, "Shub's Revenge", "Get telefragged by Shub-Niggurath's gate");
+};
+
+// finale_1 (Shub-Niggurath is done)
+void() QX_AchShubLord =
+{
+	local entity p;
+
+	p = find (world, classname, "player");
+	if (p)
+	if (p.qx_adren >= 100)
+		QX_Ach2 (QX_A2_SHUBLORD, "Shub Lord at 300%", "Finish off Shub-Niggurath at 300% adrenaline");
+};
+
+// THE ENDER: the 10th BFG hit
+void() QX_AchBFGSniper =
+{
+	if (!qx_ach_bfgground)
+		QX_Ach2 (QX_A2_BFGSNIPER, "BFG Sniper", "Land all 10 BFG hits on the Cyber Delta in midair");
+};
+
+// THE ENDER: the Cyber Delta is down
+void(float deltahere) QX_AchDeltaPride =
+{
+	if (deltahere)
+	if (qx_delta_losses == 0)
+		QX_Ach2 (QX_A2_DELTAPRIDE, "Delta's Pride", "Down the Cyber Delta with Delta Team, and lose no man");
 };

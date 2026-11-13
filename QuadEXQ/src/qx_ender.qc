@@ -296,6 +296,7 @@ void(entity p) QX_EnderBackfire =
 	p.items = p.items - (p.items & (IT_ARMOR1 | IT_ARMOR2 | IT_ARMOR3));
 	p.qx_back_prot = 0;
 	T_Damage (p, shub, shub, 50000);
+	QX_AchShubGate ();
 	QX_Center (p, "TELEFRAGGED!\n\nSHUB-NIGGURATH LORD\nturned the gate on you", "", "", "");
 	QX_LB ();
 	QX_LS ("    THE ENDER: the gate turned on you");
@@ -639,6 +640,7 @@ void(entity p) QX_EnderArenaThink =
 	if (qx_ender_boss_e.health <= 0 || qx_ender_boss_e.classname != "monster_cyber")
 	{
 		qx_ender_won_at = time + 5;
+		QX_AchDeltaPride (qx_ender_delta);
 		QX_Center (p, "!!! CYBER DELTA DOWN !!!\n\nDELTA TEAM:\nNice shot. Now let's finish this.", "", "", "");
 		QX_LB ();
 		QX_LS ("    THE ENDER: Cyber Delta down");
@@ -688,8 +690,13 @@ float(entity targ, entity inflictor, entity attacker, float damage) QX_EnderDama
 	if (!targ.qx_ender_hp0)
 		targ.qx_ender_hp0 = targ.health;
 	qx_ender_hits = qx_ender_hits + 1;
+	if (targ.flags & FL_ONGROUND)
+		qx_ach_bfgground = TRUE;		// (BFG Sniper: all 10 in the air)
 	if (qx_ender_hits >= QX_ENDER_HITS)
+	{
+		QX_AchBFGSniper ();
 		return targ.health * 10 + 1000;		// down it goes
+	}
 
 	targ.health = targ.qx_ender_hp0 * (QX_ENDER_HITS - qx_ender_hits) / QX_ENDER_HITS;
 	QX_Center (attacker, "CYBER DELTA\n\nHIT  ", ftos (qx_ender_hits), " / 10", "");	// (one ftos per call: a shared buffer)
