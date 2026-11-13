@@ -46,6 +46,7 @@ $frame ion1 ion2 ion3
 $frame light1 light2
 $frame rockatt1 rockatt2 rockatt3 rockatt4 rockatt5 rockatt6
 $frame shotatt1 shotatt2 shotatt3 shotatt4 shotatt5 shotatt6
+$frame axatt1 axatt2 axatt3 axatt4 axatt5 axatt6
 
 float	QX_DUEL_FRAGS		= 10;	// first to this many frags wins
 float	QX_HUNTER_LG_DAMAGE	= 16;	// Tres's thunderbolt, per 0.1 s (yours: 30)
@@ -657,12 +658,46 @@ void() rh_bolt4 =[ $light2, rh_bolt5 ] { ai_face (); QX_HunterBolt (); };
 void() rh_bolt5 =[ $light1, rh_bolt6 ] { ai_face (); QX_HunterBolt (); };
 void() rh_bolt6 =[ $light2, rh_run1  ] { ai_face (); QX_HunterBolt (); SUB_AttackFinished (0.6); };
 
+// QuadEXQ: right up close, and only when you are nearly dead, a hunter
+// takes the axe to you to finish you off (die to it: Humiliation! -- you
+// have to go looking for it)
+float	QX_HUNTER_AXE	= 35;
+float	QX_HUNTER_AXE_HP	= 40;	// your health at or below this
+
+void() QX_HunterAxe =
+{
+	local vector org;
+
+	makevectors (self.angles);
+	org = self.origin + '0 0 16';
+	traceline (org, org + v_forward * 72, FALSE, self);
+	if (trace_fraction == 1)
+		return;
+	if (trace_ent.takedamage)
+	{
+		sound (self, CHAN_WEAPON, "player/axhit2.wav", 1, ATTN_NORM);
+		SpawnBlood (trace_endpos, '0 0 0', QX_HUNTER_AXE);
+		T_Damage (trace_ent, self, self, QX_HUNTER_AXE);
+	}
+	else
+		sound (self, CHAN_WEAPON, "player/axhit2.wav", 0.6, ATTN_NORM);
+};
+
+void() rh_axe1 =[ $axatt1, rh_axe2 ] { ai_face (); self.weapon = IT_AXE; sound (self, CHAN_WEAPON, "weapons/ax1.wav", 1, ATTN_NORM); };
+void() rh_axe2 =[ $axatt2, rh_axe3 ] { ai_charge (8); };
+void() rh_axe3 =[ $axatt3, rh_axe4 ] { ai_charge (6); QX_HunterAxe (); };
+void() rh_axe4 =[ $axatt4, rh_axe5 ] { ai_face (); };
+void() rh_axe5 =[ $axatt5, rh_axe6 ] { ai_face (); };
+void() rh_axe6 =[ $axatt6, rh_run1 ] { ai_face (); SUB_AttackFinished (0.4); };
+
 void() rh_attack =
 {
 	local float d;
 
 	d = vlen (self.enemy.origin - self.origin);
-	if (d < 260 || (self.netname == "K4B" && d < 450 && random () < 0.5))
+	if (d < 90 && self.enemy.health <= QX_HUNTER_AXE_HP && random () < 0.6)
+		rh_axe1 ();				// right in its face, and you're nearly dead: the axe
+	else if (d < 260 || (self.netname == "K4B" && d < 450 && random () < 0.5))
 		rh_shot1 ();				// K4B likes the super shotgun from further out
 	else if (self.netname == "Tres" && d < 600 && random () < 0.7)
 		rh_bolt1 ();
