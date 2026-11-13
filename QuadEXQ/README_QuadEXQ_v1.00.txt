@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v0.96 beta
+  QuadEXQ  v1.00
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -56,6 +56,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
         music\track02.mp3 ...   <- map music (optional: your own or
                                    Quake's; a QuadEXQ soundtrack for
                                    track02-11 is on the way)
+        music\track12.mp3       <- "Quad EXQ Theme", the end map's
+                                   music (included)
         sound\player\taunt.wav  <- auto-melee shout (optional)
       quadexq.exe        <- the QuadEXQ engine (recommended)
 
@@ -550,8 +552,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
                            0 = off. 4 = ALWAYS 1996, in any game or mod
                            (plain Quake, Arcane Dimensions ..): 640x480,
                            the Quake palette. 5 = always, at your full
-                           resolution (only the 256 colours)
-  qx_checkpoints 0         plain Quake / other mods: restart the map on
+                           resolution (only the 256 colours). Also in
+                           Options > Preferences > Retro 1996
+  qx_checkpoints 0        plain Quake / other mods: restart the map on
                            death instead of loading the checkpoint
   qx_centerscale 0.5-4     size of the messages in the middle of the
                            screen and of the end text (default 1.5,
@@ -580,7 +583,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
  12. Known issues and notes
 ==============================================================================
 
-  - This is a beta. Balance is still being tuned.
+  - Balance may still change in later updates.
   - The boss can end up somewhere hard to find. impulse 150 shows how far
     away it is, and the BOSS arrow on the HUD shows the direction.
   - Near PlayerSkill 100 the game is meant to be very hard.
@@ -596,9 +599,12 @@ fork), which adds the HUD, music switching, checkpoints and more.
  13. Version history
 ==============================================================================
 
-  v0.96 beta
+  v1.00 (v0.96 beta was never released)
     Game:
     - The end map has a story of its own now. Play it to the end.
+      The Cyber Delta there fires big green rockets of its own: too heavy
+      for the Golden Left Hand to swat back (it tells you so), and its
+      scouts get tougher with your PlayerSkill.
       (It needs maps/ender.bsp and music/track12.mp3, both in the zip.)
     - The Ion cannon and the BFG left the weapon slots. The Ion's plasma
       is the Thunderbolt's bonus now (PlayerSkill above 50 and 300%
@@ -607,6 +613,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
     - The sight of a Shambler, a Vore or a BFG fiend gets the adrenaline
       going; Shub-Niggurath in sight means 300% at once.
     - The Golden Left Hand only swats shots coming from in front of you.
+    - Rune Hunters take the axe to you if you get right in their face
+      while you're nearly dead.
     - The Vore Lord no longer swats plasma back.
     - The Cyberdemon has left the main game: Shamblers no longer turn into
       one (that roll gives a BFG fiend now).
@@ -615,11 +623,16 @@ fork), which adds the HUD, music switching, checkpoints and more.
       scored as the arena map's own clear, not added to the map you came
       from; a PERFECT 10 - 0 is worth the hunter (Tres 10000, K4B / G
       5000, GuroFighter 2000).
-    - Achievements (17, a few of them not exactly flattering) and stats:
+    - Achievements (42, a few of them not exactly flattering) and stats:
       kills and deaths by monster, time and score, adding up over every
       game you play. qx_achievements and qx_runstats in the console.
       (QuadEXQ engine)
+    - Other engines (the DarkPlaces family such as Zircon, QuakeSpasm-Spiked
+      ..): no more zoomed-in view a second after the start, and where the
+      engine can't slow the world down there is no bullet time.
     QuadEXQ engine:
+    - Retro 1996 in Options > Preferences (qx_retro): off, in bullet time,
+      or always -- the DOS Quake look.
     - Bigger messages in the middle of the screen (and the end text), and
       longer ones stay up longer: qx_centerscale, qx_centerreadtime.
     - Frame interpolation in the menu, one by one: model animation,
@@ -791,8 +804,11 @@ fork), which adds the HUD, music switching, checkpoints and more.
   Base mod            EXQ - Bob Kabura
   Some weapon ideas   QuadUTF - Bob Kabura
   Music               Bob Kabura. All of QuadEXQ's music (the track01
-                      boss theme, and the coming soundtrack) is made
-                      with Mureka, an AI music generator.
+                      boss theme, track12 "Quad EXQ Theme" for the end
+                      map, and the coming soundtrack) is made with
+                      Mureka, an AI music generator.
+  Mega Enforcer, Riot Gun and Thunderbolt models
+                      Zerstorer - Nihilism Unlimited
   Bots                FrikBot - Ryan "Frika C" Smith
   Engine              Mark V - Baker and others (FitzQuake / QuakeSpasm lineage)
   Quake               id Software
