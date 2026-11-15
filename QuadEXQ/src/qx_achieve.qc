@@ -241,7 +241,10 @@ void() QX_AchDeath =
 
 	QX_CvAdd ("qx_run_deaths", 1);
 	if (qx_newengine && !deathmatch)
-		cvar_set ("qx_ach_streak", "0");	// Untouchable starts over
+	{
+		cvar_set ("qx_ach_streak", "0");	// Untouchable (and the score streak) starts over
+		cvar_set ("qx_run_epclean", "0");	// so does a whole episode without a death
+	}
 	if (self.super_damage_finished > time)
 		QX_Ach2 (QX_A2_QUADFAIL, "Quad Fail", "Die with Quad Damage running");
 	if (qx_delta_call || find (world, classname, "qx_delta_wait"))
@@ -270,12 +273,20 @@ void() QX_AchDeath =
 // a map cleared (from QX_StatMapEnd)
 void(float runtime, float score) QX_AchMapEnd =
 {
+	local float t;
+
 	QX_CvAdd ("qx_run_time", runtime);
 	QX_CvAdd ("qx_run_score", score);
 	QX_CvAdd ("qx_run_maps", 1);
 	if (QX_MapDeaths () == 0)
-	if (QX_CvAdd ("qx_ach_streak", 1) >= 5)
-		QX_Ach2 (QX_A2_UNTOUCHABLE, "Untouchable", "Clear 5 maps in a row without dying");
+	{
+		QX_CvAdd ("qx_run_cleanmaps", 1);
+		t = QX_CvAdd ("qx_ach_streak", 1);
+		if (t > cvar ("qx_run_beststreak"))
+			cvar_set ("qx_run_beststreak", ftos (t));
+		if (t >= 5)
+			QX_Ach2 (QX_A2_UNTOUCHABLE, "Untouchable", "Clear 5 maps in a row without dying");
+	}
 };
 
 // an arena win (from QX_DuelEnd): its score, and the hunter achievements
@@ -367,6 +378,14 @@ void() QX_AchMapStart =
 	if (mapname == "e2m1")	cvar_set ("qx_ach_ep", "2");
 	if (mapname == "e3m1")	cvar_set ("qx_ach_ep", "3");
 	if (mapname == "e4m1")	cvar_set ("qx_ach_ep", "4");
+	// an episode without a death: begun on its first map, not after dying there
+	if (cvar ("qx_mapdeaths") == 0)
+	{
+		if (mapname == "e1m1")	cvar_set ("qx_run_epclean", "1");
+		if (mapname == "e2m1")	cvar_set ("qx_run_epclean", "2");
+		if (mapname == "e3m1")	cvar_set ("qx_run_epclean", "3");
+		if (mapname == "e4m1")	cvar_set ("qx_run_epclean", "4");
+	}
 };
 
 void() QX_AchDeltaHere =
@@ -388,6 +407,15 @@ void(float sflags) QX_AchSigil =
 	if (ep)
 	if (cvar ("qx_ach_ep") == ep)
 		QX_Ach2 (QX_A2_NODELTA, "No Delta Needed", "Finish an episode without Delta Team");
+	if (ep)
+	if (qx_newengine && !deathmatch)
+	if (cvar ("qx_run_epclean") == ep && QX_MapDeaths () == 0)
+	{	// a whole episode without a death: stats, and the bonus on this map's score
+		cvar_set ("qx_run_epclean", "0");
+		QX_CvAdd ("qx_run_cleaneps", 1);
+		qx_st_points = qx_st_points + QX_SC_EPCLEAN;
+		bprint ("FLAWLESS EPISODE!  +10000\n");
+	}
 };
 
 // you swatted e back (QX_AutoDeflect, before e.owner is you)

@@ -11,7 +11,9 @@ QuadEXQ map report
   are counted by the engine cvar qx_mapdeaths, which survives the restart.
 
   Score:  kill 10 / scout 20 / elite 30 / boss +300
-          secret 100, death -200, no-death clear +3000
+          secret 100, death -200, no-death clear +3000 x the no-death
+          streak (2nd map in a row 6000, 3rd 9000 ..), an episode
+          without a death +10000
 ==============================================================================
 */
 
@@ -21,7 +23,9 @@ float	QX_SC_ELITE	= 30;
 float	QX_SC_BOSS	= 300;
 float	QX_SC_SECRET	= 100;
 float	QX_SC_DEATH	= 200;
-float	QX_SC_NODEATH	= 3000;	// (was 300)
+float	QX_SC_NODEATH	= 3000;	// (was 300) x the no-death streak
+float	QX_SC_EPCLEAN	= 10000;	// a whole episode without a death
+float	qx_st_streak;		// this map's place in the no-death streak (0 = died)
 
 // QuadEXQ / Mark V engines concatenate up to 8 strings and keep 16 ftos results
 void(entity client, string s1, string s2, string s3, string s4, string s5, string s6, string s7, string s8) qx_cprint8 = #73;
@@ -372,8 +376,14 @@ float() QX_StatScore =
 
 	d = QX_MapDeaths ();
 	sc = qx_st_points + found_secrets * QX_SC_SECRET - d * QX_SC_DEATH;
+	qx_st_streak = 0;
 	if (d == 0)
-		sc = sc + QX_SC_NODEATH;
+	{	// the streak (qx_ach_streak: QuadEXQ engine; elsewhere every clear is the 1st)
+		qx_st_streak = 1;
+		if (qx_newengine)
+			qx_st_streak = cvar ("qx_ach_streak") + 1;
+		sc = sc + QX_SC_NODEATH * qx_st_streak;
+	}
 	if (sc < 0)
 		sc = 0;
 	return sc;
@@ -405,6 +415,15 @@ void(entity p) QX_StatMapEnd =
 	QX_LN (qx_st_score);
 	QX_LS (" ===");
 	QX_LE ();
+	if (qx_st_streak)
+	{
+		QX_LB ();
+		QX_LS ("  NO DEATHS: ");
+		QX_LN (qx_st_streak);
+		QX_LS (" in a row  +");
+		QX_LN (QX_SC_NODEATH * qx_st_streak);
+		QX_LE ();
+	}
 
 	QX_LB ();
 	QX_LS ("  time ");
