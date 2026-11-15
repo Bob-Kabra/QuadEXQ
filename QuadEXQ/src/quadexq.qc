@@ -781,11 +781,45 @@ void() QX_PlayerUnboost =
 };
 
 // ---------------------------------------------------------------- air jet
-// Jump again in mid-air = jetpack burst. One burst per airtime for each
-// jetpack you found (qx_hasjet = how many), QX_JET_MAX at most.
+// Jump again in mid-air = jetpack burst. qx_hasjet is the jetpack's stage
+// (one per jetpack found, QX_JET_MAX at most): stages 1-3 give 1-3 bursts
+// per airtime at half power (yellow on the HUD), stages 4-6 bring bursts 1,
+// 2, 3 up to full power (orange). Full-power bursts go first.
+float(float stage) QX_JetBursts =
+{
+	if (stage > QX_JET_SLOTS)
+		return QX_JET_SLOTS;
+	return stage;
+};
+
+float(float stage) QX_JetFull =
+{
+	if (stage > QX_JET_SLOTS)
+		return stage - QX_JET_SLOTS;
+	return 0;
+};
+
+// lightning hit you with no armor left (T_Damage): one stage gone
+void(entity p) QX_JetBreak =
+{
+	if (time < p.qx_jetbrk + 2)
+		return;					// (once in two seconds -- a beam hits ten times a second)
+	p.qx_jetbrk = time;
+	p.qx_hasjet = p.qx_hasjet - 1;
+	if (p.qx_jets > QX_JetBursts (p.qx_hasjet))
+		p.qx_jets = QX_JetBursts (p.qx_hasjet);
+	sound (p, CHAN_AUTO, "misc/power.wav", 1, ATTN_NORM);
+	particle (p.origin, '0 0 80', 230, 40);
+	if (p.qx_hasjet <= 0)
+		QX_Center (p, "JETPACK FRIED!\n\nlightning and no armor", "", "", "");
+	else
+		QX_Center (p, "JETPACK DAMAGED\n\nstage ", ftos (p.qx_hasjet), " / 6", "");
+};
+
 void() QX_AirJet =
 {
 	local vector f;
+	local float up;
 
 	if (self.flags & FL_ONGROUND)
 	{
@@ -802,16 +836,19 @@ void() QX_AirJet =
 		return;
 	if (self.health <= 0)
 		return;
-	if (self.qx_jets >= self.qx_hasjet)
+	if (self.qx_jets >= QX_JetBursts (self.qx_hasjet))
 		return;
 
+	up = QX_JET_UP * 0.5;					// half power (yellow)
+	if (self.qx_jets < QX_JetFull (self.qx_hasjet))
+		up = QX_JET_UP;						// full power (orange)
 	self.qx_jets = self.qx_jets + 1;
 	qx_st_jets = qx_st_jets + 1;
 	self.flags = self.flags - FL_JUMPRELEASED;
 
 	if (self.velocity_z < 0)
 		self.velocity_z = 0;
-	self.velocity_z = self.velocity_z + QX_JET_UP;
+	self.velocity_z = self.velocity_z + up;
 	if (self.velocity_z > 600)
 		self.velocity_z = 600;
 	makevectors (self.v_angle);
@@ -822,7 +859,7 @@ void() QX_AirJet =
 
 	sound (self, CHAN_BODY, "hknight/attack1.wav", 1, ATTN_NORM);
 	particle (self.origin - '0 0 24', '0 0 -150', 230, 40);
-	if (self.qx_jets == self.qx_hasjet)
+	if (self.qx_jets == QX_JetBursts (self.qx_hasjet))
 		QX_Center (self, "JET EMPTY", "", "", "");
 };
 
@@ -1198,8 +1235,9 @@ void() QX_SendHUD =
 	}
 
 	v = 0;
-	if (self.qx_hasjet)				// bursts left + 16 x bursts you have (QuadEXQ engine HUD)
-		v = (self.qx_hasjet - self.qx_jets) + 16 * self.qx_hasjet;
+	if (self.qx_hasjet)				// bursts left + 16 x bursts + 256 x full-power ones (QuadEXQ engine HUD)
+		v = (QX_JetBursts (self.qx_hasjet) - self.qx_jets) + 16 * QX_JetBursts (self.qx_hasjet)
+			+ 256 * QX_JetFull (self.qx_hasjet);
 	if (full || v != self.qx_hs_jets)
 	{
 		self.qx_hs_jets = v;
@@ -2761,6 +2799,12 @@ void() QX_JetpackTouch =
 		if (other.ammo_rockets > 100)
 			other.ammo_rockets = 100;
 		sprint (other, "You got 5 rockets\n");
+	}
+	else if (other.qx_hasjet >= QX_JET_SLOTS)
+	{	// a burst to full power
+		other.qx_hasjet = other.qx_hasjet + 1;
+		QX_Center (other, "JETPACK BOOST\n\nburst ", ftos (QX_JetFull (other.qx_hasjet)), " at full power", "");
+		sprint (other, "You got another Jetpack\n");
 	}
 	else if (other.qx_hasjet)
 	{	// one more burst per jump

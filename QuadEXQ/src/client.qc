@@ -83,10 +83,16 @@ void() SetNewParms =
 
 void() DecodeLevelParms =
 {
+	local float n;
+
 	if (serverflags)
 	{
 		if (world.model == "maps/start.bsp")
+		{
+			n = parm10;
 			SetNewParms ();		// take away all stuff on starting new episode
+			parm10 = n;			// QuadEXQ: ... but the jetpack, which you keep
+		}
 	}
 	
 	self.items = parm1;

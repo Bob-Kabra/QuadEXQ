@@ -920,6 +920,7 @@ void(vector p1, vector p2, entity from, float damage) LightningDamage =
 	f = f*16;
 
 	e1 = e2 = world;
+	qx_elec_hit = TRUE;		// QuadEXQ: (it can break a jetpack stage)
 
 	traceline (p1, p2, FALSE, self);
 	if (trace_ent.takedamage)
@@ -948,6 +949,7 @@ void(vector p1, vector p2, entity from, float damage) LightningDamage =
 		particle (trace_endpos, '0 0 100', 225, damage*4);
 		T_Damage (trace_ent, from, from, damage);
 	}
+	qx_elec_hit = FALSE;
 };
 
 void(vector p1, vector p2, entity from, float damage) ChainLightDamage;
@@ -1655,7 +1657,9 @@ local entity	l_chain;
 	//if (trace_ent.health > 0 && trace_ent.takedamage)
 	//{
 		particle (trace_endpos, '0 0 100', 225, damage*4);
+		qx_elec_hit = TRUE;		// QuadEXQ: (it can break a jetpack stage)
 		T_Damage (trace_ent, from, from, (damage - 5));
+		qx_elec_hit = FALSE;
 		l_chain = spawn();
 		l_chain.origin = trace_ent.origin;
 		l_chain.owner = self;

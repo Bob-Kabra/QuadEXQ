@@ -196,6 +196,14 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 	if ( (teamplay == 1) && (targ.team > 0)&&(targ.team == attacker.team) )
 		return;
 		
+// QuadEXQ: lightning with no armor left fries a jetpack stage
+	if (qx_elec_hit)
+	if (targ.flags & FL_CLIENT)
+	if (targ.qx_hasjet > 0)
+	if (targ.armorvalue <= 0)
+	if (attacker != targ)
+		QX_JetBreak (targ);
+
 // QuadEXQ: getting hit costs PlayerSkill
 	if (targ.flags & FL_CLIENT)
 	{

@@ -391,10 +391,15 @@ fork), which adds the HUD, music switching, checkpoints and more.
 
   Jetpack:
     Pick up the glowing backpack a jet knight drops to unlock it.
-    Jump again in mid-air to fire a burst. Each jetpack you find adds one
-    burst per jump, up to 3 before you land. You keep them on later maps.
-    Picking one up when you already have 3 gives +5 rockets. Dropped
-    jetpacks vanish after 120 seconds.
+    Jump again in mid-air to fire a burst. Every jetpack you find is one
+    more stage, 6 in all:
+      1-3  one more burst per jump, up to 3 before you land -- at half
+           power (yellow on the HUD)
+      4-6  bursts 1, 2, 3 go up to full power (orange); full ones fire first
+    Picking one up at stage 6 gives +5 rockets. You keep the jetpack on
+    later maps, and from one episode to the next. But lightning that hits
+    you with no armor left fries a stage (at most one every 2 seconds).
+    Dropped jetpacks vanish after 120 seconds.
 
   Auto melee:
     When an enemy is right in front of you, you hit it automatically: the
@@ -494,7 +499,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
             - orange above 150%, red at max, gold during Quad Damage
             - "TIME x0.7" (or similar) while the world is slowed
       SKL   PlayerSkill bar ("MAX" at 100)
-      JET   Jet bursts left, one box per jetpack you have
+      JET   Jet bursts left: yellow = half power, orange = full power
       BOSS  Direction and distance to the boss (while it is alive)
   - Sound pitch drops during bullet time.
   - Bullet time takes you back to 1996: as the world slows down, the
@@ -547,6 +552,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
   impulse 155              arena challenge test: your next death calls an
                            arena challenge.
   impulse 156              Delta team test: call them in now.
+  impulse 158              THE ENDER test: the Cyber Delta goes down now,
+                           and the ending goes on as if you'd won
 
   QuadEXQ engine:
   scr_qxhud 0/1            show the HUD (default 1)
@@ -615,6 +622,14 @@ fork), which adds the HUD, music switching, checkpoints and more.
 ==============================================================================
  13. Version history
 ==============================================================================
+
+  v1.02
+    Game:
+    - The jetpack has 6 stages: 1-3 add half-power bursts (yellow), 4-6
+      bring them to full power (orange). It stays with you from one
+      episode to the next, but lightning with no armor left fries a stage.
+    - impulse 158: in THE ENDER's fight, the Cyber Delta goes down now
+      (a test, to see the ending).
 
   v1.01
     Game:

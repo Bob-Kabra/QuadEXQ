@@ -50,8 +50,13 @@ float	QX_ADREN_SHUB_MIN	= 100;	// Shub-Niggurath in sight: the gauge floor (100 
 float	QX_SLOW_START		= 1.5;	// adrenaline 150%: world starts to slow
 float	QX_SLOW_MIN		= 0.5;	// adrenaline 300%: world at half speed
 float	QX_QUAD_TIMESCALE	= 0.4;	// Quad Damage (400%): world speed
-float	QX_JET_MAX		= 3;	// air-jump jet bursts per airtime, at most (one per jetpack found)
-float	QX_JET_UP		= 300;	// upward kick per burst
+float	QX_JET_MAX		= 6;	// jetpack stages (one per jetpack found): 1-3 add a half-power
+								// burst (yellow), 4-6 bring bursts 1-3 to full power (orange)
+float	QX_JET_SLOTS	= 3;	// air-jump jet bursts per airtime, at most
+float	QX_JET_UP		= 300;	// upward kick per full-power burst (half power: half of it)
+float	qx_elec_hit;			// T_Damage: this hit is lightning (LightningDamage, the BFG's chain)
+.float	qx_jetbrk;				// the last time lightning broke a jetpack stage
+void(entity p) QX_JetBreak;		// lightning with no armor left: a jetpack stage lost
 float	QX_SNG_HOMING_SKILL	= 50;	// super nails home in above this PlayerSkill
 float	QX_SNG_DAMAGE		= 12;	// super nail damage, grows with PlayerSkill like every weapon (v0.3: 16 -> 12)
 float	QX_SNG_FAST_SKILL	= 999;	// above this PlayerSkill the SNG fires every 0.05s (999 = never; was 50)
