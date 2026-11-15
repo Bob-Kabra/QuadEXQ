@@ -731,8 +731,81 @@ double sv_frametime;
 double cl_frametime;
 double s_frametime;
 double host_timeslice; // Time slice not affected by timescale or demospeed, for 2D
+
+/*
+==================
+QuadEXQ: qx_hitchlog <ms> -- a frame (start to start) longer than that is
+logged: "outside" is the time between frames (the OS, waiting, the window's
+messages); and a frame that itself ran long is logged with where its time
+went: input (keys, console, the mouse -- CL_SendCmd), server (the progs),
+client (server messages), screen (the drawing; swap = the buffer swap in
+it), sound. To the console, and to quadexq_hitch.txt.
+==================
+*/
+extern double qx_hitch_swap;
+static double qx_hitch_last;		// the last frame's start
+static double qx_hitch_end;		// ... and end
+
+void Host_QX_HitchWrite (const char *line)
+{
+	char path[MAX_OSPATH];
+	FILE *f;
+
+	Con_PrintLinef ("%s", line);
+	FS_FullPath_From_QPath (path, "quadexq_hitch.txt");
+	if ((f = FS_fopen_write (path, "a"))) {
+		fprintf (f, "%s\n", line);
+		FS_fclose (f);
+	}
+}
+
+static double qx_hitch_keys, qx_hitch_cbuf;	// input, split: window messages and keys / console commands (the rest: the mouse, CL_SendCmd)
+
+static void Host_QX_Hitch (double h0, double h1, double h2, double h3, double h4, double h5)
+{
+	double frame = h0 - qx_hitch_last;		// start to start
+	char line[256];
+
+	if (qx_hitch_last && frame * 1000 > qx_hitchlog.value) {
+		c_snprintf5 (line, "hitch %4.0f ms at %.1f (%s): outside %4.1f  frame before %4.1f",
+			frame * 1000, cl.time, sv.active ? sv.name : "-", (h0 - qx_hitch_end) * 1000,
+			(qx_hitch_end - qx_hitch_last) * 1000);
+		Host_QX_HitchWrite (line);
+	}
+	if ((h5 - h0) * 1000 > qx_hitchlog.value) {	// this frame itself ran long
+		c_snprintf10 (line, "slow frame %4.0f ms at %.1f: input %4.1f (keys %4.1f  commands %4.1f)  server %4.1f  client %4.1f  screen %4.1f (swap %4.1f)  sound %4.1f",
+			(h5 - h0) * 1000, cl.time, (h1 - h0) * 1000, qx_hitch_keys * 1000, qx_hitch_cbuf * 1000,
+			(h2 - h1) * 1000, (h3 - h2) * 1000, (h4 - h3) * 1000, qx_hitch_swap * 1000, (h5 - h4) * 1000);
+		Host_QX_HitchWrite (line);
+#ifdef _WIN32
+		{	// the window messages behind "keys"
+			extern int qx_hitch_msgs;
+			extern double qx_hitch_msgmax, qx_hitch_msgsum, qx_hitch_idt[12];
+			extern unsigned qx_hitch_msgid, qx_hitch_ids[12];
+			if (qx_hitch_keys * 1000 > qx_hitchlog.value * 0.5) {
+				int n;
+				c_snprintf5 (line, "  messages: %d, the slowest %4.1f ms (message 0x%04x); handling them %4.1f ms, waiting in Peek/GetMessage %4.1f ms",
+					qx_hitch_msgs, qx_hitch_msgmax * 1000, qx_hitch_msgid, qx_hitch_msgsum * 1000,
+					(qx_hitch_keys - qx_hitch_msgsum) * 1000);
+				Host_QX_HitchWrite (line);
+				c_strlcpy (line, "   ");
+				for (n = 0; n < qx_hitch_msgs && n < 12; n++) {
+					char one[32];
+					c_snprintf2 (one, " %04x:%.1f", qx_hitch_ids[n], qx_hitch_idt[n] * 1000);
+					c_strlcat (line, one);
+				}
+				Host_QX_HitchWrite (line);
+			}
+		}
+#endif // _WIN32
+	}
+	qx_hitch_last = h0;
+	qx_hitch_end = h5;
+}
+
 void _Host_Frame (double time)
 {
+	double		qh0 = 0, qh1 = 0, qh2 = 0, qh3 = 0, qh4 = 0;	// QuadEXQ (qx_hitchlog)
 	static double		time1 = 0;
 	static double		time2 = 0;
 	static double		time3 = 0;
@@ -749,16 +822,22 @@ void _Host_Frame (double time)
 		return;			// don't run too fast, or packets will flood out
 
 	sv_frametime = cl_frametime = s_frametime = /*host_timeslice =*/ host_frametime_;
+	if (qx_hitchlog.value > 0)
+		qh0 = System_DoubleTime (), qx_hitch_swap = 0;
 
 // get new key events
 	Input_Local_SendKeyEvents ();
 
 // allow mice or other external controllers to add commands
 	Input_Commands (); // Baker: Joystick (on Windows at least) and Mac uses for keyrepeats
+	if (qx_hitchlog.value > 0)
+		qx_hitch_keys = System_DoubleTime () - qh0;
 
 // process console commands
 	Cbuf_Execute ();
 	NET_Poll();
+	if (qx_hitchlog.value > 0)
+		qx_hitch_cbuf = System_DoubleTime () - qh0 - qx_hitch_keys;
 
 // if running the server locally, make intentions now
 	if (sv.active)
@@ -776,9 +855,13 @@ void _Host_Frame (double time)
 
 // check for commands typed to the host
 	Host_GetConsoleCommands (); // Dedicated
+	if (qx_hitchlog.value > 0)
+		qh1 = System_DoubleTime ();
 
 	if (sv.active)
 		SV_Host_Frame_UpdateServer (sv_frametime); // UpdateServer called here if server active
+	if (qx_hitchlog.value > 0)
+		qh2 = System_DoubleTime ();
 
 //-------------------
 //
@@ -794,6 +877,8 @@ void _Host_Frame (double time)
 // fetch results from server
 	if (cls.state == ca_connected)
 		CL_UpdateClient (cl_frametime, true);
+	if (qx_hitchlog.value > 0)
+		qh3 = System_DoubleTime ();
 
 // update video
 	if (host_speeds.value)
@@ -814,6 +899,8 @@ void _Host_Frame (double time)
 			CL_DecayLights ();
 		}
 	}
+	if (qx_hitchlog.value > 0)
+		qh4 = System_DoubleTime ();
 
 	if (host_speeds.value)
 		time2 = System_DoubleTime ();
@@ -828,6 +915,10 @@ void _Host_Frame (double time)
 #ifdef SUPPORTS_NEHAHRA
 	FMOD_Volume_Think (false);
 #endif // SUPPORTS_NEHAHRA
+	if (qx_hitchlog.value > 0)
+		Host_QX_Hitch (qh0, qh1, qh2, qh3, qh4, System_DoubleTime ());
+	else
+		qx_hitch_last = 0;
 
 	if (host_speeds.value)
 	{

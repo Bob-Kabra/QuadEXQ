@@ -208,6 +208,19 @@ VRESULT Cbuf_Execute (void)
 		}
 
 // execute the command line
+		if (qx_hitchlog.value > 0)
+		{	// QuadEXQ: a command that holds the frame up gets logged by name
+			void Host_QX_HitchWrite (const char *line);
+			double t = System_DoubleTime ();
+			char msg[256];
+			qres = Cmd_ExecuteString (line, src_command);
+			t = (System_DoubleTime () - t) * 1000;
+			if (t > qx_hitchlog.value * 0.5) {
+				c_snprintf2 (msg, "  slow command %4.1f ms: %.120s", t, line);
+				Host_QX_HitchWrite (msg);
+			}
+		}
+		else
 		qres = Cmd_ExecuteString (line, src_command);
 
 		if (qres) {

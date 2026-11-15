@@ -196,11 +196,22 @@ cbool WIN_IN_ReadInputMessages (HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpara
 
 
 
+// QuadEXQ (qx_hitchlog): this frame's window messages -- how many, and the
+// slowest one (its time, its number)
+int		qx_hitch_msgs;
+double	qx_hitch_msgmax;
+unsigned qx_hitch_msgid;
+double	qx_hitch_msgsum;		// time in TranslateMessage + DispatchMessage, all told
+unsigned qx_hitch_ids[12];		// the first 12 messages ...
+double	qx_hitch_idt[12];		// ... and their times
+
 // Baker: On Windows these might not only be key events.
 void Input_Local_SendKeyEvents (void)
 {
     MSG        msg;
+	double		t = 0;
 
+	qx_hitch_msgs = 0, qx_hitch_msgmax = 0, qx_hitch_msgid = 0, qx_hitch_msgsum = 0;
 	while (PeekMessage (&msg, NULL, 0, 0, PM_NOREMOVE))
 	{
 	// we always update if there are any event, even if we're paused
@@ -209,8 +220,19 @@ void Input_Local_SendKeyEvents (void)
 		if (!GetMessage (&msg, NULL, 0, 0))
 			System_Quit ();
 
+		if (qx_hitchlog.value > 0)
+			t = System_DoubleTime ();
       	TranslateMessage (&msg);
       	DispatchMessage (&msg);
+		if (qx_hitchlog.value > 0) {
+			t = System_DoubleTime () - t;
+			qx_hitch_msgsum += t;
+			if (qx_hitch_msgs < 12)
+				qx_hitch_ids[qx_hitch_msgs] = msg.message, qx_hitch_idt[qx_hitch_msgs] = t;
+			qx_hitch_msgs ++;
+			if (t > qx_hitch_msgmax)
+				qx_hitch_msgmax = t, qx_hitch_msgid = msg.message;
+		}
 	}
 }
 

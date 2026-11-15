@@ -405,13 +405,18 @@ void VID_AppActivate(cbool fActive, cbool minimize, cbool hide)
     }
 }
 
+double qx_hitch_swap;	// QuadEXQ (qx_hitchlog): time in the buffer swap this frame
+
 void VID_SwapBuffers (void)
 {
     if (scr_skipupdate)
         return;
 
 #ifdef CORE_GL // Both GLQUAKE and WinQuake through software need this
-    VID_Local_SwapBuffers ();
+    {	double t = System_DoubleTime ();
+		VID_Local_SwapBuffers ();
+		qx_hitch_swap += System_DoubleTime () - t;
+	}
 #endif // CORE_GL
 
 #ifdef WINQUAKE_RENDERER_SUPPORT
