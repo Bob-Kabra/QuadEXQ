@@ -534,7 +534,7 @@ void View_CalcBlend (void)
 View_PolyBlend -- johnfitz -- moved here from gl_rmain.c, and rewritten to use glOrtho
 ============
 */
-void View_PolyBlend (void)
+static void View_PolyBlend_Draw (void)
 {
 	if (!v_polyblend.value || !v_blend[3])
 		return;
@@ -565,6 +565,29 @@ void View_PolyBlend (void)
 	eglEnable (GL_DEPTH_TEST);
 	eglEnable (GL_TEXTURE_2D);
 	eglEnable (GL_ALPHA_TEST);
+}
+
+void View_PolyBlend (void)
+{
+	float QX_Retro_Level (void);
+
+	if (QX_Retro_Level () >= 0.99f)
+		return;		// QuadEXQ: the 1996 look blends after the palette (View_QX_RetroBlend)
+	View_PolyBlend_Draw ();
+}
+
+/*
+============
+View_QX_RetroBlend -- QuadEXQ: in the 1996 look (qx_retro) the colour shift
+(pain, powerups, water) goes on after the frame is in the Quake palette, the
+way the software renderer shifted the palette itself. Blended first, a haze
+such as the Ring of Shadows' grey got snapped to the palette's light greys
+and whited the view out.
+============
+*/
+void View_QX_RetroBlend (void)
+{
+	View_PolyBlend_Draw ();
 }
 #endif // GLQUAKE_VIEW_BLENDS
 

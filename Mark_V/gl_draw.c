@@ -1467,6 +1467,12 @@ void QX_Retro_Apply (float t)
 	QX_Retro_Quad ((float)w / qx_rt_dst_w, (float)h / qx_rt_dst_h);
 
 	eglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+#ifdef GLQUAKE_VIEW_BLENDS
+	if (palette) {	// 5. the colour shift on top, like a palette shift (view.c)
+		void View_QX_RetroBlend (void);
+		View_QX_RetroBlend ();
+	}
+#endif // GLQUAKE_VIEW_BLENDS
 	currenttexture = -1;		// GL_Bind's cache: we bound our own textures
 	Draw_Set2D ();
 }
