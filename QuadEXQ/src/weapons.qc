@@ -12,6 +12,7 @@ void() W_Precache =
 {
 	precache_model ("progs/v_rshot.mdl");
 	precache_model ("progs/s_light.spr");
+	precache_model ("progs/s_rift.spr");	// QuadEXQ: the raging slipgate's dark ball
 	precache_model ("progs/v_cg.mdl");
 	precache_model ("progs/v_lg.mdl");
 	precache_model ("progs/g_gren.mdl");	// QuadEXQ: lightning grenade

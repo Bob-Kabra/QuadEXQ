@@ -2470,7 +2470,7 @@ void() QX_RiftWarn =
 	}
 	self.ltime = time + QX_REV_WARN;
 	setorigin (self, self.qx_home);
-	setmodel (self, "progs/s_light.spr");
+	setmodel (self, "progs/s_rift.spr");		// the BFG ball gone black and purple
 	self.effects = EF_DIMLIGHT;
 	sound (self, CHAN_VOICE, "weapons/lstart.wav", 1, ATTN_NORM);
 	QX_RiftTell (self.qx_home, "The slipgate is raging...");
