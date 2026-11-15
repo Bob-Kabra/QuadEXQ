@@ -1718,12 +1718,12 @@ intermission screen shows it instead of the stock kills x/total.
 
   qx_statcard clear                 empty the card (map start)
   qx_statcard score <n>
-  qx_statcard text "<line>"         a line of plain text (up to 4)
+  qx_statcard text "<line>"         a line of plain text (up to 6; "*..." in gold)
   qx_statcard row "<a|b|c|d|e>"     a table row, fields split by |
                                     (the first row is the header)
 ==================
 */
-#define QX_CARD_TEXT	4
+#define QX_CARD_TEXT	6
 #define QX_CARD_ROWS	14
 #define QX_CARD_LEN		64
 static int	qx_card_score = -1;
@@ -1779,8 +1779,11 @@ cbool Sbar_QX_DrawCard (void)
 	Sbar_IntermissionNumber (104, y, qx_card_score, 7, 0);
 
 	y = 88;
-	for (i = 0; i < qx_card_ntext; i++, y += 10)
-		Draw_String (160 - (int)strlen (qx_card_text[i]) * 4, y, qx_card_text[i]);
+	for (i = 0; i < qx_card_ntext; i++, y += 10) {
+		const char *s = qx_card_text[i];
+		if (*s == '*')	QX_StringAlt (160 - (int)strlen (s + 1) * 4, y, s + 1);	// a record: in gold
+		else			Draw_String (160 - (int)strlen (s) * 4, y, s);
+	}
 
 	y += 6;
 	for (i = 0; i < qx_card_nrows && y <= 192; i++, y += 9) {

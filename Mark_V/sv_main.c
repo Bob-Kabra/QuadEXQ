@@ -1564,6 +1564,79 @@ void SV_QX_RunReset_f (lparse_t *line)
 	Cvar_SetValueByName ("qx_run_time", 0);
 	Cvar_SetValueByName ("qx_run_score", 0);
 	Cvar_SetValueByName ("qx_run_maps", 0);
+	Cvar_SetValueByName ("qx_run_cleanmaps", 0);
+	Cvar_SetValueByName ("qx_run_cleaneps", 0);
+	Cvar_SetValueByName ("qx_run_beststreak", 0);
+	Cvar_SetValueByName ("qx_run_epclean", 0);
+	Cvar_SetValueByName ("qx_ach_streak", 0);	// (the no-death streak behind the score bonus)
+	// (the high score, qx_hiscore, and the map bests in quadexq_scores.txt stay: they are records)
+}
+
+// ---- map best scores: quadexq_scores.txt, a line "<map> <score>" per map
+#define QX_BEST_MAX 1024
+static int SV_QX_BestRead (char names[][MAX_QPATH_64], int *scores)
+{
+	char path[MAX_OSPATH], name[MAX_QPATH_64];
+	int n = 0, sc;
+	FILE *f;
+
+	FS_FullPath_From_QPath (path, "quadexq_scores.txt");
+	f = FS_fopen_read (path, "r");
+	if (!f)
+		return 0;
+	while (n < QX_BEST_MAX && fscanf (f, "%63s %d", name, &sc) == 2) {
+		c_strlcpy (names[n], name);
+		scores[n++] = sc;
+	}
+	FS_fclose (f);
+	return n;
+}
+
+static char	qx_best_names[QX_BEST_MAX][MAX_QPATH_64];
+static int	qx_best_scores[QX_BEST_MAX];
+
+// a map starts: its best goes to qx_map_best (0 = never cleared)
+void SV_QX_MapBest_Load (const char *map)
+{
+	int i, n = SV_QX_BestRead (qx_best_names, qx_best_scores);
+	Cvar_SetValueQuick (&qx_map_best, 0);
+	for (i = 0; i < n; i++)
+		if (!strcasecmp (qx_best_names[i], map))
+			Cvar_SetValueQuick (&qx_map_best, qx_best_scores[i]);
+}
+
+// "qx_mapbest <score>": keep it as this map's best, if it is
+void SV_QX_MapBest_f (lparse_t *line)
+{
+	char path[MAX_OSPATH];
+	int i, n, sc;
+	FILE *f;
+
+	if (!sv.active || line->count < 2)
+		return;
+	sc = atoi (line->args[1]);
+	n = SV_QX_BestRead (qx_best_names, qx_best_scores);
+	for (i = 0; i < n; i++)
+		if (!strcasecmp (qx_best_names[i], sv.name))
+			break;
+	if (i < n && qx_best_scores[i] >= sc)
+		return;
+	if (i == n) {
+		if (n >= QX_BEST_MAX)
+			return;
+		c_strlcpy (qx_best_names[n], sv.name);
+		n ++;
+	}
+	qx_best_scores[i] = sc;
+	Cvar_SetValueQuick (&qx_map_best, sc);
+
+	FS_FullPath_From_QPath (path, "quadexq_scores.txt");
+	f = FS_fopen_write (path, "w");
+	if (!f)
+		return;
+	for (i = 0; i < n; i++)
+		fprintf (f, "%s %d\n", qx_best_names[i], qx_best_scores[i]);
+	FS_fclose (f);
 }
 
 // the whole table: console, and quadexq_stats.txt
@@ -1580,6 +1653,15 @@ void SV_QX_RunStats_f (lparse_t *line)
 	c_snprintf5 (row, "RUN STATS   time %s   maps %d   kills %d   deaths %d   score %d", hms,
 		(int) Cvar_VariableValue ("qx_run_maps"), (int) Cvar_VariableValue ("qx_run_kills"),
 		(int) Cvar_VariableValue ("qx_run_deaths"), (int) Cvar_VariableValue ("qx_run_score"));
+	Con_PrintLinef ("%s", row);
+	if (f) fprintf (f, "%s\n", row);
+	c_snprintf3 (row, "HIGH SCORE %d   this run %d (loop %d)", (int) Cvar_VariableValue ("qx_hiscore"),
+		(int) Cvar_VariableValue ("qx_run_cur"), (int) Cvar_VariableValue ("qx_run_loop"));
+	Con_PrintLinef ("%s", row);
+	if (f) fprintf (f, "%s\n", row);
+	c_snprintf4 (row, "NO DEATHS   maps %d   episodes %d   best streak %d   streak now %d",
+		(int) Cvar_VariableValue ("qx_run_cleanmaps"), (int) Cvar_VariableValue ("qx_run_cleaneps"),
+		(int) Cvar_VariableValue ("qx_run_beststreak"), (int) Cvar_VariableValue ("qx_ach_streak"));
 	Con_PrintLinef ("%s", row);
 	if (f) fprintf (f, "%s\n", row);
 
@@ -1627,6 +1709,7 @@ void SV_QX_Achievements_f (lparse_t *line)
 	}
 }
 
+
 // a page of end text: the run in 40-column lines
 void SV_QX_RunPage_f (lparse_t *line)
 {
@@ -1643,7 +1726,13 @@ void SV_QX_RunPage_f (lparse_t *line)
 	c_strlcat (text, row);
 	c_snprintf2 (row, "Kills %d   Deaths %d\n", (int) Cvar_VariableValue ("qx_run_kills"), (int) Cvar_VariableValue ("qx_run_deaths"));
 	c_strlcat (text, row);
-	c_snprintf1 (row, "Score %d\n\n", (int) Cvar_VariableValue ("qx_run_score"));
+	c_snprintf1 (row, "Score %d\n", (int) Cvar_VariableValue ("qx_run_score"));
+	c_strlcat (text, row);
+	c_snprintf3 (row, "This run %d (loop %d)  High %d\n", (int) Cvar_VariableValue ("qx_run_cur"),
+		(int) Cvar_VariableValue ("qx_run_loop"), (int) Cvar_VariableValue ("qx_hiscore"));
+	c_strlcat (text, row);
+	c_snprintf2 (row, "No deaths: %d maps, %d episodes\n\n", (int) Cvar_VariableValue ("qx_run_cleanmaps"),
+		(int) Cvar_VariableValue ("qx_run_cleaneps"));
 	c_strlcat (text, row);
 
 	// the top kills
@@ -1658,7 +1747,7 @@ void SV_QX_RunPage_f (lparse_t *line)
 		for (j = i + 1; j < n; j++)
 			if (SV_QX_Rs (order[j], false) > SV_QX_Rs (order[i], false))
 				{ int x = order[i]; order[i] = order[j]; order[j] = x; }
-	for (i = 0, shown = 0; i < n && shown < 7; i++, shown++)
+	for (i = 0, shown = 0; i < n && shown < 5; i++, shown++)	// (5: room for the run and no-death lines)
 	{
 		int k = SV_QX_Rs (order[i], false), d = SV_QX_Rs (order[i], true);
 		if (d)
@@ -2109,6 +2198,9 @@ void SV_SpawnServer (const char *server)
 			Cvar_SetValueQuick (&qx_mapdeaths, 0);
 			Sbar_QX_CardClear ();
 			c_strlcpy (qx_last_map, server);
+		}
+		{	void SV_QX_MapBest_Load (const char *map);
+			SV_QX_MapBest_Load (server);	// qx_map_best, for the progs' map report
 		}
 	}
 
