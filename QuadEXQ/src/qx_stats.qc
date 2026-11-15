@@ -26,6 +26,9 @@ float	QX_SC_DEATH	= 200;
 float	QX_SC_NODEATH	= 3000;	// (was 300) x the no-death streak
 float	QX_SC_EPCLEAN	= 10000;	// a whole episode without a death
 float	qx_st_streak;		// this map's place in the no-death streak (0 = died)
+float	qx_st_runnew;		// the map report: this run just made a new high score
+float	qx_st_mapnew;		// ... and a new best for this map
+float	qx_st_mapprev;		// (the map's best before)
 
 // QuadEXQ / Mark V engines concatenate up to 8 strings and keep 16 ftos results
 void(entity client, string s1, string s2, string s3, string s4, string s5, string s6, string s7, string s8) qx_cprint8 = #73;
@@ -200,7 +203,10 @@ void() QX_StatStart =
 	qx_st_skill0 = qx_pskill;
 	QX_AchMapStart ();
 	if (world.model == "maps/start.bsp")
+	{
+		QX_RunStart ();		// a loop, or a new run
 		return;
+	}
 
 	if (qx_persist)
 		localcmd ("qx_statcard clear\n");
@@ -389,6 +395,73 @@ float() QX_StatScore =
 	return sc;
 };
 
+// ---------------------------------------------------------------- the run
+// A run is a game from New Game on, over every loop (the end text's
+// ONE MORE TIME?). Its score adds up in qx_run_cur; the best is qx_hiscore,
+// and every map keeps its own best (the engine's quadexq_scores.txt).
+// QuadEXQ engine only (elsewhere these return 0).
+
+void() QX_RunLoopTell;
+
+float() QX_RunLoop =
+{
+	if (cvar ("qx_run_loop") < 1)
+		return 1;
+	return cvar ("qx_run_loop");
+};
+
+// add to this run's score: TRUE = past the high score
+float(float pts) QX_RunAdd =
+{
+	local float r;
+
+	if (!qx_newengine || deathmatch)
+		return FALSE;
+	r = cvar ("qx_run_cur") + pts;
+	cvar_set ("qx_run_cur", ftos (r));
+	if (r > cvar ("qx_hiscore"))
+	{
+		cvar_set ("qx_hiscore", ftos (r));
+		return TRUE;
+	}
+	return FALSE;
+};
+
+// the start map (QX_StatStart, self = player): a loop, or a new run?
+void() QX_RunStart =
+{
+	local float n;
+	local entity e;
+
+	if (!qx_newengine || deathmatch)
+		return;
+	if (cvar ("qx_loopnext"))
+	{	// round again (oldone.qc)
+		cvar_set ("qx_loopnext", "0");
+		n = cvar ("qx_run_loop");
+		if (n < 1)
+			n = 1;
+		n = n + 1;
+		cvar_set ("qx_run_loop", ftos (n));
+		e = spawn ();					// say so once the player is in
+		e.owner = self;
+		e.cnt = n;
+		e.think = QX_RunLoopTell;
+		e.nextthink = time + 1.5;
+	}
+	else if (serverflags == 0 && cvar ("qx_mapdeaths") == 0)
+	{	// New Game
+		cvar_set ("qx_run_cur", "0");
+		cvar_set ("qx_run_loop", "1");
+	}
+};
+
+void() QX_RunLoopTell =
+{
+	QX_Center (self.owner, "LOOP ", ftos (self.cnt), "\n\nThe slipgates are open again.", "");
+	remove (self);
+};
+
 // the player reached the exit (self = trigger, p = player)
 void(entity p) QX_StatMapEnd =
 {
@@ -405,6 +478,20 @@ void(entity p) QX_StatMapEnd =
 	qx_st_endt = QX_RunTime (time);
 	qx_st_score = QX_StatScore ();
 	QX_AchMapEnd (qx_st_endt, qx_st_score);	// the run stats
+	qx_st_runnew = QX_RunAdd (qx_st_score);		// this run, and the high score
+	qx_st_mapnew = FALSE;
+	qx_st_mapprev = 0;
+	if (qx_newengine)
+	{	// this map's best
+		qx_st_mapprev = cvar ("qx_map_best");
+		if (qx_st_score > qx_st_mapprev)
+		{
+			qx_st_mapnew = TRUE;
+			localcmd ("qx_mapbest ");
+			localcmd (ftos (qx_st_score));
+			localcmd ("\n");
+		}
+	}
 
 	qx_rep_to = p;
 	QX_LB (); QX_LE ();
@@ -423,6 +510,39 @@ void(entity p) QX_StatMapEnd =
 		QX_LS (" in a row  +");
 		QX_LN (QX_SC_NODEATH * qx_st_streak);
 		QX_LE ();
+	}
+	if (qx_newengine)
+	{
+		QX_LB ();
+		QX_LS ("  RUN SCORE ");
+		QX_LN (cvar ("qx_run_cur"));
+		QX_LS ("  (loop ");
+		QX_LN (QX_RunLoop ());
+		QX_LS (")   HIGH SCORE ");
+		QX_LN (cvar ("qx_hiscore"));
+		QX_LS ("   map best ");
+		if (qx_st_mapnew)
+			QX_LN (qx_st_score);
+		else
+			QX_LN (qx_st_mapprev);
+		QX_LE ();
+		if (qx_st_runnew || qx_st_mapnew)
+		{
+			QX_LB ();
+			if (qx_st_runnew)
+				QX_LS ("  *** NEW HIGH SCORE! ***");
+			if (qx_st_mapnew)
+			{
+				QX_LS ("  *** MAP BEST! ***");
+				if (qx_st_mapprev > 0)
+				{
+					QX_LS (" (was ");
+					QX_LN (qx_st_mapprev);
+					QX_LS (")");
+				}
+			}
+			QX_LE ();
+		}
 	}
 
 	QX_LB ();
@@ -547,6 +667,25 @@ void(entity p) QX_StatMapEnd =
 	{
 		QX_CB ("text");
 		QX_LS ("BOSS DOWN AT "); QX_LT (qx_st_bosst);
+		QX_CE ();
+	}
+
+	QX_CB ("text");
+	QX_LS ("RUN "); QX_LN (cvar ("qx_run_cur"));
+	QX_LS ("  LOOP "); QX_LN (QX_RunLoop ());
+	if (qx_st_streak)
+	{
+		QX_LS ("  NO DEATHS x"); QX_LN (qx_st_streak);
+	}
+	QX_CE ();
+	if (qx_st_runnew || qx_st_mapnew)
+	{	// a record: in gold
+		QX_CB ("text");
+		QX_LS ("*");
+		if (qx_st_runnew)
+			QX_LS ("NEW HIGH SCORE!  ");
+		if (qx_st_mapnew)
+			QX_LS ("MAP BEST!");
 		QX_CE ();
 	}
 

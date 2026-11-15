@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v1.00
+  QuadEXQ  v1.01
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -306,8 +306,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
   Revenants    A few seconds after you kill one, it teleports back to where
                it started and comes straight for you. It returns at most
                twice.
-               Three seconds before it returns, you get a warning: lightning
-               and sparks at the spot, and "The slipgate is raging..." with
+               Three seconds before it returns, you get a warning: a dark
+               purple ball, lightning and sparks at the spot, and "The
+               slipgate is raging..." with
                the direction (ahead / on your left / on your right /
                BEHIND YOU / far away). Then: "REINFORCEMENTS!"
   Liquids      Enemies now take damage in slime and lava (they never did in
@@ -450,7 +451,20 @@ fork), which adds the HUD, music switching, checkpoints and more.
 
   Score:
     kill 10 / scout 20 / elite 30 / boss +300
-    secret 100 / death -200 / clear without dying +3000
+    secret 100 / death -200 / clear without dying +3000 x the no-death
+    streak: the 2nd map in a row without dying is +6000, the 3rd +9000 ..
+    (one death and it starts over; on other engines always +3000)
+    a whole episode without dying (from its first map to the rune) +10000
+
+  Loops and high scores (QuadEXQ engine):
+    Beat Shub-Niggurath and the end text turns over page by page (FIRE
+    turns it sooner). The last page asks ONE MORE TIME? -- FIRE takes you
+    round again: the start map, no runes, a new game's guns. Your
+    PlayerSkill, your no-death streak and the run's score come along.
+    The run is everything from New Game on, over every loop; its score is
+    the high score to beat. Every map also keeps its own best
+    (quadexq_scores.txt). The map report says RUN SCORE / HIGH SCORE /
+    map best, and NEW HIGH SCORE! or MAP BEST! in gold when you set one.
 
   Play log (QuadEXQ engine):
     quadexq_stats.txt in the QuadEXQ folder grows with every session. It
@@ -564,9 +578,12 @@ fork), which adds the HUD, music switching, checkpoints and more.
   qx_achievements          list the achievements (the ones still to find
                            about THE ENDER show as ???)
   qx_runstats              your stats over every game: kills and deaths
-                           by monster, time, score (also written to
-                           quadexq_stats.txt)
-  qx_runreset              start the stats over (the achievements stay)
+                           by monster, time, score, maps and episodes
+                           cleared without dying, the best no-death streak,
+                           the high score and this run's score and loop
+                           (also written to quadexq_stats.txt)
+  qx_runreset              start the stats over (the achievements, the high
+                           score and the map bests stay)
   sv_protocol 999          network protocol (default 999, as QuakeSpasm:
                            big maps past +-4096; 666 = FitzQuake)
 
@@ -598,6 +615,24 @@ fork), which adds the HUD, music switching, checkpoints and more.
 ==============================================================================
  13. Version history
 ==============================================================================
+
+  v1.01
+    Game:
+    - Round again: after the end text, ONE MORE TIME? takes you back to
+      the start map for another loop -- no runes, a new game's guns, but
+      your PlayerSkill, no-death streak and score carry on. A high score
+      for the whole run, a best for every map, both on the map report.
+      The end text's pages turn with FIRE, and the end map counts as a
+      cleared map now.
+    - No deaths, more score: each map in a row without dying is worth
+      3000 more than the last (+3000, +6000, +9000 ..), and a whole
+      episode without dying is +10000. The stats count the maps and
+      episodes cleared without dying, and the best streak.
+    - The raging slipgate's warning is a dark purple ball now.
+    QuadEXQ engine:
+    - The 1996 look (qx_retro): the colour of pain, powerups and water goes
+      on like the software renderer's palette shift -- the Ring of Shadows
+      no longer whites the view out.
 
   v1.00 (v0.96 beta was never released)
     Game:

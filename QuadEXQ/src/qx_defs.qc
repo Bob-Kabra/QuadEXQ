@@ -380,6 +380,13 @@ void() QX_AchShubLord;
 void() QX_AchBFGSniper;
 void(float deltahere) QX_AchDeltaPride;
 void() QX_AchMapStart;
+// loops: after the end text, FIRE takes you round again (oldone.qc)
+float	qx_loop_reset;		// SetChangeParms: the loop starts with a new game's kit
+void() QX_FinaleButton;		// IntermissionThink, while the end text is up
+.float	qx_fbtn;			// the end text: FIRE held last frame
+float(float pts) QX_RunAdd;	// this run's score (qx_stats.qc): TRUE = a new high score
+void() QX_RunStart;		// the start map: a loop, or a new run
+void(entity e, string a, string b, string c, string d) QX_Center;
 .float	qx_ach_vlord;		// a shot a Vore Lord swatted back at you
 .entity	qx_ach_swatfrom;	// a shot you swatted: the monster that fired it
 .float	qx_ach_ff;			// a BFG ball that already counted a Delta Team hit

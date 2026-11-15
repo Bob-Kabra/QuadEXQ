@@ -32,6 +32,11 @@ void() info_intermission =
 
 void() SetChangeParms =
 {
+	if (qx_loop_reset)		// QuadEXQ: round again -- a new game's kit
+	{
+		SetNewParms ();
+		return;
+	}
 	if (self.health <= 0)
 	{
 		SetNewParms ();
@@ -246,6 +251,11 @@ When the player presses attack or jump, change to the next level
 void() IntermissionThink =
 {
 	QX_StatInterFrame ();	// QuadEXQ: score card
+	if (qx_finale)
+	{
+		QX_FinaleButton ();	// QuadEXQ: the end text's pages, and going round again
+		return;
+	}
 	if (time < intermission_exittime)
 		return;
 

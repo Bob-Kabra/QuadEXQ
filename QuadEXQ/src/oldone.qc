@@ -116,6 +116,9 @@ void() finale_1 =
 	QX_AchShubLord ();		// QuadEXQ
 	if (serverflags & QX_ENDER_WON)
 		QX_AchQuad ();		// QuadEXQ: (its banner is lost under the end text; the run page counts it)
+	pl = find (world, classname, "player");
+	if (pl)
+		QX_StatMapEnd (pl);	// QuadEXQ: the end map is cleared too (score, streak, the run)
 	qx_finale = TRUE;		// QuadEXQ: nothing may print over the end text now
 
 	// find the intermission spot
@@ -182,25 +185,82 @@ void() finale_3 =
 	lightstyle(0, "abcdefghijklmlkjihgfedcb");	
 };
 
-// QuadEXQ: THE ENDER -- once the stock text has typed out, the screen
-// turns over to a second page: what became of Delta Team
-float	QX_FINALE_PAGE2	= 52;	// seconds (the first page types at 8 characters a second)
-float	QX_FINALE_PAGE3	= 34;	// seconds after page 2 (the run's stats)
+// QuadEXQ: the end text in pages. Each turns over by itself, or with FIRE
+// (after a few seconds on it):
+//   1  the ending (THE ENDER's own, or the stock one)
+//   2  THE ENDER only: what became of Delta Team
+//   3  QuadEXQ engine: the run's stats
+//   4  ONE MORE TIME? -- FIRE takes you round again: the start map, no runes,
+//      a new game's kit; PlayerSkill, the no-death streak and this run's
+//      score come along (a loop)
+float	QX_FINALE_PAGE1	= 52;	// seconds (the first page types at 8 characters a second)
+float	QX_FINALE_PAGE2	= 34;
+float	QX_FINALE_PAGE3	= 30;
+float	QX_FINALE_MIN	= 3;	// seconds on a page before FIRE turns it
+float	qx_fpage;				// the page up (0 = the text hasn't started)
+float	qx_fpage_t;				// ... since when
+entity	qx_ftimer;
 
-void() qx_finale_page3 =
+void(float pg) QX_FinaleShow;
+
+void() QX_FinaleTimer =
 {
-	if (qx_newengine)
-		localcmd ("qx_runpage\n");	// (the engine writes the page from the run stats)
-	remove (self);
+	QX_FinaleShow (qx_fpage + 1);
 };
 
-void() qx_finale_page2 =
+// the page after page pg-1 (pages that don't apply are skipped)
+void(float pg) QX_FinaleShow =
 {
-	WriteByte (MSG_ALL, SVC_FINALE);
-	WriteString (MSG_ALL, "\n\nAnd Delta Team?\n\nFour of you brought it down together.\nThat's no Delta any more.\nCall it what it is:\n\nQUAD!\n\n(Quad Damage -- just as id intended.)\n\n\nThank you for playing!!\n\nQuadEXQ, built on Quake.\nThank you, id Software --\n30 years on, we're still fragging.");
-	// QuadEXQ engine: then a page with the run's stats
-	self.think = qx_finale_page3;
-	self.nextthink = time + QX_FINALE_PAGE3;
+	if (pg == 2 && !(serverflags & QX_ENDER_WON))
+		pg = 3;
+	if (pg == 3 && !qx_newengine)
+		pg = 4;
+	if (pg > 4 || pg <= qx_fpage)
+		return;
+	qx_fpage = pg;
+	qx_fpage_t = time;
+	if (qx_ftimer)
+		qx_ftimer.nextthink = 0;
+	if (pg == 2)
+	{
+		WriteByte (MSG_ALL, SVC_FINALE);
+		WriteString (MSG_ALL, "\n\nAnd Delta Team?\n\nFour of you brought it down together.\nThat's no Delta any more.\nCall it what it is:\n\nQUAD!\n\n(Quad Damage -- just as id intended.)\n\n\nThank you for playing!!\n\nQuadEXQ, built on Quake.\nThank you, id Software --\n30 years on, we're still fragging.");
+		qx_ftimer.nextthink = time + QX_FINALE_PAGE2;
+	}
+	else if (pg == 3)
+	{
+		localcmd ("qx_runpage\n");	// (the engine writes the page from the run stats)
+		qx_ftimer.nextthink = time + QX_FINALE_PAGE3;
+	}
+	else if (pg == 4)
+	{
+		WriteByte (MSG_ALL, SVC_FINALE);
+		WriteString (MSG_ALL, "\n\nONE MORE TIME?\n\nThe slipgates are opening again.\n\nBack to the start map: the runes are\ngone, and so are your guns. Your\nPlayerSkill, your no-death streak and\nthis run's score come along.\n\n\nFIRE: round again\n\n(or quit -- it's all saved)");
+	}
+};
+
+// IntermissionThink while the end text is up (self = player)
+void() QX_FinaleButton =
+{
+	local float down;
+
+	down = (self.button0 || self.button2);
+	if (down && !self.qx_fbtn)
+	if (qx_fpage >= 1)
+	if (time > qx_fpage_t + QX_FINALE_MIN)
+	{
+		if (qx_fpage >= 4)
+		{	// round again
+			serverflags = 0;			// no runes (and THE ENDER is to win again)
+			qx_loop_reset = TRUE;		// SetChangeParms: a new game's kit
+			if (qx_newengine)
+				cvar_set ("qx_loopnext", "1");	// the start map: a loop, not a new game
+			changelevel ("start");
+		}
+		else
+			QX_FinaleShow (qx_fpage + 1);
+	}
+	self.qx_fbtn = down;
 };
 
 void() finale_4 =
@@ -248,12 +308,12 @@ void() finale_4 =
 	else
 	WriteString (MSG_ALL, "Congratulations and well done! You have\nbeaten the hideous Shub-Niggurath, and\nher hundreds of ugly changelings and\nmonsters. You have proven that your\nskill and your cunning are greater than\nall the powers of Quake. You are the\nmaster now. Id Software salutes you.");
 
-	if (serverflags & QX_ENDER_WON)	// QuadEXQ: THE ENDER -- a second page for Delta Team
-	{
-		n = spawn ();
-		n.think = qx_finale_page2;
-		n.nextthink = time + QX_FINALE_PAGE2;
-	}
+	// QuadEXQ: the next pages (QX_FinaleShow)
+	qx_fpage = 1;
+	qx_fpage_t = time;
+	qx_ftimer = spawn ();
+	qx_ftimer.think = QX_FinaleTimer;
+	qx_ftimer.nextthink = time + QX_FINALE_PAGE1;
 
 // put a player model down
 	n = spawn();

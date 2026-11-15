@@ -293,6 +293,7 @@ void(float runtime, float score) QX_AchMapEnd =
 void(float pts, string hunter, float perfect) QX_AchDuelWin =
 {
 	QX_CvAdd ("qx_run_score", pts);
+	QX_RunAdd (pts);						// and this run's
 	if (hunter == "GuroFighter")
 		QX_Ach (QX_ACH_GURO, "GuroFighter Down", "Beat GuroFighter in the arena");
 	if (!perfect)
