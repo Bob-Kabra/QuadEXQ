@@ -1688,7 +1688,8 @@ Layout is a 320x200 canvas (CANVAS_QXHUD) sitting just above the status bar.
 #define QXC_QUAD		215		// gold
 #define QXC_SKILL		200		// blue
 #define QXC_SKILL_MAX	251
-#define QXC_JET			111		// yellow
+#define QXC_JET			111		// yellow (a half-power burst)
+#define QXC_JET_FULL	234		// orange (a full-power burst)
 
 static void QX_Bar (int x, int y, int w, int h, float frac, int color)
 {
@@ -1877,14 +1878,16 @@ void Sbar_DrawQuadEXQ (void)
 	// ---- jetpack bursts
 	if (flags & QX_F_HASJET)
 	{
-		// stat = bursts left + 16 x bursts owned (one per jetpack found); an
-		// older progs sends only the bursts left, out of 3
-		int owned = jets >> 4, left = jets & 15;
+		// stat = bursts left + 16 x bursts owned + 256 x full-power ones (the
+		// first ones, used first); an older progs sends only the bursts left,
+		// out of 3. Used bursts go dark from the left.
+		int owned = (jets >> 4) & 15, left = jets & 15, full = jets >> 8, used;
 		if (!owned)
-			owned = 3, left = jets;
+			owned = 3, left = jets & 15, full = 0;
+		used = owned - left;
 		QX_StringAlt (x + 206, y - 2, "JET");
 		for (i = 0; i < owned && i < 8; i++)
-			Draw_Fill (x + 238 + i * 8, y - 1, 6, 6, i < left ? QXC_JET : QXC_BAR_BG, 1.0f);
+			Draw_Fill (x + 238 + i * 8, y - 1, 6, 6, i < used ? QXC_BAR_BG : i < full ? QXC_JET_FULL : QXC_JET, 1.0f);
 	}
 
 	// ---- boss compass
