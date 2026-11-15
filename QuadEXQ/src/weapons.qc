@@ -2517,6 +2517,9 @@ void() ImpulseCommands =
 		QX_DeltaArrive ();
 	if (self.impulse == 157)		// QuadEXQ: test THE ENDER's Cyberdemon boss fight (and back here)
 		QX_EnderTest ();
+	if (self.impulse == 158)		// QuadEXQ: test the ending -- the Cyber Delta goes down now
+	if (!deathmatch && !coop)
+		QX_EnderSkip ();
 	if (self.impulse == 151)		// QuadEXQ: reset PlayerSkill
 	{
 		QX_SetSkill (QX_StartSkill ());

@@ -401,5 +401,6 @@ void() QX_EnderThink;
 void() QX_EnderGo;
 void() QX_EnderRetry;
 void() QX_EnderTest;
+void() QX_EnderSkip;		// impulse 158: down the Cyber Delta (a test)
 float(entity p, entity trig) QX_EnderTeleport;
 float(entity targ, entity inflictor, entity attacker, float damage) QX_EnderDamage;

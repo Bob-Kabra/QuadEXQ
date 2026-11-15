@@ -48,6 +48,7 @@ float	qx_ender_delta;			// ender.bsp: Delta Team is here
 float	qx_ender_hunted;		// ender.bsp: boss and scouts sent at you
 float	qx_ender_hits;			// ender.bsp: BFG hits landed
 float	qx_ender_hint;			// ender.bsp: next "it shrugs it off" hint
+float	qx_ender_skip;			// ender.bsp: impulse 158 downed the boss (no Delta's Pride)
 float	qx_ender_won_at;		// ender.bsp: back to end.bsp at this time
 float	qx_ender_regen_scan;		// ender.bsp: next look for taken health / armor
 .float	qx_ender_regen;			// (an item) comes back at this time
@@ -640,7 +641,8 @@ void(entity p) QX_EnderArenaThink =
 	if (qx_ender_boss_e.health <= 0 || qx_ender_boss_e.classname != "monster_cyber")
 	{
 		qx_ender_won_at = time + 5;
-		QX_AchDeltaPride (qx_ender_delta);
+		if (!qx_ender_skip)
+			QX_AchDeltaPride (qx_ender_delta);
 		QX_Center (p, "!!! CYBER DELTA DOWN !!!\n\nDELTA TEAM:\nNice shot. Now let's finish this.", "", "", "");
 		QX_LB ();
 		QX_LS ("    THE ENDER: Cyber Delta down");
@@ -708,6 +710,24 @@ float(entity targ, entity inflictor, entity attacker, float damage) QX_EnderDama
 		self = oself;
 	}
 	return 0;
+};
+
+// impulse 158 (self = player): a test -- the Cyber Delta goes down now, and
+// the ending goes on as if you'd won (killed by nobody: no True Cyber, no
+// kill in the stats, no BFG Sniper or Delta's Pride)
+void() QX_EnderSkip =
+{
+	local entity b;
+
+	b = qx_ender_boss_e;
+	if (!b || qx_ender_won_at || b.health <= 0 || b.classname != "monster_cyber")
+	{
+		sprint (self, "impulse 158: only in THE ENDER's fight\n");
+		return;
+	}
+	qx_ender_skip = TRUE;
+	b.health = -100;
+	Killed (b, world);
 };
 
 // from respawn (self = the dead player): the fight starts over
