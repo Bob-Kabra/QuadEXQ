@@ -791,6 +791,8 @@ void() CyberAct =
 					CyberQRocket (-4);
 					CyberQRocket (4);
 				}
+				if (QX_RunLoop () >= 2)
+					QX_Revenge (self, QX_RunLoop () * 2 + 1);	// loop 2 on: a fan of lasers as it dodges
 				self.qx_cy_lava = 1;
 			}
 		}

@@ -88,6 +88,13 @@ void(entity targ, entity attacker) Killed =
 
 	monster_death_use();
 	self.th_die ();
+
+	// QuadEXQ: loop 2 on, it shoots back as it dies -- unless it went to
+	// pieces (gibbed: ThrowHead made it a bouncing head)
+	if (self.flags & FL_MONSTER)
+	if (!self.qx_ender_boss)
+	if (self.movetype != MOVETYPE_BOUNCE)
+		QX_Revenge (self, 0);
 	
 	self = oself;
 };

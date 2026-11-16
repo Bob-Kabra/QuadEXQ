@@ -410,6 +410,21 @@ float() QX_RunLoop =
 	return cvar ("qx_run_loop");
 };
 
+// monsters run 10% faster a loop, up to +30% (ai_run)
+float() QX_LoopSpeed =
+{
+	local float l;
+
+	if (!qx_loopspd)
+	{
+		l = QX_RunLoop () - 1;
+		if (l > 3)
+			l = 3;
+		qx_loopspd = 1 + 0.1 * l;
+	}
+	return qx_loopspd;
+};
+
 // add to this run's score: TRUE = past the high score
 float(float pts) QX_RunAdd =
 {
@@ -433,6 +448,7 @@ void() QX_RunStart =
 	local float n;
 	local entity e;
 
+	qx_loopspd = 0;			// (worked out again for this run's loop)
 	if (!qx_newengine || deathmatch)
 		return;
 	if (cvar ("qx_loopnext"))

@@ -3109,3 +3109,70 @@ void() QX_FireBlaster =
 	newmis.nextthink = time + 5;
 	newmis.think = SUB_Remove;
 };
+
+// ---------------------------------------------------------------- revenge shots
+// Loop 2 on (the end text's ONE MORE TIME?), every monster shoots back as it
+// dies (but not when it's blown to pieces: Killed) -- a homage to the "uchikaeshi" of 2nd-loop shmups (Chou Ren Sha 68k):
+// loop 2 one laser at the nearest player, loop 3 three in a fan, loop 4 on
+// five. Monsters' lasers, so the Golden Left Hand swats them back.
+// n = 0: by the loop; else that many.
+float	QX_REV_SPEED	= 500;
+float	QX_REV_SPREAD	= 12;		// degrees between the shots of a fan
+
+void(entity src, float n) QX_Revenge =
+{
+	local entity p, oself;
+	local vector org, d, a;
+	local float i, f;
+
+	if (deathmatch || coop)
+		return;
+	if (!n)
+	{
+		f = QX_RunLoop ();
+		if (f < 2)
+			return;
+		n = 1;
+		if (f == 3)
+			n = 3;
+		if (f >= 4)
+			n = 5;
+	}
+	p = find (world, classname, "player");
+	if (!p || p.health <= 0)
+		return;
+	org = src.origin + '0 0 16';
+	if (vlen (p.origin - org) > 1500)
+		return;
+	traceline (org, p.origin + p.view_ofs, TRUE, src);
+	if (trace_fraction < 1)
+		return;						// (only what can see you)
+
+	a = vectoangles (p.origin + p.view_ofs - org);
+	a_x = 0 - a_x;
+	oself = self;
+	self = src;
+	sound (src, CHAN_AUTO, "enforcer/enfire.wav", 1, ATTN_NORM);
+	i = 0;
+	while (i < n)
+	{
+		f = a_y + (i - (n - 1) / 2) * QX_REV_SPREAD;
+		makevectors (a_x * '1 0 0' + f * '0 1 0');
+		d = v_forward;
+		newmis = spawn ();
+		newmis.owner = src;
+		newmis.movetype = MOVETYPE_FLY;
+		newmis.solid = SOLID_BBOX;
+		setmodel (newmis, "progs/laser.mdl");
+		setsize (newmis, '0 0 0', '0 0 0');
+		setorigin (newmis, org);
+		newmis.velocity = d * QX_REV_SPEED;
+		newmis.angles = vectoangles (newmis.velocity);
+		newmis.nextthink = time + 5;
+		newmis.think = SUB_Remove;
+		newmis.touch = Laser_Touch;
+		newmis.classname = "qx_revenge";
+		i = i + 1;
+	}
+	self = oself;
+};

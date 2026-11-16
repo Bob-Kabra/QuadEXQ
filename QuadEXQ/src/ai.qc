@@ -695,6 +695,7 @@ void(float dist) ai_run =
 	local	float	direct, ang_rint, ang_floor, ang_ceil;
 	
 	QX_AIHook ();
+	dist = dist * QX_LoopSpeed ();	// QuadEXQ: a little faster every loop
 	movedist = dist;
 // see if the enemy is dead
 	if (self.enemy.health <= 0)

@@ -391,6 +391,10 @@ void() QX_FinaleButton;		// IntermissionThink, while the end text is up
 .float	qx_fbtn;			// the end text: FIRE held last frame
 float(float pts) QX_RunAdd;	// this run's score (qx_stats.qc): TRUE = a new high score
 void() QX_RunStart;		// the start map: a loop, or a new run
+float() QX_RunLoop;			// this run's loop (1 = the first time through)
+float	qx_loopspd;			// monsters' running speed this loop (0 = not worked out yet)
+float() QX_LoopSpeed;
+void(entity src, float n) QX_Revenge;	// loop 2 on: a monster shoots back as it dies
 void(entity e, string a, string b, string c, string d) QX_Center;
 .float	qx_ach_vlord;		// a shot a Vore Lord swatted back at you
 .entity	qx_ach_swatfrom;	// a shot you swatted: the monster that fired it
