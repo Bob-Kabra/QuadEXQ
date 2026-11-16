@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v1.01
+  QuadEXQ  v1.02
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -82,7 +82,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
   The main menu is the stock one. With the QuadEXQ engine, SINGLE PLAYER
   opens this:
 
-    CONTINUE      resume from the latest autosave (s19.sav)
+    CONTINUE      resume from the latest autosave (qx_continue.sav)
     NEW GAME      start over (go to the start map)
     LOAD / SAVE
     LEVELS        level select
@@ -466,6 +466,15 @@ fork), which adds the HUD, music switching, checkpoints and more.
     turns it sooner). The last page asks ONE MORE TIME? -- FIRE takes you
     round again: the start map, no runes, a new game's guns. Your
     PlayerSkill, your no-death streak and the run's score come along.
+    From loop 2 on, every monster shoots back as it dies -- unless you
+    blow it to pieces (lasers at you:
+    1 on loop 2, a fan of 3 on loop 3, 5 from loop 4 -- the Golden Left
+    Hand swats them back), monsters run 10% faster a loop (up to +30%),
+    and the Cyber Delta sprays lasers whenever it dodges.
+    Every loop is worth more: each map's score (and an arena win's) counts
+    1.4 times the last loop's -- loop 2 x1.4, loop 3 x1.96, loop 4 x2.74 ..
+    Down the Cyber Delta without dying in THE ENDER and the whole run's
+    score doubles (FLAWLESS).
     The run is everything from New Game on, over every loop; its score is
     the high score to beat. Every map also keeps its own best
     (quadexq_scores.txt). The map report says RUN SCORE / HIGH SCORE /
@@ -520,8 +529,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
         not hit for 4 seconds, no bullet time, and no enemy in sight that
         is after you. Otherwise it waits, so a checkpoint never drops you
         into a hopeless spot.
-      - it is also written to load slot 20 (s19.sav), which the CONTINUE
-        menu entry loads
+      - it is written to qx_continue.sav, which the CONTINUE menu entry
+        loads -- a file of its own, so saving over a load slot can't lose
+        it -- and copied to load slot 20 (s19.sav) for the Load menu
   - PlayerSkill saved in your config.
   - Runes work as in stock Quake: they live in your game and its saves.
     CONTINUE (or loading a save) keeps them, NEW GAME starts without them.
@@ -560,8 +570,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
   snd_qxpitch 0-1          how far the pitch drops in slow motion
                            (default 0.7, 0 = off)
   snd_qxpitch_self 0/1     also lower the pitch of your own sounds (default 0)
-  sv_autosave_slot 0-20    load slot the autosave is copied to
-                           (default 20, 0 = off)
+  sv_autosave_slot 0-20    load slot the autosave is also copied to
+                           (default 20, 0 = off: slot 20 is all yours;
+                           CONTINUE doesn't need it)
   sv_autosave 0            turn autosave off completely
   autosave                 autosave right now
   qx_playerskill           saved PlayerSkill + 1 (-1 = nothing saved yet)
@@ -591,6 +602,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
                            (also written to quadexq_stats.txt)
   qx_runreset              start the stats over (the achievements, the high
                            score and the map bests stay)
+  qx_hitchlog 30           stutters? log every frame over 30 ms and where
+                           its time went (console, quadexq_hitch.txt).
+                           0 = off (default)
   sv_protocol 999          network protocol (default 999, as QuakeSpasm:
                            big maps past +-4096; 666 = FitzQuake)
 
@@ -630,6 +644,14 @@ fork), which adds the HUD, music switching, checkpoints and more.
       episode to the next, but lightning with no armor left fries a stage.
     - impulse 158: in THE ENDER's fight, the Cyber Delta goes down now
       (a test, to see the ending).
+    - Loop 2 on: every monster shoots back as it dies, unless gibbed (1,
+      3, then 5 lasers), monsters run faster (+10% a loop, up to +30%), and the
+      Cyber Delta sprays lasers as it dodges -- a nod to Chou Ren Sha 68k.
+    - Down the Cyber Delta without a death in THE ENDER: the run's score x2.
+    - Scores grow every loop: x1.4, x1.96, x2.74 ..
+    - CONTINUE has a save file of its own, qx_continue.sav: saving over
+      load slot 20 no longer loses it. (QuadEXQ engine)
+    - qx_hitchlog <ms>: logs a stutter and where its time went.
 
   v1.01
     Game:

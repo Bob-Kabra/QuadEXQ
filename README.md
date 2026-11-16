@@ -39,7 +39,7 @@ You need Quake (`id1/pak0.pak`, plus `pak1.pak` for the full game). Put the mod 
 quadexq.exe -game QuadEXQ
 ```
 
-The player's guide comes with the mod (`README_QuadEXQ_v1.01.txt`).
+The player's guide comes with the mod (`README_QuadEXQ_v1.02.txt`).
 
 ## License
 
