@@ -1418,6 +1418,9 @@ void SV_Autosave_Think (void)
 
 	Host_Savegame (AUTOSAVE_BASENAME "0", false);
 
+	// QuadEXQ: the checkpoint (Continue, and where a death takes you back to)
+	Host_Savegame ("qx_continue", false);
+
 	// QuadEXQ: also drop it into a normal menu slot so it can be loaded from the menu
 	if (sv_autosave_slot.value >= 1 && sv_autosave_slot.value <= 20)
 		Host_Savegame (va("s%d", (int)sv_autosave_slot.value - 1), false);

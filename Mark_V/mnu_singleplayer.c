@@ -30,8 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define local_menu				(&menux[LOCAL_MENU_STATE]) // /*static menux_t *menu = &menux[OUR_MENU_STATE]
 
 // Define menu items
-// QuadEXQ: Continue (only when the autosave slot file exists, s19.sav by
-// default) is added above the stock rows, and New Game can offer a list of
+// QuadEXQ: Continue (only when there is a checkpoint, qx_continue.sav) is added above the stock rows, and New Game can offer a list of
 // start maps. The main menu is stock again: Enter on Single Player gets here.
 typedef enum { ENUM_FORCE_INT_GCC_ (opt)
 	opt_continue_0,
@@ -55,22 +54,11 @@ typedef enum { ENUM_FORCE_INT_GCC_ (opt)
 void Mnu_SinglePlayer_Do_NewGame_ (void);
 static int qx_has_continue;		// the autosave slot file exists
 
-static int QX_Continue_Slot (void)
-{
-	int slot = (int)sv_autosave_slot.value;
-	return (slot >= 1 && slot <= 20) ? slot - 1 : -1;	// menu slot 20 = s19.sav
-}
+const char *QX_Checkpoint_Name (void);	// host_cmd.c: qx_continue.sav (or an older game's autosave slot)
 
 static void QX_Continue_Scan (void)
 {
-	char name[MAX_OSPATH];
-	int slot = QX_Continue_Slot ();
-
-	qx_has_continue = false;
-	if (slot >= 0) {
-		FS_FullPath_From_QPath (name, va("s%d.sav", slot));
-		qx_has_continue = File_Exists (name);
-	}
+	qx_has_continue = QX_Checkpoint_Name () != NULL;
 	if (local_menu->cursor >= LOCAL_ITEMS_COUNT)
 		local_menu->cursor = 0;
 }
@@ -83,13 +71,13 @@ static int QX_Item (int cursor)
 
 static void QX_Do_Continue_ (void)
 {
-	int slot = QX_Continue_Slot ();
-	if (slot < 0)
+	const char *ck = QX_Checkpoint_Name ();
+	if (!ck)
 		return;
 	SCR_BeginLoadingPlaque ();
 	Key_SetDest (key_game);
 	console1.visible_pct = 0;
-	Cbuf_AddTextLinef ("load s%d", slot);
+	Cbuf_AddTextLinef ("load %s", ck);
 }
 
 //=============================================================================

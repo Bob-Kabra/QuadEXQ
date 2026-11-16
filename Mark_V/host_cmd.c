@@ -1019,6 +1019,7 @@ Restarts the current server for a dead player
 ==================
 */
 static cbool QX_Autosave_Is_For (const char *mapname, int *slot_out);
+const char *QX_Checkpoint_Name (void);
 
 void Host_Restart_f (lparse_t *unnused)
 {
@@ -1037,9 +1038,9 @@ void Host_Restart_f (lparse_t *unnused)
 	// autosave of this map yet: restart as always.
 	if (qx_checkpoints.value && svs.maxclients_internal == 1 && svs.clients[0].active
 		&& svs.clients[0].edict->v.health <= 0 && QX_Autosave_Is_For (sv.name, &slot)) {
-		Con_PrintLinef ("Back to the last checkpoint (s%d)", slot);
+		Con_PrintLinef ("Back to the last checkpoint (%s)", QX_Checkpoint_Name ());
 		SCR_BeginLoadingPlaque ();
-		Cbuf_AddTextLinef ("load s%d", slot);
+		Cbuf_AddTextLinef ("load %s", QX_Checkpoint_Name ());
 		return;
 	}
 	c_strlcpy (mapname, sv.name);	// mapname gets cleared in spawnserver
@@ -1365,23 +1366,45 @@ void Host_Savegame_f (lparse_t *line)
 QuadEXQ: qx_respawn
 
 Called by the progs instead of "restart" when the player dies in single player.
-If the autosave slot (sv_autosave_slot, s19.sav by default) holds a save of the
-map we are on, load it; otherwise restart the map as Quake always did.
+If the checkpoint (qx_continue.sav, every autosave) is a save of the map we
+are on, load it; otherwise restart the map as Quake always did.
 ===============
 */
-// QuadEXQ: is the autosave slot a save of map 'mapname'?
+// QuadEXQ: the checkpoint save -- qx_continue.sav, a file of its own the
+// Load/Save menu never shows (so saving over a menu slot can't lose it).
+// A game from before it existed: the autosave slot (sv_autosave_slot), if
+// that holds one. NULL: no checkpoint.
+const char *QX_Checkpoint_Name (void)
+{
+	static char name[MAX_QPATH_64];
+	char path[MAX_OSPATH];
+	int slot = (int)sv_autosave_slot.value - 1;
+
+	FS_FullPath_From_QPath (path, "qx_continue.sav");
+	if (File_Exists (path))
+		return "qx_continue";
+	if (slot >= 0 && slot < 20) {
+		c_snprintf1 (name, "s%d", slot);
+		FS_FullPath_From_QPath (path, va("%s.sav", name));
+		if (File_Exists (path))
+			return name;
+	}
+	return NULL;
+}
+
+// QuadEXQ: is the checkpoint a save of map 'mapname'? (*slot_out: unused, -1)
 static cbool QX_Autosave_Is_For (const char *mapname, int *slot_out)
 {
-	int slot = (int)sv_autosave_slot.value - 1;
+	const char *ck = QX_Checkpoint_Name ();
 	char path[MAX_OSPATH];
 	char buf[MAX_OSPATH];
 	FILE *f;
 	int version, i, ok = false;
 
-	*slot_out = slot;
-	if (slot < 0 || slot >= 20 || svs.maxclients_internal != 1)
+	*slot_out = -1;
+	if (!ck || svs.maxclients_internal != 1)
 		return false;
-	FS_FullPath_From_QPath (path, va("s%d.sav", slot));
+	FS_FullPath_From_QPath (path, va("%s.sav", ck));
 	f = FS_fopen_read (path, "rb");
 	if (!f)
 		return false;
@@ -1406,9 +1429,9 @@ void Host_QX_Respawn_f (lparse_t *line)
 	int slot;
 
 	if (sv.active && QX_Autosave_Is_For (sv.name, &slot)) {
-		Con_PrintLinef ("Back to the last checkpoint (s%d)", slot);
+		Con_PrintLinef ("Back to the last checkpoint (%s)", QX_Checkpoint_Name ());
 		SCR_BeginLoadingPlaque ();
-		Cbuf_AddTextLinef ("load s%d", slot);
+		Cbuf_AddTextLinef ("load %s", QX_Checkpoint_Name ());
 	}
 	else Cbuf_AddTextLine ("restart");
 }
@@ -1433,9 +1456,9 @@ void Host_QX_Return_f (lparse_t *line)
 	}
 	map = line->args[1];
 	if (QX_Autosave_Is_For (map, &slot)) {
-		Con_PrintLinef ("Back to the checkpoint of %s (s%d)", map, slot);
+		Con_PrintLinef ("Back to the checkpoint of %s (%s)", map, QX_Checkpoint_Name ());
 		SCR_BeginLoadingPlaque ();
-		Cbuf_AddTextLinef ("load s%d", slot);
+		Cbuf_AddTextLinef ("load %s", QX_Checkpoint_Name ());
 	}
 	else Cbuf_AddTextLinef ("changelevel %s", map);
 }
