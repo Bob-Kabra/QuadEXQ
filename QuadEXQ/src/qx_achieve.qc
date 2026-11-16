@@ -292,6 +292,7 @@ void(float runtime, float score) QX_AchMapEnd =
 // an arena win (from QX_DuelEnd): its score, and the hunter achievements
 void(float pts, string hunter, float perfect) QX_AchDuelWin =
 {
+	pts = floor (pts * QX_LoopMult ());		// (x1.4 a loop, as every score)
 	QX_CvAdd ("qx_run_score", pts);
 	QX_RunAdd (pts);						// and this run's
 	if (hunter == "GuroFighter")

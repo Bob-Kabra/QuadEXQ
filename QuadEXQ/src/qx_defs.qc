@@ -392,6 +392,7 @@ void() QX_FinaleButton;		// IntermissionThink, while the end text is up
 float(float pts) QX_RunAdd;	// this run's score (qx_stats.qc): TRUE = a new high score
 void() QX_RunStart;		// the start map: a loop, or a new run
 float() QX_RunLoop;			// this run's loop (1 = the first time through)
+float() QX_LoopMult;		// scores this loop: x1.4 a loop (loop 2 x1.4, loop 3 x1.96 ..)
 float	qx_loopspd;			// monsters' running speed this loop (0 = not worked out yet)
 float() QX_LoopSpeed;
 void(entity src, float n) QX_Revenge;	// loop 2 on: a monster shoots back as it dies

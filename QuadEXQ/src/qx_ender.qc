@@ -49,6 +49,7 @@ float	qx_ender_hunted;		// ender.bsp: boss and scouts sent at you
 float	qx_ender_hits;			// ender.bsp: BFG hits landed
 float	qx_ender_hint;			// ender.bsp: next "it shrugs it off" hint
 float	qx_ender_skip;			// ender.bsp: impulse 158 downed the boss (no Delta's Pride)
+float	qx_ender_x2;			// ender.bsp: downed without a death -- the run's score doubled
 float	qx_ender_won_at;		// ender.bsp: back to end.bsp at this time
 float	qx_ender_regen_scan;		// ender.bsp: next look for taken health / armor
 .float	qx_ender_regen;			// (an item) comes back at this time
@@ -643,7 +644,15 @@ void(entity p) QX_EnderArenaThink =
 		qx_ender_won_at = time + 5;
 		if (!qx_ender_skip)
 			QX_AchDeltaPride (qx_ender_delta);
-		QX_Center (p, "!!! CYBER DELTA DOWN !!!\n\nDELTA TEAM:\nNice shot. Now let's finish this.", "", "", "");
+		if (!qx_ender_skip && qx_newengine && QX_MapDeaths () == 0)
+		{	// not one death in here: the whole run's score doubles
+			QX_RunAdd (cvar ("qx_run_cur"));
+			bprint ("FLAWLESS CYBER DELTA!  THE RUN'S SCORE x2\n");
+			QX_Center (p, "!!! CYBER DELTA DOWN !!!\n\nFLAWLESS -- THE RUN'S SCORE x2\n\nDELTA TEAM:\nNice shot. Now let's finish this.", "", "", "");
+			qx_ender_x2 = TRUE;
+		}
+		if (!qx_ender_x2)
+			QX_Center (p, "!!! CYBER DELTA DOWN !!!\n\nDELTA TEAM:\nNice shot. Now let's finish this.", "", "", "");
 		QX_LB ();
 		QX_LS ("    THE ENDER: Cyber Delta down");
 		QX_LE ();

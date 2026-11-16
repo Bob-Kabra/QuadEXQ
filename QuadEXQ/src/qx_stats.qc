@@ -392,7 +392,22 @@ float() QX_StatScore =
 	}
 	if (sc < 0)
 		sc = 0;
-	return sc;
+	return floor (sc * QX_LoopMult ());	// every loop is worth 1.4 times the last
+};
+
+// x1.4 a loop, compounding
+float() QX_LoopMult =
+{
+	local float l, m;
+
+	l = QX_RunLoop ();
+	m = 1;
+	while (l > 1)
+	{
+		m = m * 1.4;
+		l = l - 1;
+	}
+	return m;
 };
 
 // ---------------------------------------------------------------- the run
@@ -474,7 +489,12 @@ void() QX_RunStart =
 
 void() QX_RunLoopTell =
 {
-	QX_Center (self.owner, "LOOP ", ftos (self.cnt), "\n\nThe slipgates are open again.", "");
+	QX_Center (self.owner, "LOOP ", ftos (self.cnt), "\n\nThe slipgates are open again.\nEvery score counts for more.", "");
+	sprint (self.owner, "Loop ");
+	sprint (self.owner, ftos (self.cnt));
+	sprint (self.owner, ": scores ");
+	sprint (self.owner, ftos (rint (QX_LoopMult () * 100)));
+	sprint (self.owner, "%\n");
 	remove (self);
 };
 
@@ -534,7 +554,9 @@ void(entity p) QX_StatMapEnd =
 		QX_LN (cvar ("qx_run_cur"));
 		QX_LS ("  (loop ");
 		QX_LN (QX_RunLoop ());
-		QX_LS (")   HIGH SCORE ");
+		QX_LS (", scores ");
+		QX_LN (rint (QX_LoopMult () * 100));
+		QX_LS ("%)   HIGH SCORE ");
 		QX_LN (cvar ("qx_hiscore"));
 		QX_LS ("   map best ");
 		if (qx_st_mapnew)
@@ -689,6 +711,10 @@ void(entity p) QX_StatMapEnd =
 	QX_CB ("text");
 	QX_LS ("RUN "); QX_LN (cvar ("qx_run_cur"));
 	QX_LS ("  LOOP "); QX_LN (QX_RunLoop ());
+	if (QX_RunLoop () > 1)
+	{
+		QX_LS (" x"); QX_LN (rint (QX_LoopMult () * 100)); QX_LS ("%");
+	}
 	if (qx_st_streak)
 	{
 		QX_LS ("  NO DEATHS x"); QX_LN (qx_st_streak);
