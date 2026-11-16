@@ -1944,6 +1944,8 @@ void() QX_DuelThink =
 	if (QX_FindLivePlayer ())
 	{
 		qx_back_ckpt_at = 0;
+		if (qx_newengine)
+			localcmd ("save qx_continue\n");	// the checkpoint (Continue; a death comes back here)
 		n = floor (cvar ("sv_autosave_slot"));
 		if (n >= 1 && n <= 20)
 		{
