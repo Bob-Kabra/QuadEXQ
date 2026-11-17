@@ -585,10 +585,14 @@ void CL_PlayDemo_Opened (const char *in_demo_name_url)
 	cls.state = ca_connected;
 	cls.forcetrack = 0;
 
-	while ((c = getc(cls.demofile)) != '\n')
+	// QuadEXQ: only digits count. Scourge of Armagon's demo1 starts " 2"
+	// (a space before the track): the space was read as a digit, -16, and
+	// forced track 98, which isn't there -- no music. ("\r\n" line ends did
+	// the same.) QuakeSpasm / vkQuake read it this way too.
+	while ((c = getc(cls.demofile)) != '\n' && c != EOF)
 		if (c == '-')
 			neg = true;
-		else
+		else if (c >= '0' && c <= '9')
 			cls.forcetrack = cls.forcetrack * 10 + (c - '0');
 
 	if (neg)
