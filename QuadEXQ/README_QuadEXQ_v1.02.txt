@@ -609,9 +609,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
                            big maps past +-4096; 666 = FitzQuake)
 
   The crosshair, status bar (viewsize, scr_sbar*, scr_qxhud) and the qx_
-  settings are also saved to id1/qx_config.cfg on quit and read last at
-  start, so they hold in every game and mod, whatever its autoexec.cfg
-  says.
+  settings are also saved to qx_config.cfg in the game's own folder on
+  quit, and read last at start: every mod keeps its own, whatever its
+  autoexec.cfg says. A mod with none yet starts from id1's.
   newgame_map <map>        map that NEW GAME starts on (QuadEXQ ships
                            "newgame_map start" in autoexec.cfg; empty =
                            guess from the maps in the mod folder)

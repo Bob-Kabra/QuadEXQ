@@ -309,10 +309,11 @@ void Host_InitLocal (void)
 ===============
 Host_WriteQXConfiguration -- QuadEXQ
 
-The crosshair, status bar and QuadEXQ settings go to id1/qx_config.cfg as
-well, which every game reads (exec'd after quake.rc, so after config.cfg
-and autoexec.cfg): set them once, and Arcane Dimensions or any other mod
-keeps them too, even one whose own autoexec.cfg resets the crosshair.
+The crosshair, status bar and QuadEXQ settings go to qx_config.cfg as
+well, in the game's own folder (QuadEXQ/, ad/, id1/ ..), exec'd after
+quake.rc -- so after config.cfg and autoexec.cfg: each mod keeps its own,
+even one whose own autoexec.cfg resets the crosshair. A mod with none yet
+starts from id1's (exec finds the mod's first, then id1's).
 ===============
 */
 #define QX_CONFIG_CFG "qx_config.cfg"
@@ -323,9 +324,17 @@ static const char *qx_shared_cvars[] = {
 	NULL
 };
 
+// where it's written: this game's folder
 static const char *Host_QXConfig_Path (void)
 {
-	return va("%s/%s/%s", com_basedir, GAMENAME_ID1, QX_CONFIG_CFG);
+	return va("%s/%s", com_gamedir, QX_CONFIG_CFG);
+}
+
+// is there one to read: this game's, or id1's to start from
+static cbool Host_QXConfig_Exists (void)
+{
+	return File_Exists (Host_QXConfig_Path ())
+		|| File_Exists (va("%s/%s/%s", com_basedir, GAMENAME_ID1, QX_CONFIG_CFG));
 }
 
 static void Host_WriteQXConfiguration (void)
@@ -339,7 +348,7 @@ static void Host_WriteQXConfiguration (void)
 		return;
 	}
 
-	fprintf (f, "// QuadEXQ: settings shared by every game (written on quit, read after config.cfg and autoexec.cfg)" NEWLINE);
+	fprintf (f, "// QuadEXQ: this game's crosshair, status bar and QuadEXQ settings (written on quit, read after config.cfg and autoexec.cfg)" NEWLINE);
 	for (i = 0; qx_shared_cvars[i]; i ++)
 	{
 		cvar_t *var = Cvar_Find (qx_shared_cvars[i]);
@@ -1047,7 +1056,7 @@ void Host_Init (void)
 #pragma message ("Have dedicated server show ip address and port on startup?")
 
 	Cbuf_InsertText ("exec quake.rc" NEWLINE);
-	if (!isDedicated && File_Exists (Host_QXConfig_Path ()))
+	if (!isDedicated && Host_QXConfig_Exists ())
 		Cbuf_AddTextLine ("exec " QX_CONFIG_CFG);	// QuadEXQ: after quake.rc (config.cfg, autoexec.cfg)
 	Cbuf_AddTextLine (NEWLINE "_host_post_initialized");  // Baker -- hint to dedicated server.
 
