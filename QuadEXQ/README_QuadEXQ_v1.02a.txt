@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v1.02
+  QuadEXQ  v1.02a
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -636,6 +636,15 @@ fork), which adds the HUD, music switching, checkpoints and more.
 ==============================================================================
  13. Version history
 ==============================================================================
+
+  v1.02a
+    QuadEXQ engine:
+    - Scourge of Armagon's start-up demo plays its music now: a demo's
+      forced CD track ignores a space before the number (it read as
+      track 98).
+    - qx_config.cfg is kept per game (QuadEXQ/, ad/ ..): every mod its
+      own crosshair, HUD and qx_ settings. A mod with none yet starts
+      from id1's.
 
   v1.02
     Game:
