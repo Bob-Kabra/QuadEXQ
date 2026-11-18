@@ -39,13 +39,14 @@ typedef enum { ENUM_FORCE_INT_GCC_ (opt)
 	opt_mousespeed_06,
 	opt_cdvolume_07,
 	opt_soundvolume_08,
-	opt_extmusic_09,
-	opt_alwaysrun_10,
-	opt_usemouse_11,
-	opt_invertmouse_12,
-	opt_lookspring_13,
-	opt_preferences_14,
-	opt_videomode_15,
+	opt_soundrate_09,		// QuadEXQ: sndspeed 11/22/44 kHz
+	opt_extmusic_10,
+	opt_alwaysrun_11,
+	opt_usemouse_12,
+	opt_invertmouse_13,
+	opt_lookspring_14,
+	opt_preferences_15,
+	opt_videomode_16,
 	opt_COUNT
 } opt_e;
 
@@ -57,7 +58,7 @@ typedef enum { ENUM_FORCE_INT_GCC_ (opt)
 // Range  (hi/low)
 // Action
 typedef void (*qboolfunc_t)(cbool);
-typedef enum { ENUM_FORCE_INT_GCC_ (mdraw) mdraw_none_0, mdraw_check, mdraw_slide, mdraw_vmode, mdraw_textbutton} mdraw_t;
+typedef enum { ENUM_FORCE_INT_GCC_ (mdraw) mdraw_none_0, mdraw_check, mdraw_slide, mdraw_vmode, mdraw_textbutton, mdraw_soundrate} mdraw_t;
 typedef enum { ENUM_FORCE_INT_GCC_ (moperation) op_nonzero, op_greaterthan, op_lessthan } moperation_e; // True is determined by what
 
 #if defined(GLQUAKE_RENDERER_SUPPORT) && !defined (DIRECT3D9_WRAPPER) // May 7 2018
@@ -93,6 +94,7 @@ static void Mnu_Options_Pitch_Toggle_ (cbool action)
 
 static const char s_externmusic[]	= "cd or mp3 music"; // Baker: Ironically have to have this as char array for below struct data?
 static const char s_lookspring[]	= "levels view for keyboarders";
+static const char s_soundrate[]		= "applies after restarting quake"; // QuadEXQ
 
 moptions_t menu_options_draw [opt_COUNT] =
 {
@@ -112,16 +114,17 @@ moptions_t menu_options_draw [opt_COUNT] =
 #endif
 	{opt_cdvolume_07,	 "   CD Music Volume", "",				mdraw_slide,		&bgmvolume, 		11,		0,						3									},
 	{opt_soundvolume_08, "      Sound Volume", "",				mdraw_slide,		&sfxvolume, 		21,		0,						1									},
+	{opt_soundrate_09,	 "     Sound Quality", s_soundrate,		mdraw_soundrate,	&sndspeed																	}, // QuadEXQ
 
-	{opt_extmusic_09,	 "    External Music", s_externmusic,	mdraw_check,		&external_music,	op_nonzero},
+	{opt_extmusic_10,	 "    External Music", s_externmusic,	mdraw_check,		&external_music,	op_nonzero},
 
 	// Option #			Label					Description		Control Type		Cvar eval			eval type		versus  unused	toggle func
-	{opt_alwaysrun_10,	 "        Always Run", "",				mdraw_check,		&cl_forwardspeed, 	op_greaterthan, 200,	0,		Mnu_Options_AlwaysRun_Toggle_		},
-	{opt_usemouse_11,    "        Mouse Look", "",				mdraw_check,		&in_freelook, 		op_nonzero															},
-	{opt_invertmouse_12, "      Invert Mouse", "",				mdraw_check,		&m_pitch, 			op_lessthan,	0,		0,		Mnu_Options_Pitch_Toggle_			},
-	{opt_lookspring_13,  "        Lookspring", s_lookspring,	mdraw_check,		&lookspring, 		op_nonzero															},
-	{opt_preferences_14,"       Preferences", "",				mdraw_textbutton																							},
-	{opt_videomode_15, 	 "     Video Options", "",				mdraw_vmode																									},
+	{opt_alwaysrun_11,	 "        Always Run", "",				mdraw_check,		&cl_forwardspeed, 	op_greaterthan, 200,	0,		Mnu_Options_AlwaysRun_Toggle_		},
+	{opt_usemouse_12,    "        Mouse Look", "",				mdraw_check,		&in_freelook, 		op_nonzero															},
+	{opt_invertmouse_13, "      Invert Mouse", "",				mdraw_check,		&m_pitch, 			op_lessthan,	0,		0,		Mnu_Options_Pitch_Toggle_			},
+	{opt_lookspring_14,  "        Lookspring", s_lookspring,	mdraw_check,		&lookspring, 		op_nonzero															},
+	{opt_preferences_15,"       Preferences", "",				mdraw_textbutton																							},
+	{opt_videomode_16, 	 "     Video Options", "",				mdraw_vmode																									},
 };
 //int num_menu_options_draw = sizeof(menu_options_draw) / sizeof(menu_options_draw[0]);
 //int	options_available = OPTIONS_ITEMS;
@@ -159,6 +162,18 @@ static void Mnu_Options_AdjustSliders_ (int this_cursor, int dir, cbool is_silen
 	
 	switch (myopt->control_type) {
 	default: // Nothing
+	case_break mdraw_soundrate: {
+			// QuadEXQ: cycle sndspeed 11025 -> 22050 -> 44100 (wraps).  The sound
+			// device is opened once at startup, so this applies on restart.
+			static const float rates[3] = {11025, 22050, 44100};
+			int i, cur = 0;
+			for (i = 0; i < 3; i ++) if (myopt->cvar_eval->value == rates[i]) cur = i;
+			cur = (cur + dir + 3) % 3;
+			if (!is_silent) MENU_TOGGLE_SOFT_SOUND();
+			Cvar_SetValueQuick (myopt->cvar_eval, rates[cur]);
+			if (local_menu->cursor != this_cursor)
+				local_menu->cursor = this_cursor;
+	}
 	case_break mdraw_slide: {
 			cbool			slider_positive	= myopt->c > myopt->b;
 			float			highval			= slider_positive ? myopt->c : myopt->b;
@@ -302,6 +317,12 @@ no_action:		(0); // Null statement.  A label must have a statement :(
 										Mnu_Part_DrawCheckbox (local_menu->column2, row, Mnu_Options_Evaluate_(&menu_options_draw[n]) );
 
 		case_break mdraw_slide:			Mnu_Part_DrawSlider (local_menu->column2, row, Mnu_Options_Evaluate_(&menu_options_draw[n]), e->a, /*is_gamma*/ n == opt_gamma_05);
+		case_break mdraw_soundrate: {	// QuadEXQ
+										extern int sound_rate_hz;
+										int want = (int)e->cvar_eval->value;
+										Hotspots_Add (local_menu->column1, row, local_menu->colwidth, M_HOTHEIGHT_8, 1, hotspottype_toggle);
+										M_Print (local_menu->column2, row, va("%d kHz%s", want / 1000, (sound_rate_hz && want != sound_rate_hz) ? " *" : ""));
+		}
 		case_break mdraw_vmode:			Hotspots_Add (local_menu->column1, row, local_menu->colwidth, M_HOTHEIGHT_8, 1, hotspottype_button);
 
 #ifdef WINQUAKE_RENDERER_SUPPORT
@@ -385,8 +406,8 @@ LOCAL_EVENT (KeyPress) (key_scancode_e key, int hotspot)
 		case_break opt_customize_00:	Mnu_CustomizeControls_Enter_f (NULL);
 		case_break opt_goconsole_01:	Con_ToggleConsole_f (NULL);
 		case_break opt_reset_02:		Mnu_Dialog_Modal_YesNo (/* yes function*/ Mnu_Options_Do_ResetConfig_, NULL, "Are you sure you want to reset" NEWLINE "all keys and settings?");
-		case_break opt_preferences_14:	Mnu_Preferences_Enter_f (NULL);			
-		case_break opt_videomode_15:	Mnu_Video_Enter_f (NULL);
+		case_break opt_preferences_15:	Mnu_Preferences_Enter_f (NULL);			
+		case_break opt_videomode_16:	Mnu_Video_Enter_f (NULL);
 		} // End switch (key_action_cursor)
 	} // End switch (key)
 
@@ -412,7 +433,7 @@ LOCAL_EVENT (Enter_f) (lparse_t *unused)
 
 LOCAL_EVENT (InitOnce) (menux_t *self)
 {
-	DEBUG_COMPILE_TIME_ASSERT (/*hint word*/ opt_COUNT, opt_COUNT == 16);   // it is 15 because of gamma slider!
+	DEBUG_COMPILE_TIME_ASSERT (/*hint word*/ opt_COUNT, opt_COUNT == 17);   // it is 15 because of gamma slider!
 	self->cursor_solid_count = opt_COUNT; // Immutable - let's do this and check cursor against disabled attribute
 }
 
