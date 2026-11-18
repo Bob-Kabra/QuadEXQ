@@ -1129,10 +1129,31 @@ static void Mod_LoadTextures (lump_t *l)
 #endif // WINQUAKE_RENDERER_SUPPORT
 
 			// copy the data over,  the pixels immediately follow the structures
+			if (loadmodel->bspversion == BSPVERSION_HALFLIFE && !mt->offsets[0])
+			{	// QuadEXQ: a Half-Life texture kept in a .wad (offsets[0] 0: no
+				// pixels in the map) -- we don't read .wads, and copying from
+				// here read past the map and brought the game down. A grey
+				// checkerboard in its place, in Quake's palette.
+				int x, y;
+				for (y = 0; y < tx->height; y++)
+					for (x = 0; x < tx->width; x++)
+						tx_qpixels[y * tx->width + x] = (((x >> 4) ^ (y >> 4)) & 1) ? 6 : 10;
+			}
+			else
 			memcpy ( tx_qpixels, mt+1, pixelcount);
 
 #ifdef GLQUAKE_RENDERER_SUPPORT
-			if (do_palette_too)
+			if (do_palette_too && !mt->offsets[0])
+			{	// QuadEXQ: (the checkerboard above, in Quake's palette)
+				byte *rgba = (byte *)vid.d_8to24table;
+				int k;
+				tx_wad3_palette = (byte*)tx_qpixels + pixelcount;
+				for (k = 0; k < 256; k++)
+					tx_wad3_palette[k * 3 + 0] = rgba[k * 4 + 0],
+					tx_wad3_palette[k * 3 + 1] = rgba[k * 4 + 1],
+					tx_wad3_palette[k * 3 + 2] = rgba[k * 4 + 2];
+			}
+			else if (do_palette_too)
 			{
 				// Determine WAD3 palette location then copy over
 				byte *mt_wad3_palette = ((byte *) ((byte *) mt + mt->offsets[0])) + ((pixelcount * 85) >> 6) + 2;
@@ -1154,7 +1175,7 @@ static void Mod_LoadTextures (lump_t *l)
 #endif // GLQUAKE_RENDERER_SUPPORT
 
 #ifdef WINQUAKE_RENDERER_SUPPORT
-			if (loadmodel->bspversion == BSPVERSION_HALFLIFE)
+			if (loadmodel->bspversion == BSPVERSION_HALFLIFE && mt->offsets[0])	// (QuadEXQ: a .wad texture is the checkerboard, already Quake's palette)
 			{
 				// Baker: Process Half-Life textures
 				byte *mt_wad3_palette = ((byte *) ((byte *) mt + mt->offsets[0])) + ((pixmip0 * 85) >> 6) + 2;
