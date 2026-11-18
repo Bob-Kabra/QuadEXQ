@@ -292,9 +292,39 @@ const char *Game_NewGameMap (void)
 	return newgame_map.string[0] ? newgame_map.string : game_startmap;
 }
 
+// QuadEXQ: is maps/<name>.bsp a Quake map? (its header: Quake's BSP29 or
+// BSP2 / 2PSB -- not Half-Life's BSP30, whose textures live in .wads we
+// don't read and whose entities Quake doesn't know, nor Quake 3's IBSP)
+static cbool Lists_QX_Map_Loadable (const char *name)
+{
+	FILE *f = NULL;
+	int version = 0;
+
+	COM_FOpenFile (va("maps/%s.bsp", name), &f);
+	if (!f)
+		return false;
+	if (fread (&version, sizeof(version), 1, f) != 1)
+		version = 0;
+	FS_fclose (f);
+	version = LittleLong (version);
+	return isin3 (version, BSPVERSION, BSP2VERSION_2PSB, BSP2VERSION_BSP2);
+}
+
 void Lists_Update_Levels_Menu (void)
 {
-	List_Filelist_Rebuild (&list_info[list_type_levels_menu].plist, "/maps", list_info[list_type_levels_menu].extension, 32*1024, SPECIAL_GAMEDIR_PREFERENCE);
+	clist_t **plist = &list_info[list_type_levels_menu].plist, *kept = NULL, *cursor;
+
+	List_Filelist_Rebuild (plist, "/maps", list_info[list_type_levels_menu].extension, 32*1024, SPECIAL_GAMEDIR_PREFERENCE);
+
+	// QuadEXQ: leave out what isn't a Quake map (a Quake 3 or Half-Life map
+	// in some mod's folder ..): picking one brought the game down, or at
+	// best a checkerboard world with nothing in it. ("map <name>" still tries.)
+	// (The names are "<depth char><sep><map>", the menu's own sorting.)
+	for (cursor = *plist; cursor; cursor = cursor->next)
+		if (strlen (cursor->name) > 2 && Lists_QX_Map_Loadable (&cursor->name[2]))
+			List_Add (&kept, cursor->name);
+	List_Free (plist);
+	*plist = kept;
 }
 
 void Lists_Update_Demos_Menu (void)
