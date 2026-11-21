@@ -204,7 +204,7 @@
 				</Linker>
 			</Target>
 			<Target title="Win32 GL Release">
-				<Option output="../../../../QuadEXQ" prefix_auto="1" extension_auto="1" />
+				<Option output="../../../../QX" prefix_auto="1" extension_auto="1" />
 				<Option object_output="./objj/Release_GCC_GLQuake" />
 				<Option type="0" />
 				<Option compiler="gcc" />
