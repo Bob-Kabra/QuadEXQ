@@ -1,11 +1,11 @@
 ==============================================================================
-  QuadEXQ  v1.02a
+  QuadEXQ  v1.03
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
 
 QuadEXQ is a single-player overhaul of the Quake mod "EXQ" that rebuilds how
-the game plays. It runs best with its own engine, quadexq.exe (a Mark V
+the game plays. It runs best with its own engine, QX.exe (a Mark V
 fork), which adds the HUD, music switching, checkpoints and more.
 
   - One difficulty setting: PlayerSkill. The better you play, the tougher
@@ -59,10 +59,10 @@ fork), which adds the HUD, music switching, checkpoints and more.
         music\track12.mp3       <- "Quad EXQ Theme", the end map's
                                    music (included)
         sound\player\taunt.wav  <- auto-melee shout (optional)
-      quadexq.exe        <- the QuadEXQ engine (recommended)
+      QX.exe             <- the QuadEXQ engine (recommended)
 
   Run:
-    quadexq.exe -game QuadEXQ
+    QX.exe -game QuadEXQ
     (included bat file in QuadEXQ directory. Just double click to run)
 
   * Other Mark V or QuakeSpasm-family engines can run the mod too. These
@@ -498,7 +498,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
  10. QuadEXQ engine features
 ==============================================================================
 
-  quadexq.exe is a QuadEXQ build of the Mark V engine. With any other mod it
+  QX.exe is a QuadEXQ build of the Mark V engine. With any other mod it
   behaves like plain Mark V.
   Source code (GPL v2): https://github.com/Bob-Kabra/QuadEXQ
 
@@ -585,7 +585,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
                            (plain Quake, Arcane Dimensions ..): 640x480,
                            the Quake palette. 5 = always, at your full
                            resolution (only the 256 colours). Also in
-                           Options > Preferences > Retro 1996
+                           Options > Preferences > Retro 1996 and
+                           Options > QuadEXQ Settings
   qx_checkpoints 0        plain Quake / other mods: restart the map on
                            death instead of loading the checkpoint
   qx_centerscale 0.5-4     size of the messages in the middle of the
@@ -607,9 +608,22 @@ fork), which adds the HUD, music switching, checkpoints and more.
                            0 = off (default)
   sv_protocol 999          network protocol (default 999, as QuakeSpasm:
                            big maps past +-4096; 666 = FitzQuake)
+  crosshair 0-9            0 none, 1 Quake "+", 2 dot, 3 dot + arcs,
+                           4 gap cross, 5 ring, 6 X, 7 chevron,
+                           8 brackets, 9 scope
+  crosshair_color 0-7      white, red, green, yellow, cyan, orange, pink,
+                           blue
+  crosshair_alpha 0.1-1    how solid the crosshair is (default 1)
+  sndspeed 11025/22050/44100  sound mixing rate, after a restart (also in
+                           Options > Preferences > Sound Quality)
 
-  The crosshair, status bar (viewsize, scr_sbar*, scr_qxhud) and the qx_
-  settings are also saved to qx_config.cfg in the game's own folder on
+  Options > QuadEXQ Settings has the QuadEXQ settings in one place: Retro
+  1996, the QX HUD, weapon auto switch, checkpoints, message size and
+  time, and the crosshair (shape, colour, alpha, scale, with a preview),
+  per-weapon crosshairs and the status bar scale.
+
+  The crosshair, status bar (viewsize, scr_sbar*, scr_qxhud), the message
+  size and time and the qx_ settings are also saved to qx_config.cfg in the game's own folder on
   quit, and read last at start: every mod keeps its own, whatever its
   autoexec.cfg says. A mod with none yet starts from id1's.
   newgame_map <map>        map that NEW GAME starts on (QuadEXQ ships
@@ -636,6 +650,24 @@ fork), which adds the HUD, music switching, checkpoints and more.
 ==============================================================================
  13. Version history
 ==============================================================================
+
+  v1.03
+    QuadEXQ engine:
+    - The engine is QX.exe now (was quadexq.exe), with a new icon: a
+      framed blue QX. Delete the old quadexq.exe if you like.
+    - Options > QuadEXQ Settings: the QuadEXQ settings in one menu, saved
+      per game in qx_config.cfg.
+    - Crosshairs: ten shapes (crosshair 0-9), eight colours
+      (crosshair_color) and alpha (crosshair_alpha), with a preview in
+      the menu.
+    - Sound Quality (11 / 22 / 44 kHz) in Options > Preferences.
+    - Screenshots are named QX_<game>_0000.png (QX_quadexq_, QX_ad_,
+      QX_id1_ ..), so you know which mod each one is from.
+    - The Levels menu lists only maps Quake can load (no Half-Life or
+      Quake 3 maps), and a Half-Life map's textures from an outside .wad
+      show as a checkerboard instead of crashing.
+    - The 2021 re-release progs (Dimension of the Past / Machine) no
+      longer fill the screen with "campaign not found".
 
   v1.02a
     QuadEXQ engine:

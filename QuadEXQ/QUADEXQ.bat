@@ -1,3 +1,3 @@
 cd..
-quadexq.exe -game quadexq
+QX.exe -game quadexq
    

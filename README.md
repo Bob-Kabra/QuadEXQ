@@ -36,10 +36,10 @@ The playable mod (progs.dat, pak0.pak, maps, music) is released on ModDB as the 
 You need Quake (`id1/pak0.pak`, plus `pak1.pak` for the full game). Put the mod in a `QuadEXQ` folder next to `id1` and run:
 
 ```
-quadexq.exe -game QuadEXQ
+QX.exe -game QuadEXQ
 ```
 
-The player's guide comes with the mod (`README_QuadEXQ_v1.02a.txt`).
+The player's guide comes with the mod (`README_QuadEXQ_v1.03.txt`).
 
 ## License
 
