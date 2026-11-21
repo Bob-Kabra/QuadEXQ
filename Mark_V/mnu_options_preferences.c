@@ -90,7 +90,7 @@ typedef struct _mnu_ent_t_s {
 
 #define QCTRL(X) q_control_ ## X
 static mnu_ent_t mnu_ent_table[] = { //                                                                           fitz mv                                    
-	{ opt_crosshair_0,		QCTRL(labeltoggle), "   Crosshair", "Standard Quake crosshair is a '+'", /*gp*/ 0,  1,  0,  2, "None,Quake Default,Small Dot,Dot + Arcs"										},
+	{ opt_crosshair_0,		QCTRL(labeltoggle), "   Crosshair", "Standard Quake crosshair is a '+'", /*gp*/ 0,  1,  0,  2, "None,Quake Default,Small Dot,Dot + Arcs,Gap Cross,Ring,X,Chevron,Brackets,Scope", "None,Quake Default,Small Dot"										},
 	{ opt_weapon_draw_1,	QCTRL(labeltoggle), " Weapon Draw", "FitzQuake position is lower",              0,  2,  1,  1, "Quake Default,FitzQuake (Low),High,Gangsta"							},
 	{ opt_invisibility_2,	QCTRL(labeltoggle), "Invisibility", "Default: invisible = no weapon draw",      0,  3,  0,  1, "Quake Default,Draw Weapon"											},
 	{ opt_view_blends_3,	QCTRL(labeltoggle), " View Blends", "Screen blend underwater, powerup, ..",     0,  4,  0,  1, "Quake Default,Lite,None"											},
@@ -120,7 +120,13 @@ static int Mnu_Preferences_Get_Basket_Value_ (const opt_e option_idx)
 // We return 0 (catch all default) if no match
     switch (option_idx) {
     default:						System_Error ("unknown idx %d", option_idx);
-    case_break opt_crosshair_0:		return CLAMP(0, (int) scr_crosshair.value, 3);                                                                          // Crosshair
+    case_break opt_crosshair_0:		{
+#ifdef WINQUAKE_RENDERER_SUPPORT
+										return CLAMP(0, (int) scr_crosshair.value, 2);
+#else
+										return CLAMP(0, (int) scr_crosshair.value, 9);	// QuadEXQ: 3-9 shapes (GL)
+#endif
+									}                                                                          // Crosshair
     case_break opt_weapon_draw_1:   return Choose321 (r_viewmodel_offset.value, r_viewmodel_size.value >= FUHQUAKE_POSITION_1_2X, !r_viewmodel_quake.value); // Weapon Draw
     case_break opt_invisibility_2:  return CONVBOOL r_viewmodel_ring.value;                                                                                // Invisibility
     case_break opt_view_blends_3:   return Choose12 (v_polyblend_lite.value /*lite*/, !v_polyblend.value /*off*/);                                          // View Blends
@@ -266,6 +272,10 @@ LOCAL_EVENT (Draw) (void)
 		// Help text does not
 		int help_idx = local_menu->hover ? local_menu->hover->idx : local_menu->cursor;
 		mnu_ent_t *e = &mnu_ent_table[help_idx];
+#ifdef GLQUAKE_RENDERER_SUPPORT
+		if (help_idx == opt_crosshair_0)	// QuadEXQ: show the crosshair as set, top right
+			Draw_QX_CrosshairPreview (298, 15, 15);
+#endif
 		M_PrintWhite (M_CANVAS_HALF_WIDTH_160 - strlen(e->help_text) * (M_CHAR_WIDTH_8 / 2), 23 * M_CHAR_HEIGHT_8, e->help_text);
 	}
 }

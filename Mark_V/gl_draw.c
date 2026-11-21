@@ -1007,9 +1007,10 @@ QuadEXQ: crosshair 3 -- a dot with two translucent arcs, left and right
 */
 static void QX_Crosshair_Arc (float a0, float a1, float r0, float r1)
 {
-	const int steps = 12;
+	int steps = (int)((a1 - a0) / 10);	// 10 degrees a step
 	int i;
 
+	if (steps < 12)	steps = 12;
 	eglBegin (GL_TRIANGLE_STRIP);
 	for (i = 0; i <= steps; i++) {
 		float a = (a0 + (a1 - a0) * i / steps) * (float)M_PI / 180.0f;
@@ -1020,34 +1021,176 @@ static void QX_Crosshair_Arc (float a0, float a1, float r0, float r1)
 	eglEnd ();
 }
 
-void Draw_QX_Crosshair (void)
+// a line t pixels thick from (x0,y0) to (x1,y1)
+static void QX_Crosshair_Line (float x0, float y0, float x1, float y1, float t)
 {
-	// sized to the screen: at 1080 lines the arcs run 18-32 pixels from the
-	// centre and the dot is 4 pixels (scr_crosshairscale still scales it)
-	float k = scr_vrect.height / 1080.0f;
-	float r0 = 18 * k, r1 = 32 * k, d = 2 * k;
+	float dx = x1 - x0, dy = y1 - y0, len = (float)sqrt (dx * dx + dy * dy);
+	float px, py;
 
-	if (d < 1)	d = 1;
-	eglDisable (GL_TEXTURE_2D);
-	eglEnable (GL_BLEND);
-	eglDisable (GL_ALPHA_TEST);
+	if (len <= 0)
+		return;
+	px = -dy / len * t * 0.5f;
+	py =  dx / len * t * 0.5f;
+	eglBegin (GL_QUADS);
+	eglVertex2f (x0 + px, y0 + py);
+	eglVertex2f (x1 + px, y1 + py);
+	eglVertex2f (x1 - px, y1 - py);
+	eglVertex2f (x0 - px, y0 - py);
+	eglEnd ();
+}
 
-	eglColor4f (0.75f, 0.75f, 0.75f, 0.35f);			// the arcs: faint
-	QX_Crosshair_Arc (180 - 55, 180 + 55, r0, r1);		// left
-	QX_Crosshair_Arc (-55, 55, r0, r1);					// right
-
-	eglColor4f (1, 1, 1, 0.9f);							// the dot
+static void QX_Crosshair_Dot (float d)
+{
 	eglBegin (GL_QUADS);
 	eglVertex2f (-d, -d);
 	eglVertex2f (d, -d);
 	eglVertex2f (d, d);
 	eglVertex2f (-d, d);
 	eglEnd ();
+}
+
+// crosshair_color (0-7) times brightness, alpha times crosshair_alpha
+static void QX_Crosshair_Color (float bright, float alpha)
+{
+	static const float colors[8][3] = {
+		{1, 1, 1},			// 0 white
+		{1, 0.25f, 0.2f},	// 1 red
+		{0.35f, 1, 0.3f},	// 2 green
+		{1, 0.95f, 0.3f},	// 3 yellow
+		{0.3f, 0.95f, 1},	// 4 cyan
+		{1, 0.6f, 0.15f},	// 5 orange
+		{1, 0.45f, 0.85f},	// 6 pink
+		{0.4f, 0.6f, 1},	// 7 blue
+	};
+	int c = CLAMP (0, (int) scr_crosshaircolor.value, 7);
+	float a = CLAMP (0.1f, scr_crosshairalpha.value, 1.0f);
+
+	eglColor4f (colors[c][0] * bright, colors[c][1] * bright, colors[c][2] * bright, alpha * a);
+}
+
+// crosshair 1 ('+') and 2 (the dot): the font character, tinted
+void Draw_QX_CrosshairChar (int ch)
+{
+	eglEnable (GL_BLEND);
+	eglDisable (GL_ALPHA_TEST);		// the alpha test would drop a faint crosshair
+	eglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	QX_Crosshair_Color (1, 1);
+	Draw_Character (-4, -4, ch);
+	eglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	eglColor4f (1, 1, 1, 1);
+	eglEnable (GL_ALPHA_TEST);
+	eglDisable (GL_BLEND);
+}
+
+// crosshair 3-9 around 0,0: the sizes below are pixels at 1080 lines, times k;
+// t = line thickness, d = dot half size
+static void QX_Crosshair_Shape (int style, float k, float t, float d)
+{
+	eglDisable (GL_TEXTURE_2D);
+	eglEnable (GL_BLEND);
+	eglDisable (GL_ALPHA_TEST);
+
+	switch (style) {
+	default:	// 3: a dot with two faint arcs, left and right
+		QX_Crosshair_Color (0.75f, 0.35f);
+		QX_Crosshair_Arc (180 - 55, 180 + 55, 18 * k, 32 * k);
+		QX_Crosshair_Arc (-55, 55, 18 * k, 32 * k);
+		QX_Crosshair_Color (1, 0.9f);
+		QX_Crosshair_Dot (d);
+		break;
+
+	case 4:		// a cross with a gap in the middle
+		QX_Crosshair_Color (1, 0.9f);
+		QX_Crosshair_Line (0, -18 * k, 0, -6 * k, t);
+		QX_Crosshair_Line (0, 6 * k, 0, 18 * k, t);
+		QX_Crosshair_Line (-18 * k, 0, -6 * k, 0, t);
+		QX_Crosshair_Line (6 * k, 0, 18 * k, 0, t);
+		break;
+
+	case 5:		// a ring with a tiny dot
+		QX_Crosshair_Color (1, 0.9f);
+		QX_Crosshair_Arc (0, 360, 12 * k - t * 0.5f, 12 * k + t * 0.5f);
+		QX_Crosshair_Dot (t * 0.5f);
+		break;
+
+	case 6:		// an X
+		QX_Crosshair_Color (1, 0.9f);
+		QX_Crosshair_Line (-13 * k, -13 * k, -4 * k, -4 * k, t);
+		QX_Crosshair_Line (13 * k, -13 * k, 4 * k, -4 * k, t);
+		QX_Crosshair_Line (-13 * k, 13 * k, -4 * k, 4 * k, t);
+		QX_Crosshair_Line (13 * k, 13 * k, 4 * k, 4 * k, t);
+		break;
+
+	case 7:		// a chevron, its tip on the centre
+		QX_Crosshair_Color (1, 0.9f);
+		QX_Crosshair_Line (-11 * k, 11 * k, 0, 0, t);
+		QX_Crosshair_Line (0, 0, 11 * k, 11 * k, t);
+		break;
+
+	case 8:		// four corner brackets and a tiny dot
+		QX_Crosshair_Color (1, 0.9f);
+		{	int sx, sy;
+			for (sx = -1; sx <= 1; sx += 2) for (sy = -1; sy <= 1; sy += 2) {
+				float cx = sx * 16 * k, cy = sy * 16 * k;
+				QX_Crosshair_Line (cx, cy + sy * t * 0.5f, cx, cy - sy * 7 * k, t);	// up/down arm
+				QX_Crosshair_Line (cx + sx * t * 0.5f, cy, cx - sx * 7 * k, cy, t);	// sideways arm
+			}
+		}
+		QX_Crosshair_Dot (t * 0.5f);
+		break;
+
+	case 9:		// a scope: a ring crossed by four ticks
+		QX_Crosshair_Color (1, 0.9f);
+		QX_Crosshair_Arc (0, 360, 16 * k - t * 0.5f, 16 * k + t * 0.5f);
+		QX_Crosshair_Line (0, -24 * k, 0, -9 * k, t);
+		QX_Crosshair_Line (0, 9 * k, 0, 24 * k, t);
+		QX_Crosshair_Line (-24 * k, 0, -9 * k, 0, t);
+		QX_Crosshair_Line (9 * k, 0, 24 * k, 0, t);
+		break;
+	}
 
 	eglColor3f (1, 1, 1);
 	eglDisable (GL_BLEND);
 	eglEnable (GL_ALPHA_TEST);
 	eglEnable (GL_TEXTURE_2D);
+}
+
+// crosshair 3-9 on CANVAS_CROSSHAIR (0,0 = centre), sized to the screen
+// (scr_crosshairscale still scales it)
+void Draw_QX_Crosshair (int style)
+{
+	float k = scr_vrect.height / 1080.0f;
+	float t = 2 * k, d = 2 * k;
+
+	if (t < 1)	t = 1;	// at least a pixel
+	if (d < 1)	d = 1;
+	QX_Crosshair_Shape (style, k, t, d);
+}
+
+// The menus' preview: the crosshair as set (shape, colour, alpha), enlarged,
+// in a dark box centred on cx,cy (menu canvas units), half units each way
+void Draw_QX_CrosshairPreview (int cx, int cy, int half)
+{
+	int style = (int) scr_crosshair.value;
+
+	Draw_Fill (cx - half, cy - half, 2 * half, 2 * half, 0, 0.85f);		// the box
+	Draw_Fill (cx - half, cy - half, 2 * half, 1, 8, 1);					// its edge
+	Draw_Fill (cx - half, cy + half - 1, 2 * half, 1, 8, 1);
+	Draw_Fill (cx - half, cy - half, 1, 2 * half, 8, 1);
+	Draw_Fill (cx + half - 1, cy - half, 1, 2 * half, 8, 1);
+
+	if (style <= 0)
+		return;
+	eglPushMatrix ();
+	eglTranslatef (cx, cy, 0);
+	if (style >= 3) {
+		float k = half * 0.85f / 32;	// the biggest shape (3's arcs) reaches 32
+		QX_Crosshair_Shape (style, k, 2 * k, 2 * k);
+	} else {
+		eglScalef (2, 2, 1);			// the font character, twice its size
+		Draw_QX_CrosshairChar (style == 2 ? 15 : '+');
+	}
+	eglPopMatrix ();
 }
 
 void Draw_Alpha_Spot (int x, int y, int w, int h, int c)

@@ -947,14 +947,18 @@ missing_weapon_crosshair:
 #endif // GLQUAKE_TEXTURE_MANAGER
 
 #ifdef GLQUAKE_RENDERER_SUPPORT
-	if (scr_crosshair.value >= 3) { // QuadEXQ: dot + two translucent arcs
-		Draw_QX_Crosshair ();
+	if (scr_crosshair.value >= 3) { // QuadEXQ: 3-9, shapes drawn in crosshair_color / crosshair_alpha
+		Draw_QX_Crosshair ((int) scr_crosshair.value);
 		return;
 	}
 #endif // GLQUAKE_RENDERER_SUPPORT
 
 	if (scr_crosshair.value > 1) { // Dot crosshair
+#ifdef GLQUAKE_RENDERER_SUPPORT
+		Draw_QX_CrosshairChar (15);	// QuadEXQ: tinted
+#else
 		Draw_Character (-4, -4, 15); //0,0 is center of viewport
+#endif
 		return;
 	}
 
@@ -967,7 +971,11 @@ missing_weapon_crosshair:
 #endif // GLQUAKE_TEXTURE_MANAGER
 
 	// Standard Quake crosshair
+#ifdef GLQUAKE_RENDERER_SUPPORT
+	Draw_QX_CrosshairChar ('+');	// QuadEXQ: tinted
+#else
 	Draw_Character (-4, -4, '+'); 
+#endif
 }
 
 

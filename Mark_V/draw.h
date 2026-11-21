@@ -34,7 +34,9 @@ void Draw_Character (int x, int y, int num);
 void Draw_Pic (int x, int y, qpic_t *pic);
 void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_Fill (int x, int y, int w, int h, int c, float alpha);
-void Draw_QX_Crosshair (void);	// QuadEXQ: crosshair 3 (GL only)
+void Draw_QX_Crosshair (int style);	// QuadEXQ: crosshair 3-9 (GL only)
+void Draw_QX_CrosshairChar (int ch);
+void Draw_QX_CrosshairPreview (int cx, int cy, int half);	// QuadEXQ: the menus' crosshair preview (GL)	// QuadEXQ: crosshair 1-2 in crosshair_color / crosshair_alpha
 void Draw_Triangle_Corner (int x, int y, int wh, int _wh, int c);
 void Draw_Alpha_Spot (int x, int y, int w, int h, int c);
 void Draw_TileClear (int x, int y, int w, int h);
