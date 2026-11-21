@@ -1170,7 +1170,7 @@ void SCR_ScreenShot_f (lparse_t *line)
 // find a file name to save it to
 	for (i = 0; i < 10000; i++)
 	{
-		c_snprintf1 (basefilename, ENGINE_SHOT_PREFIX "%04d.png", i);
+		c_snprintf2 (basefilename, "QX_%s_%04d.png", gamedir_shortname (), i);	// QuadEXQ: QX_<game>_0000.png, so you know which mod it came from
 		file_url = qpath_to_url(basefilename);
 
 		if (!File_Exists (file_url))
