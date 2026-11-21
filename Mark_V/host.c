@@ -321,6 +321,7 @@ static const char *qx_shared_cvars[] = {
 	"crosshair", "scr_crosshairscale", "scr_weapon_crosshair",
 	"viewsize", "scr_sbaralpha", "scr_sbarcentered", "scr_sbarscale", "scr_scaleauto", "scr_qxhud",
 	"qx_retro", "qx_autoswitch", "qx_checkpoints",
+	"crosshair_color", "crosshair_alpha", "qx_centerscale", "qx_centerreadtime",	// the QuadEXQ Settings menu has them all
 	NULL
 };
 

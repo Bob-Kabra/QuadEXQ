@@ -21,6 +21,7 @@ CMD_DEF (		PlayerSetup, 			0,		6 * 8,		0,		32 * 8		)
 CMD_DEF (			NameMaker, 			0,			0,		0,		0			)
 CMD_DEF (		Demos, 					0,			0,		0,		0			)
 CMD_DEF (	Options, 					0,		6 * 8,	  220,		34 * 8		)
+CMD_DEF (		QXSettings, 			0,		7 * 8, 22 * 8,		34 * 8		)	// QuadEXQ: Options > QuadEXQ Settings
 CMD_DEF (		CustomizeControls, 		0,		2 * 8,	    0,		38 * 8		)
 CMD_DEF (		Preferences, 			0,		7 * 8, 22 * 8,		34 * 8		)
 CMD_DEF (		Video, 					0,		6 * 8,		0,		34 * 8		)

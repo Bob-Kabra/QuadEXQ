@@ -30,22 +30,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define local_menu				(&menux[LOCAL_MENU_STATE]) // /*static menux_t *menu = &menux[OUR_MENU_STATE]
 
 typedef enum { ENUM_FORCE_INT_GCC_ (opt)
-	opt_crosshair_0 = 0,
-	opt_weapon_draw_1,
-	opt_invisibility_2,
-	opt_view_blends_3,
-	opt_bobbing_4,
-	opt_flashblend_5,
-	opt_stain_maps_6,
-	opt_start_demos_7,
-	opt_server_aim_8,
-	opt_draw_clock_9,
-	opt_autoscale_10,
-	opt_status_bar_11,
-	opt_effects_12,
-	opt_lerpmodels_13,		// QuadEXQ: the frame interpolation pieces, each on its own (was "Effects")
-	opt_lerpmove_14,
-	opt_stairs_15,
+	opt_weapon_draw_0 = 0,	// QuadEXQ: Crosshair moved to QuadEXQ Settings
+	opt_invisibility_1,
+	opt_view_blends_2,
+	opt_bobbing_3,
+	opt_flashblend_4,
+	opt_stain_maps_5,
+	opt_start_demos_6,
+	opt_server_aim_7,
+	opt_draw_clock_8,
+	opt_autoscale_9,
+	opt_status_bar_10,
+	opt_effects_11,
+	opt_lerpmodels_12,		// QuadEXQ: the frame interpolation pieces, each on its own (was "Effects")
+	opt_lerpmove_13,
+	opt_stairs_14,
+	opt_soundrate_15,		// QuadEXQ: sndspeed 11/22/44 kHz (was in Options)
 	opt_retro_16,			// QuadEXQ: qx_retro, the 1996 look
 	opt_set_fitz_17,
 	opt_set_mark_v_18,
@@ -90,24 +90,24 @@ typedef struct _mnu_ent_t_s {
 
 #define QCTRL(X) q_control_ ## X
 static mnu_ent_t mnu_ent_table[] = { //                                                                           fitz mv                                    
-	{ opt_crosshair_0,		QCTRL(labeltoggle), "   Crosshair", "Standard Quake crosshair is a '+'", /*gp*/ 0,  1,  0,  2, "None,Quake Default,Small Dot,Dot + Arcs,Gap Cross,Ring,X,Chevron,Brackets,Scope", "None,Quake Default,Small Dot"										},
-	{ opt_weapon_draw_1,	QCTRL(labeltoggle), " Weapon Draw", "FitzQuake position is lower",              0,  2,  1,  1, "Quake Default,FitzQuake (Low),High,Gangsta"							},
-	{ opt_invisibility_2,	QCTRL(labeltoggle), "Invisibility", "Default: invisible = no weapon draw",      0,  3,  0,  1, "Quake Default,Draw Weapon"											},
-	{ opt_view_blends_3,	QCTRL(labeltoggle), " View Blends", "Screen blend underwater, powerup, ..",     0,  4,  0,  1, "Quake Default,Lite,None"											},
-	{ opt_bobbing_4,		QCTRL(labeltoggle), "     Bobbing", "Bobbing: cl_bob, cl_rollangle, ..",        0,  5,  0,  0, "Quake Default,DarkPlaces,None"										},
-	{ opt_flashblend_5,		QCTRL(labeltoggle), "  Flashblend", "Moving dynamic light drawing",             0,  6,  1,  0, "Quake Default,GLQuake style", "(GL Only)"							},
-	{ opt_stain_maps_6,		QCTRL(labeltoggle), "  Stain Maps", "Darkened stains that gradually fade",      0,  7,  0,  1, "Off,Subtle"															},
+	{ opt_weapon_draw_0,	QCTRL(labeltoggle), " Weapon Draw", "FitzQuake position is lower",              0,  2,  1,  1, "Quake Default,FitzQuake (Low),High,Gangsta"							},
+	{ opt_invisibility_1,	QCTRL(labeltoggle), "Invisibility", "Default: invisible = no weapon draw",      0,  3,  0,  1, "Quake Default,Draw Weapon"											},
+	{ opt_view_blends_2,	QCTRL(labeltoggle), " View Blends", "Screen blend underwater, powerup, ..",     0,  4,  0,  1, "Quake Default,Lite,None"											},
+	{ opt_bobbing_3,		QCTRL(labeltoggle), "     Bobbing", "Bobbing: cl_bob, cl_rollangle, ..",        0,  5,  0,  0, "Quake Default,DarkPlaces,None"										},
+	{ opt_flashblend_4,		QCTRL(labeltoggle), "  Flashblend", "Moving dynamic light drawing",             0,  6,  1,  0, "Quake Default,GLQuake style", "(GL Only)"							},
+	{ opt_stain_maps_5,		QCTRL(labeltoggle), "  Stain Maps", "Darkened stains that gradually fade",      0,  7,  0,  1, "Off,Subtle"															},
 
-	{ opt_start_demos_7,	QCTRL(labeltoggle), "  Startdemos", "Play startup demos on Quake startup",      0,  8,  1,  1, "Do Not Start,Quake Default"							    			},
-	{ opt_server_aim_8,		QCTRL(labeltoggle), "  Server Aim", "Lite aim help mostly for keyboarders",     0,  9,  0,  0, "Quake Default,Aim Help Off" 										},
-	{ opt_draw_clock_9,		QCTRL(labeltoggle), "  Draw Clock", "Show amount of time into level",           0, 10,  1,  0, "Deathmatch Only,Never,Always" 										},
+	{ opt_start_demos_6,	QCTRL(labeltoggle), "  Startdemos", "Play startup demos on Quake startup",      0,  8,  1,  1, "Do Not Start,Quake Default"							    			},
+	{ opt_server_aim_7,		QCTRL(labeltoggle), "  Server Aim", "Lite aim help mostly for keyboarders",     0,  9,  0,  0, "Quake Default,Aim Help Off" 										},
+	{ opt_draw_clock_8,		QCTRL(labeltoggle), "  Draw Clock", "Show amount of time into level",           0, 10,  1,  0, "Deathmatch Only,Never,Always" 										},
 	
-	{ opt_autoscale_10,		QCTRL(labeltoggle), "   Autoscale", "Adjust status bar for resolution",         0, 11,  2,  2, "Forced Off,User Cvar Control,Auto Small,Auto Medium,Auto Large", "(GL Only)"   	},
-	{ opt_status_bar_11,	QCTRL(labeltoggle), "  Status Bar", "Only default is uncentered in deathmatch", 0, 12,  0,  3, "Quake Default,Minimal (QW-ish),Translucent (GL),Centered" 			},
-	{ opt_effects_12,		QCTRL(labeltoggle), "     Effects", "QMB: JoeQuake-style particle effects",     0, 13,  0,  0, "Normal,JoeQuake (QMB),QMB + Classic Bolt", "Normal"		},
-	{ opt_lerpmodels_13,	QCTRL(labeltoggle), "  Model Anim", "Monster/weapon frames (r_lerpmodels)",      0, 14,  0,  0, "Smooth,Jerky (Original)"										},
-	{ opt_lerpmove_14,		QCTRL(labeltoggle), "    Movement", "Monster/item movement (r_lerpmove)",        0, 15,  0,  0, "Smooth,Jerky (Original)"										},
-	{ opt_stairs_15,		QCTRL(labeltoggle), "      Stairs", "Your view on stairs (v_smoothstairs)",      0, 16,  0,  0, "Smooth,Jerky (Original)"										},
+	{ opt_autoscale_9,		QCTRL(labeltoggle), "   Autoscale", "Adjust status bar for resolution",         0, 11,  2,  2, "Forced Off,User Cvar Control,Auto Small,Auto Medium,Auto Large", "(GL Only)"   	},
+	{ opt_status_bar_10,	QCTRL(labeltoggle), "  Status Bar", "Only default is uncentered in deathmatch", 0, 12,  0,  3, "Quake Default,Minimal (QW-ish),Translucent (GL),Centered" 			},
+	{ opt_effects_11,		QCTRL(labeltoggle), "     Effects", "QMB: JoeQuake-style particle effects",     0, 13,  0,  0, "Normal,JoeQuake (QMB),QMB + Classic Bolt", "Normal"		},
+	{ opt_lerpmodels_12,	QCTRL(labeltoggle), "  Model Anim", "Monster/weapon frames (r_lerpmodels)",      0, 14,  0,  0, "Smooth,Jerky (Original)"										},
+	{ opt_lerpmove_13,		QCTRL(labeltoggle), "    Movement", "Monster/item movement (r_lerpmove)",        0, 15,  0,  0, "Smooth,Jerky (Original)"										},
+	{ opt_stairs_14,		QCTRL(labeltoggle), "      Stairs", "Your view on stairs (v_smoothstairs)",      0, 16,  0,  0, "Smooth,Jerky (Original)"										},
+	{ opt_soundrate_15,		QCTRL(labeltoggle), "Sound Quality", "Applies after restarting Quake",          0, 18, -1, -1, "11 kHz,22 kHz,44 kHz"												},
 	{ opt_retro_16,			QCTRL(labeltoggle), "  Retro 1996", "The DOS Quake look (qx_retro)",             0, 17,  1,  1, "Off,In Bullet Time,Bullet Time Plain,Always (DOSQuake),Always 256 Colors", "(GL Only)"	},
 
 	{ opt_set_fitz_17,		QCTRL(labelbutton), "Set To FitzQuake", "Set FitzQuake 0.85 default settings",	0,  0, 112, -1, ""																	},
@@ -120,43 +120,37 @@ static int Mnu_Preferences_Get_Basket_Value_ (const opt_e option_idx)
 // We return 0 (catch all default) if no match
     switch (option_idx) {
     default:						System_Error ("unknown idx %d", option_idx);
-    case_break opt_crosshair_0:		{
-#ifdef WINQUAKE_RENDERER_SUPPORT
-										return CLAMP(0, (int) scr_crosshair.value, 2);
-#else
-										return CLAMP(0, (int) scr_crosshair.value, 9);	// QuadEXQ: 3-9 shapes (GL)
-#endif
-									}                                                                          // Crosshair
-    case_break opt_weapon_draw_1:   return Choose321 (r_viewmodel_offset.value, r_viewmodel_size.value >= FUHQUAKE_POSITION_1_2X, !r_viewmodel_quake.value); // Weapon Draw
-    case_break opt_invisibility_2:  return CONVBOOL r_viewmodel_ring.value;                                                                                // Invisibility
-    case_break opt_view_blends_3:   return Choose12 (v_polyblend_lite.value /*lite*/, !v_polyblend.value /*off*/);                                          // View Blends
-    case_break opt_bobbing_4:		return Choose12 (cl_sidebobbing.value, !cl_bob.value);                                                                  // Bobbing
+    case_break opt_weapon_draw_0:   return Choose321 (r_viewmodel_offset.value, r_viewmodel_size.value >= FUHQUAKE_POSITION_1_2X, !r_viewmodel_quake.value); // Weapon Draw
+    case_break opt_invisibility_1:  return CONVBOOL r_viewmodel_ring.value;                                                                                // Invisibility
+    case_break opt_view_blends_2:   return Choose12 (v_polyblend_lite.value /*lite*/, !v_polyblend.value /*off*/);                                          // View Blends
+    case_break opt_bobbing_3:		return Choose12 (cl_sidebobbing.value, !cl_bob.value);                                                                  // Bobbing
     
-    case_break opt_stain_maps_6:	return CONVBOOL r_stains.value;                                                                                         // Stains
-    case_break opt_start_demos_7:   return CONVBOOL host_startdemos.value;																					// Start Demos
-    case_break opt_server_aim_8:	return iif (sv_aim.value >= 1,     1, 0);                                                                               // Server Aim
-    case_break opt_draw_clock_9:	return Choose12(!scr_clock.value /*never*/, scr_clock.value >= 1 /*always*/);                                           // Draw Clock
+    case_break opt_stain_maps_5:	return CONVBOOL r_stains.value;                                                                                         // Stains
+    case_break opt_start_demos_6:   return CONVBOOL host_startdemos.value;																					// Start Demos
+    case_break opt_server_aim_7:	return iif (sv_aim.value >= 1,     1, 0);                                                                               // Server Aim
+    case_break opt_draw_clock_8:	return Choose12(!scr_clock.value /*never*/, scr_clock.value >= 1 /*always*/);                                           // Draw Clock
 
 #ifdef WINQUAKE_RENDERER_SUPPORT
-	case_break opt_flashblend_5:	return 0;                                                                       // Flash Blends
-    case_break opt_autoscale_10:	return 0;                                                                       // Autoscale
-	case_break opt_effects_12:		return 0;
-	case_break opt_lerpmodels_13:	return !r_lerpmodels.value;
-	case_break opt_lerpmove_14:		return !r_lerpmove.value;
-	case_break opt_stairs_15:		return !v_smoothstairs.value;
+	case_break opt_flashblend_4:	return 0;                                                                       // Flash Blends
+    case_break opt_autoscale_9:	return 0;                                                                       // Autoscale
+	case_break opt_effects_11:		return 0;
+	case_break opt_lerpmodels_12:	return !r_lerpmodels.value;
+	case_break opt_lerpmove_13:		return !r_lerpmove.value;
+	case_break opt_stairs_14:		return !v_smoothstairs.value;
 	case_break opt_retro_16:		return 0;
 #else
-	case_break opt_flashblend_5:	return CONVBOOL gl_flashblend.value;                                                                                    // Flash Blends
-	case_break opt_autoscale_10:	return CLAMP(0, (int)scr_scaleauto.value + 1, 5);                                                                       // Autoscale
-	case_break opt_effects_12:		return Choose12 (qmb_active.value && qmb_lightning.value, qmb_active.value && !qmb_lightning.value);
-	case_break opt_lerpmodels_13:	return !r_lerpmodels.value;
-	case_break opt_lerpmove_14:		return !r_lerpmove.value;
-	case_break opt_stairs_15:		return !v_smoothstairs.value;
+	case_break opt_flashblend_4:	return CONVBOOL gl_flashblend.value;                                                                                    // Flash Blends
+	case_break opt_autoscale_9:	return CLAMP(0, (int)scr_scaleauto.value + 1, 5);                                                                       // Autoscale
+	case_break opt_effects_11:		return Choose12 (qmb_active.value && qmb_lightning.value, qmb_active.value && !qmb_lightning.value);
+	case_break opt_lerpmodels_12:	return !r_lerpmodels.value;
+	case_break opt_lerpmove_13:		return !r_lerpmove.value;
+	case_break opt_stairs_14:		return !v_smoothstairs.value;
 	case_break opt_retro_16:		{	int r = (int) qx_retro.value;							// 0, 1, 2, 4, 5 -> rows 0..4
 										return r >= 5 ? 4 : r == 4 ? 3 : r == 2 ? 2 : r >= 1 ? 1 : 0; }
 #endif
 
-    case_break opt_status_bar_11:	return Choose123(scr_viewsize.value == 110, scr_sbaralpha.value < 1, scr_sbarcentered.value);                           // Status bar
+    case_break opt_soundrate_15:	return sndspeed.value >= 44100 ? 2 : sndspeed.value >= 22050 ? 1 : 0;					// Sound Quality
+    case_break opt_status_bar_10:	return Choose123(scr_viewsize.value == 110, scr_sbaralpha.value < 1, scr_sbarcentered.value);                           // Status bar
 	
     }
 	//Quake Default,Minimal (QW-ish),Translucent (GL),Centered
@@ -171,16 +165,16 @@ static cbool Mnu_Preferences_Set_Basket_Value_ (const opt_e option_idx, const in
 {
     switch (option_idx) {
 	default:						System_Error ("Out of bounds option_idx");
-    case_break opt_crosshair_0:		Cvar_SetValueQuick (&scr_crosshair, newval);													// Crosshair
-    case_break opt_weapon_draw_1:   Cvar_SetValueQuick (&r_viewmodel_quake,  iif (newval == 1 /*fitz*/, 0, 1));						// Weapon
+    case_break opt_soundrate_15:	Cvar_SetValueQuick (&sndspeed, newval == 2 ? 44100 : newval == 1 ? 22050 : 11025);		// Sound Quality (on restart)
+    case_break opt_weapon_draw_0:   Cvar_SetValueQuick (&r_viewmodel_quake,  iif (newval == 1 /*fitz*/, 0, 1));						// Weapon
 									Cvar_SetValueQuick (&r_viewmodel_size,   iif (newval >= 2 /*fuh*/, FUHQUAKE_POSITION_1_2X, 0)); 
 									Cvar_SetValueQuick (&r_viewmodel_offset, iif (newval == 3 /*side*/, 5.0, 0));
-    case_break opt_invisibility_2:  Cvar_SetValueQuick (&r_viewmodel_ring,   iif (newval, 1 /* trans*/, 0) );						// Invisibility
-    case_break opt_view_blends_3:   Cvar_SetValueQuick (&v_polyblend,		Choose3 (newval, 1, 1, 0) );															// View Blends (None is no warp either)
+    case_break opt_invisibility_1:  Cvar_SetValueQuick (&r_viewmodel_ring,   iif (newval, 1 /* trans*/, 0) );						// Invisibility
+    case_break opt_view_blends_2:   Cvar_SetValueQuick (&v_polyblend,		Choose3 (newval, 1, 1, 0) );															// View Blends (None is no warp either)
 									Cvar_SetValueQuick (&v_polyblend_lite,	Choose3 (newval, 0, 1, 0) );
 									Cvar_SetValueQuick (&r_waterwarp,		Choose3 (newval, 1, 1, 0) );    
     
-	case_break opt_bobbing_4: {	cvar_t *cvar_list[] = { &v_gunkick, &v_kickpitch, &v_kickroll, &v_kicktime, &cl_bob, &cl_bobcycle, &cl_bobup, &cl_rollangle, NULL };
+	case_break opt_bobbing_3: {	cvar_t *cvar_list[] = { &v_gunkick, &v_kickpitch, &v_kickroll, &v_kicktime, &cl_bob, &cl_bobcycle, &cl_bobup, &cl_rollangle, NULL };
 					switch (newval) {
 					default:
 					case_break 0:	Cvar_ListResetQuick (cvar_list);		Cvar_ResetQuick (&cl_sidebobbing);
@@ -188,28 +182,28 @@ static cbool Mnu_Preferences_Set_Basket_Value_ (const opt_e option_idx, const in
 					case_break 2:	Cvar_ListSetValueQuick (cvar_list, 0);	Cvar_ResetQuick (&cl_sidebobbing);
 					}
 	}
-    case_break opt_flashblend_5:	Cvar_SetValueQuick (&gl_flashblend, newval);													// Flash Blend
-    case_break opt_stain_maps_6:	Cvar_SetValueQuick (&r_stains, newval);															// Stain maps
-    case_break opt_start_demos_7:	Cvar_SetValueQuick (&host_startdemos, newval);													// Startdemos
-	case_break opt_server_aim_8:	Cvar_SetValueQuick (&sv_aim, iif (newval,  2 /*off*/, 0.93 /*quake default */));				// Server Aim
-    case_break opt_draw_clock_9:	Cvar_SetValueQuick (&scr_clock, newval - 1);													// Clock
-    case_break opt_autoscale_10:	Cvar_SetValueQuick (&scr_scaleauto, newval - 1);												// Autoscale
-	case_break opt_status_bar_11:	Cvar_SetValueQuick (&scr_sbaralpha,    Choose4(newval, 1, 0, 0.5, 1)	);						// Status Bar
+    case_break opt_flashblend_4:	Cvar_SetValueQuick (&gl_flashblend, newval);													// Flash Blend
+    case_break opt_stain_maps_5:	Cvar_SetValueQuick (&r_stains, newval);															// Stain maps
+    case_break opt_start_demos_6:	Cvar_SetValueQuick (&host_startdemos, newval);													// Startdemos
+	case_break opt_server_aim_7:	Cvar_SetValueQuick (&sv_aim, iif (newval,  2 /*off*/, 0.93 /*quake default */));				// Server Aim
+    case_break opt_draw_clock_8:	Cvar_SetValueQuick (&scr_clock, newval - 1);													// Clock
+    case_break opt_autoscale_9:	Cvar_SetValueQuick (&scr_scaleauto, newval - 1);												// Autoscale
+	case_break opt_status_bar_10:	Cvar_SetValueQuick (&scr_sbaralpha,    Choose4(newval, 1, 0, 0.5, 1)	);						// Status Bar
 									Cvar_SetValueQuick (&scr_sbarcentered, Choose4(newval, 0, 1, 0, 1)		);
 									Cvar_SetValueQuick (&scr_viewsize,	   iif (newval == 1, 110, 100)		);
 
 									//Quake Default,Minimal (QW-ish),Translucent (GL),Centered
 	// QuadEXQ: each piece of the frame interpolation on its own row, so QMB and smooth / jerky mix freely
-    case_break opt_lerpmodels_13:	Cvar_SetValueQuick (&r_lerpmodels,   iif (newval == 1, 0, 1) );								// Model Anim
-    case_break opt_lerpmove_14:		Cvar_SetValueQuick (&r_lerpmove,     iif (newval == 1, 0, 1) );								// Movement
-    case_break opt_stairs_15:		Cvar_SetValueQuick (&v_smoothstairs, iif (newval == 1, 0, 1) );								// Stairs
+    case_break opt_lerpmodels_12:	Cvar_SetValueQuick (&r_lerpmodels,   iif (newval == 1, 0, 1) );								// Model Anim
+    case_break opt_lerpmove_13:		Cvar_SetValueQuick (&r_lerpmove,     iif (newval == 1, 0, 1) );								// Movement
+    case_break opt_stairs_14:		Cvar_SetValueQuick (&v_smoothstairs, iif (newval == 1, 0, 1) );								// Stairs
 #ifdef WINQUAKE_RENDERER_SUPPORT
-    case_break opt_effects_12:		break;																							// Effects (no QMB)
+    case_break opt_effects_11:		break;																							// Effects (no QMB)
     case_break opt_retro_16:		break;																							// (GL only)
 #else
     case_break opt_retro_16:		{	static const int retro_vals[5] = { 0, 1, 2, 4, 5 };					// Retro 1996 (qx_retro)
 										Cvar_SetValueQuick (&qx_retro, retro_vals[CLAMP(0, newval, 4)]); }
-    case_break opt_effects_12:		Cvar_SetValueQuick (&qmb_active,     iif (newval >= 1, 1, 0) );									// Effects
+    case_break opt_effects_11:		Cvar_SetValueQuick (&qmb_active,     iif (newval >= 1, 1, 0) );									// Effects
 									Cvar_SetValueQuick (&qmb_lightning,  iif (newval == 2, 0, 1) );								// 2: QMB, but the classic bolt
 #endif 
     } // end switch
@@ -272,10 +266,6 @@ LOCAL_EVENT (Draw) (void)
 		// Help text does not
 		int help_idx = local_menu->hover ? local_menu->hover->idx : local_menu->cursor;
 		mnu_ent_t *e = &mnu_ent_table[help_idx];
-#ifdef GLQUAKE_RENDERER_SUPPORT
-		if (help_idx == opt_crosshair_0)	// QuadEXQ: show the crosshair as set, top right
-			Draw_QX_CrosshairPreview (298, 15, 15);
-#endif
 		M_PrintWhite (M_CANVAS_HALF_WIDTH_160 - strlen(e->help_text) * (M_CHAR_WIDTH_8 / 2), 23 * M_CHAR_HEIGHT_8, e->help_text);
 	}
 }
@@ -320,7 +310,7 @@ LOCAL_EVENT (KeyPress) (key_scancode_e key, int hotspot)
 							} else if (e->q_control == q_control_labelbutton) {
 								{ int row_px = 32; int n; for (n = 0; n < local_menu->cursor_solid_count; n ++) {
 									mnu_ent_t *e = &mnu_ent_table[n];
-									if (e->q_control == q_control_labeltoggle) {
+									if (e->q_control == q_control_labeltoggle && e->fitz_num >= 0) {	// QuadEXQ: -1 = no preset (Sound Quality)
 										int newval = local_menu->cursor == opt_set_fitz_17 ? e->fitz_num : e->markv_num;
 										Mnu_Preferences_Set_Basket_Value_ (e->opt_idx, newval);
 										MENU_TOGGLE_SOFT_SOUND();
@@ -349,7 +339,7 @@ LOCAL_EVENT (Enter_f) (lparse_t *unused)
 
 LOCAL_EVENT (InitOnce) (menux_t *self)
 {
-	DEBUG_COMPILE_TIME_ASSERT (/*hint word*/ opt_COUNT, opt_COUNT == 19);   // QuadEXQ: 19 (Model Anim, Movement, Stairs, Retro 1996 rows)
+	DEBUG_COMPILE_TIME_ASSERT (/*hint word*/ opt_COUNT, opt_COUNT == 19);   // QuadEXQ: 19 (Model Anim, Movement, Stairs, Sound Quality, Retro 1996; Crosshair went to QuadEXQ Settings)
 	self->cursor_solid_count = opt_COUNT; // Immutable - let's do this and check cursor against disabled attribute
 
 	{ int row_px = 32; int n; for (n = 0; n < self->cursor_solid_count; n ++) {
@@ -377,3 +367,138 @@ LOCAL_EVENT (InitOnce) (menux_t *self)
 	}} // End for
 }
 
+
+
+//=============================================================================
+// QuadEXQ: the QuadEXQ Settings menu (Options > QuadEXQ Settings).
+// Each row cycles a cvar through a few values; all of them are kept per game
+// in qx_config.cfg (Host_WriteQXConfiguration).
+
+#undef LOCAL_MENU_STATE
+#undef LOCAL_EVENT
+#undef local_menu
+#define LOCAL_MENU_STATE		menu_state_QXSettings
+#define LOCAL_EVENT(NAME)		void Mnu_ ## QXSettings ## _ ## NAME
+#define local_menu				(&menux[LOCAL_MENU_STATE])
+
+typedef struct {
+	const char	*caption;
+	const char	*help_text;
+	cvar_t		*cvar;
+	int			count;
+	float		vals[10];
+	const char	*names;		// comma separated, one per value
+} qxset_t;
+
+static qxset_t qxset_table[] = {
+#ifdef GLQUAKE_RENDERER_SUPPORT
+	{ "Retro 1996",			"The DOS Quake look (also in Preferences)",	&qx_retro,				5, {0, 1, 2, 4, 5},			"Off,In Bullet Time,Bullet Time Plain,Always (DOSQuake),Always 256 Colors" },
+#endif
+	{ "QX HUD",				"Adrenaline, PlayerSkill, jet, boss compass",	&scr_qxhud,				2, {0, 1},					"Off,On" },
+	{ "Auto Switch",		"Switch to a weapon you pick up?",			&qx_autoswitch,			3, {0, 1, 2},				"Never,Thunderbolt Only,Always" },
+	{ "Checkpoints",		"After a death, load the map's autosave",	&qx_checkpoints,		2, {0, 1},					"Off,On" },
+#ifdef GLQUAKE_RENDERER_SUPPORT
+	{ "Message Size",		"Center messages and the end text",			&qx_centerscale,		5, {1, 1.5f, 2, 2.5f, 3},	"1x,1.5x,2x,2.5x,3x" },
+#endif
+	{ "Message Time",		"Extra seconds for each line after the 1st",	&qx_centerreadtime,		5, {0, 0.3f, 0.6f, 1, 1.5f},	"Stock,+0.3 s,+0.6 s,+1 s,+1.5 s" },
+#ifdef GLQUAKE_RENDERER_SUPPORT
+	{ "Crosshair",			"Standard Quake crosshair is a '+'",		&scr_crosshair,			10, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9},	"None,Quake +,Dot,Dot + Arcs,Gap Cross,Ring,X,Chevron,Brackets,Scope" },
+	{ "Xhair Color",	"Applies to every crosshair shape",			&scr_crosshaircolor,	8, {0, 1, 2, 3, 4, 5, 6, 7},	"White,Red,Green,Yellow,Cyan,Orange,Pink,Blue" },
+	{ "Xhair Alpha",	"Applies to every crosshair shape",			&scr_crosshairalpha,	4, {1, 0.75f, 0.5f, 0.25f},	"100%,75%,50%,25%" },
+	{ "Xhair Scale",	"Crosshair size",							&gl_crosshairscale,		5, {1, 1.5f, 2, 3, 4},		"1x,1.5x,2x,3x,4x" },
+#else
+	{ "Crosshair",			"Standard Quake crosshair is a '+'",		&scr_crosshair,			3, {0, 1, 2},				"None,Quake +,Dot" },
+#endif
+	{ "Weapon Xhair",	"Per-weapon crosshair images, if any",		&scr_weapon_crosshair,	2, {0, 1},					"Off,On" },
+#ifdef GLQUAKE_RENDERER_SUPPORT
+	{ "Sbar Scale",	"Used when Autoscale is User Cvar Control",	&gl_sbarscale,			5, {1, 1.5f, 2, 3, 4},		"1x,1.5x,2x,3x,4x" },
+#endif
+};
+#define QXSET_COUNT	(int) (sizeof(qxset_table) / sizeof(qxset_table[0]))
+#define QXSET_ROW0	48		// first row (the title is at 32)
+
+// the value nearest the cvar's
+static int Mnu_QXSettings_Index_ (const qxset_t *e)
+{
+	int i, best = 0;
+	for (i = 1; i < e->count; i ++)
+		if (fabs (e->cvar->value - e->vals[i]) < fabs (e->cvar->value - e->vals[best]))
+			best = i;
+	return best;
+}
+
+LOCAL_EVENT (Draw) (void)
+{
+	int n;
+
+	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp"), NO_HOTSPOTS_0, USE_IMAGE_SIZE_NEG1, USE_IMAGE_SIZE_NEG1);
+	M_DrawPicCentered (4, Draw_CachePic ("gfx/p_option.lmp"));
+	M_PrintWhite (M_CANVAS_HALF_WIDTH_160 - 16 * (M_CHAR_WIDTH_8 / 2), 32, "QuadEXQ Settings");
+
+	for (n = 0; n < QXSET_COUNT; n ++) {
+		const qxset_t *e = &qxset_table[n];
+		int row = QXSET_ROW0 + n * M_CHAR_HEIGHT_8;
+		int len, idx = Mnu_QXSettings_Index_ (e);
+		const char *s = String_Instance (e->names, ',', idx + 1, &len);
+		char buf[MAX_QPATH_64];
+
+		M_Print (local_menu->column1 + (12 - (int)strlen(e->caption)) * M_CHAR_WIDTH_8, row, e->caption);	// right aligned to 12, clear of the plaque
+		c_strlcpy (buf, s);
+		buf[CLAMP (0, len, (int) sizeof(buf) - 1)] = 0;
+		M_Print (local_menu->column2, row, buf);
+		Hotspots_Add (local_menu->column1, row, local_menu->colwidth, M_HOTHEIGHT_8, 1, hotspottype_toggle);
+	}
+
+	M_DrawCharacter (local_menu->column2 - 2 * M_CHAR_WIDTH_8, QXSET_ROW0 + local_menu->cursor * M_CHAR_HEIGHT_8, 12 + ((int)(realtime * 4) & 1));
+
+#ifdef GLQUAKE_RENDERER_SUPPORT
+	{	// the crosshair as set, beside its rows, while one of them is picked
+		int help_idx = local_menu->hover ? local_menu->hover->idx : local_menu->cursor;
+		if (in_range (0, help_idx, QXSET_COUNT - 1) && (strstr (qxset_table[help_idx].caption, "Xhair") || !strcmp (qxset_table[help_idx].caption, "Crosshair")) && qxset_table[help_idx].cvar != &scr_weapon_crosshair) {
+			for (n = 0; n < QXSET_COUNT; n ++)
+				if (qxset_table[n].cvar == &scr_crosshair)
+					break;	// the first crosshair row
+			Draw_QX_CrosshairPreview (284, QXSET_ROW0 + n * M_CHAR_HEIGHT_8 + 16, 18);
+		}
+	}
+#endif
+
+	M_Print (M_CANVAS_HALF_WIDTH_160 - 31 * (M_CHAR_WIDTH_8 / 2), QXSET_ROW0 + (QXSET_COUNT + 1) * M_CHAR_HEIGHT_8, "Saved per game: qx_config.cfg");
+
+	{	// help: the row under the mouse, else the cursor's
+		int help_idx = local_menu->hover ? local_menu->hover->idx : local_menu->cursor;
+		const char *h = qxset_table[CLAMP (0, help_idx, QXSET_COUNT - 1)].help_text;
+		M_PrintWhite (M_CANVAS_HALF_WIDTH_160 - (int)strlen(h) * (M_CHAR_WIDTH_8 / 2), 23 * M_CHAR_HEIGHT_8, h);
+	}
+}
+
+LOCAL_EVENT (KeyPress) (key_scancode_e key, int hotspot)
+{
+	const qxset_t *e = &qxset_table[CLAMP (0, local_menu->cursor, QXSET_COUNT - 1)];
+	int dir = 1;
+
+	switch (key) {
+	default:				// Nothing
+	case_break K_ESCAPE:	Mnu_Options_Enter_f (NULL);
+	case_break K_DOWNARROW:	MENU_ROW_CHANGE_HARD_SOUND (); if (++local_menu->cursor >= QXSET_COUNT) local_menu->cursor = 0;
+	case_break K_UPARROW:	MENU_ROW_CHANGE_HARD_SOUND (); if (--local_menu->cursor < 0) local_menu->cursor = QXSET_COUNT - 1;
+	case_break K_LEFTARROW:	dir = -1; goto cycle;
+	case_break K_RIGHTARROW:
+	case K_ENTER:
+		cycle:
+		{	int idx = (Mnu_QXSettings_Index_ (e) + dir + e->count) % e->count;
+			Cvar_SetValueQuick (e->cvar, e->vals[idx]);
+			MENU_TOGGLE_SOFT_SOUND ();
+		}
+	}
+}
+
+LOCAL_EVENT (Enter_f) (lparse_t *unused)
+{
+	Key_SetDest (key_menu); Menu_SetDest (LOCAL_MENU_STATE);
+}
+
+LOCAL_EVENT (InitOnce) (menux_t *self)
+{
+	self->cursor_solid_count = QXSET_COUNT;
+}
