@@ -1246,6 +1246,19 @@ char *COM_FindFile_NoPak (const char *file_to_find)
 	return NULL;	// Failure
 }
 
+// QuadEXQ: where com_filepath (the last file found) is in the search path:
+// 0 = first (the mod), higher = later (towards id1), -1 = not in it.
+int COM_SearchPathRank (void)
+{
+	searchpath_t *search;
+	int rank = 0;
+
+	for (search = com_searchpaths; search; search = search->next, rank ++)
+		if (!strcmp (com_filepath, search->pack ? search->pack->filename : search->filename))
+			return rank;
+	return -1;
+}
+
 /*
 =================
 COM_FindFile

@@ -71,6 +71,12 @@ a whole.
 
 #include <dshow.h>
 
+// QuadEXQ: Ogg Vorbis music (the 2021 re-release and many mods ship .ogg).
+// stb_vorbis decodes it; DirectShow then plays a .wav of it (see below).
+#define STB_VORBIS_NO_STDIO
+#define STB_VORBIS_NO_PUSHDATA_API
+#include "qx_stb_vorbis.h"
+
 #pragma comment (lib, "ole32.lib") // CoInitialize and friends
 #pragma comment (lib, "strmiids.lib") // dxsdk/sdk8/lib/
 
@@ -265,6 +271,102 @@ static char *QX_Music_FromPak (const char *relname)
 	return cached;
 }
 
+// QuadEXQ: no .mp3 for the track, but an .ogg (in a folder or a pak):
+// decode it once to a .wav in the temp folder (QX_music_<game>_<name>_<size>.wav)
+// and play that.  Decoding a whole track takes a moment, only the first time.
+static char *QX_Music_FromOgg (const char *relname)
+{
+	static char cached[MAX_OSPATH];
+	char oggname[MAX_QPATH_64], basename[MAX_QPATH_64], tmpdir[MAX_PATH], partname[MAX_OSPATH];
+	const char *slash = strrchr (relname, '/');
+	char *dot;
+	byte *buf;
+	short *pcm = NULL;
+	int len, channels, rate, samples;
+	FILE *f;
+
+	c_strlcpy (oggname, relname);
+	if ((dot = strrchr (oggname, '.')) && !strchr (dot, '/'))
+		*dot = 0;
+	c_strlcpy (basename, slash ? slash + 1 : relname);
+	if ((dot = strrchr (basename, '.')))
+		*dot = 0;
+	c_strlcat (oggname, ".ogg");
+
+	if (!GetTempPathA (sizeof(tmpdir), tmpdir))
+		return NULL;
+	if (!(buf = COM_LoadMallocFile (oggname)))	// a folder or a pak
+		return NULL;
+	len = com_filesize;
+	c_snprintf4 (cached, "%sQX_music_%s_%s_%d.wav", tmpdir, gamedir_shortname (), basename, len);
+
+	if ((f = fopen (cached, "rb"))) {	// decoded before
+		fclose (f);
+		free (buf);
+		return cached;
+	}
+
+	samples = stb_vorbis_decode_memory (buf, len, &channels, &rate, &pcm);
+	free (buf);
+	if (samples <= 0 || !pcm) {
+		Con_PrintLinef ("Couldn't decode %s", oggname);
+		if (pcm) free (pcm);
+		return NULL;
+	}
+
+	c_snprintf1 (partname, "%s.part", cached);	// renamed when it's all there
+	if ((f = fopen (partname, "wb"))) {
+		unsigned int datasize = (unsigned int) samples * channels * 2;
+		unsigned int u32;
+		unsigned short u16;
+		#define W32(x) (u32 = (x), fwrite (&u32, 4, 1, f))
+		#define W16(x) (u16 = (x), fwrite (&u16, 2, 1, f))
+		fwrite ("RIFF", 1, 4, f);	W32 (36 + datasize);	fwrite ("WAVE", 1, 4, f);
+		fwrite ("fmt ", 1, 4, f);	W32 (16);	W16 (1);	W16 (channels);
+		W32 (rate);	W32 (rate * channels * 2);	W16 (channels * 2);	W16 (16);
+		fwrite ("data", 1, 4, f);	W32 (datasize);
+		fwrite (pcm, 1, datasize, f);
+		#undef W32
+		#undef W16
+		fclose (f);
+		remove (cached);
+		rename (partname, cached);
+	}
+	free (pcm);
+	Con_VerbosePrintLinef ("Track %s decoded to %s", oggname, cached);
+	return (f ? cached : NULL);
+}
+
+// QuadEXQ: where in the search path a file is (0 = the mod, higher = towards
+// id1), or -1 if it's nowhere.  So a mod's .ogg beats id1's .mp3.
+static int QX_Music_Rank (const char *relname)
+{
+	FILE *f = NULL;
+	int rank;
+
+	if (COM_FOpenFile (relname, &f) < 0 || !f)
+		return -1;
+	fclose (f);
+	rank = COM_SearchPathRank ();
+	return rank < 0 ? 0 : rank;
+}
+
+// The .ogg of the track sits ahead of (or instead of) its .mp3
+static cbool QX_Music_OggFirst (const char *relname)
+{
+	char oggname[MAX_QPATH_64], *dot;
+	int r_mp3, r_ogg;
+
+	c_strlcpy (oggname, relname);
+	if ((dot = strrchr (oggname, '.')) && !strchr (dot, '/'))
+		*dot = 0;
+	c_strlcat (oggname, ".ogg");
+	if ((r_ogg = QX_Music_Rank (oggname)) < 0)
+		return false;
+	r_mp3 = QX_Music_Rank (relname);
+	return r_mp3 < 0 || r_ogg < r_mp3;
+}
+
 cbool MediaPlayer_Play (int tracknum, cbool looping)
 {
 	char track_file[MAX_QPATH_64];
@@ -314,9 +416,14 @@ cbool MediaPlayer_Play (int tracknum, cbool looping)
 	File_URL_Edit_Default_Extension (track_file, ".mp3", sizeof(track_file));
 
 	// Build absolute file name
-	absolute_filename = COM_FindFile_NoPak (track_file);
+	// QuadEXQ: the mod's own music first, .ogg or .mp3, in a folder or a pak
+	absolute_filename = QX_Music_OggFirst (track_file) ? QX_Music_FromOgg (track_file) : NULL;
+	if (!absolute_filename)
+		absolute_filename = COM_FindFile_NoPak (track_file);
 	if (!absolute_filename)
 		absolute_filename = QX_Music_FromPak (track_file);	// QuadEXQ
+	if (!absolute_filename)
+		absolute_filename = QX_Music_FromOgg (track_file);	// QuadEXQ
 
 	if (!absolute_filename)
 	{

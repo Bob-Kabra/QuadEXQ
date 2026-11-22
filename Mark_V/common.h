@@ -185,6 +185,7 @@ byte *COM_LoadHunkFile_Limited (const char *path, const char *media_owner_path);
 
 //#ifdef SUPPORTS_MP3_MUSIC // Baker change
 char *COM_FindFile_NoPak (const char *file_to_find);
+int COM_SearchPathRank (void);	// QuadEXQ: com_filepath's place in the search path (0 = the mod)
 //#endif // Baker change +
 
 ///////////////////////////////////////////////////////////////////////////////
