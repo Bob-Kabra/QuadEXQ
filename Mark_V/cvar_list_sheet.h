@@ -140,6 +140,7 @@ CVAR_DEF( R_Init      , SCENE     ,  DEP_GL   , gl_clear                  , "gl_
 CVAR_DEF( R_Init      , SCENE     ,  DEP_GL   , gl_cull                   , "gl_cull"                 , "1"       , CVAR_NONE         , NULL                 ,  "Toggle use of face culling in hardware renderer."            )
 CVAR_DEF( R_Init      , SCENE     ,  DEP_GL   , gl_drawworld              , "r_drawworld"             , "1"       , CVAR_NONE         , NULL                 ,  "Toggle drawing of the world each frame."            )
 CVAR_DEF( R_Init      , SCENE     ,  DEP_GL   , gl_dynamic                , "r_dynamic"               , "1"       , CVAR_NONE         , NULL                 ,  "Toggle use of dynamic lights."            )
+CVAR_DEF( R_Init      , SCENE     ,  DEP_GL   , qx_worldbatch             , "qx_worldbatch"           , "1"       , CVAR_NONE         , NULL                 ,  "QuadEXQ: draw the world's walls in batches (vertex arrays) instead of a vertex at a time. 0 = the old way."            )
 
 CVAR_DEF( R_Init      , SCENE     ,  DEP_GL   , gl_farclip                , "gl_farclip"              , "16384"   , CVAR_NONE         , NULL                 ,  "Distance that geometry cuts-off. (TODO: Software renderer should add too?)"            )
 CVAR_DEF( Sky_Init    , SCENE     ,  DEP_GL   , gl_fastsky                , "r_fastsky"               , "0"       , CVAR_NONE         , NULL                 ,  "Toggle drawing of sky as single color."            )

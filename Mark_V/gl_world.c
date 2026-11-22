@@ -422,12 +422,94 @@ extern cbool surf_abovewater;
 R_DrawTextureChains_Multitexture -- johnfitz
 ================
 */
+// QuadEXQ: the world's lightmapped walls in batches.  Mark V drew every wall
+// a vertex at a time (3 GL calls a vertex); a big map is then 100,000s of calls
+// a frame and the CPU, not the card, is the limit.  Instead the walls that
+// share a lightmap are copied into one array (their vertices are already laid
+// out xyz st lm, VERTEXSIZE floats) and drawn with a single glDrawElements.
+// OpenGL builds only (not the Direct3D wrappers or GLES); qx_worldbatch 0 is
+// the old way, to compare.
+#if !defined(DIRECT3D8_WRAPPER) && !defined(DIRECT3D9_WRAPPER) && !defined(PLATFORM_OPENGLES)
+#define QX_WORLDBATCH
+#define QXB_MAXVERTS	4096
+#define QXB_MAXINDEX	(QXB_MAXVERTS * 3)
+static float			qxb_verts[QXB_MAXVERTS * VERTEXSIZE];
+static unsigned short	qxb_index[QXB_MAXINDEX];
+static int				qxb_numverts, qxb_numindex;
+static void (APIENTRY *qxb_ClientActiveTexture) (GLenum texture);
+static int				qxb_tried;
+
+static cbool QXB_Available (void)
+{
+	if (!qxb_tried) {
+		qxb_tried = true;
+		qxb_ClientActiveTexture = (void (APIENTRY *)(GLenum)) Vid_GL_GetProcAddress ("glClientActiveTextureARB");
+		if (!qxb_ClientActiveTexture)
+			Con_DPrintLinef ("qx_worldbatch: no glClientActiveTextureARB, drawing the old way");
+	}
+	return qx_worldbatch.value && qxb_ClientActiveTexture != NULL;
+}
+
+static void QXB_Flush (void)
+{
+	if (qxb_numindex)
+		glDrawElements (GL_TRIANGLES, qxb_numindex, GL_UNSIGNED_SHORT, qxb_index);
+	qxb_numverts = qxb_numindex = 0;
+}
+
+static void QXB_Add (const glpoly_t *p)
+{
+	int i, n = p->numverts;
+
+	if (n < 3)
+		return;
+	if (qxb_numverts + n > QXB_MAXVERTS || qxb_numindex + (n - 2) * 3 > QXB_MAXINDEX)
+		QXB_Flush ();
+	memcpy (&qxb_verts[qxb_numverts * VERTEXSIZE], p->verts[0], n * VERTEXSIZE * sizeof(float));
+	for (i = 2; i < n; i ++) {	// the polygon as a fan of triangles
+		qxb_index[qxb_numindex++] = qxb_numverts;
+		qxb_index[qxb_numindex++] = qxb_numverts + i - 1;
+		qxb_index[qxb_numindex++] = qxb_numverts + i;
+	}
+	qxb_numverts += n;
+}
+
+static void QXB_Begin (void)
+{
+	qxb_numverts = qxb_numindex = 0;
+	glEnableClientState (GL_VERTEX_ARRAY);
+	glVertexPointer (3, GL_FLOAT, VERTEXSIZE * sizeof(float), &qxb_verts[0]);
+	qxb_ClientActiveTexture (renderer.TEXTURE0);
+	glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+	glTexCoordPointer (2, GL_FLOAT, VERTEXSIZE * sizeof(float), &qxb_verts[3]);
+	qxb_ClientActiveTexture (renderer.TEXTURE1);
+	glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+	glTexCoordPointer (2, GL_FLOAT, VERTEXSIZE * sizeof(float), &qxb_verts[5]);
+}
+
+static void QXB_End (void)
+{
+	QXB_Flush ();
+	qxb_ClientActiveTexture (renderer.TEXTURE1);
+	glDisableClientState (GL_TEXTURE_COORD_ARRAY);
+	qxb_ClientActiveTexture (renderer.TEXTURE0);
+	glDisableClientState (GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState (GL_VERTEX_ARRAY);
+}
+#endif // QX_WORLDBATCH
+
 static void R_DrawTextureChains_Multitexture_Tex (texture_t *t) //is_mirror_pass)
 {
 	int			j;
 	msurface_t	*s;
 	float		*v;
 	cbool		bound = false;
+#ifdef QX_WORLDBATCH
+	cbool		batch = QXB_Available ();
+	int			batch_lightmap = -1;
+	if (batch)
+		QXB_Begin ();
+#endif
 
 	for (s = t->texturechain; s; s = s->texturechain)
 	{
@@ -474,6 +556,11 @@ static void R_DrawTextureChains_Multitexture_Tex (texture_t *t) //is_mirror_pass
 					frame.has_abovewater = true;
 			}
 #endif
+#ifdef QX_WORLDBATCH
+			// a state change ahead: draw what's batched first
+			if (batch && (s->lightmaptexturenum != batch_lightmap || (s->flags & SURF_DRAWFENCE) || active_mirror))
+				QXB_Flush ();
+#endif
 			if (s->flags & SURF_DRAWFENCE)
 			{
 				GL_DisableMultitexture(); // selects TEXTURE0
@@ -483,6 +570,9 @@ static void R_DrawTextureChains_Multitexture_Tex (texture_t *t) //is_mirror_pass
 
 			R_RenderDynamicLightmaps (s);
 			GL_Bind (lightmap[s->lightmaptexturenum].texture);
+#ifdef QX_WORLDBATCH
+			batch_lightmap = s->lightmaptexturenum;
+#endif
 
 			if (active_mirror) {
 				// An active mirror is fullbright.
@@ -496,6 +586,13 @@ static void R_DrawTextureChains_Multitexture_Tex (texture_t *t) //is_mirror_pass
 				eglEnd ();
 				GL_EnableMultitexture(); // Restore state
 			}
+#ifdef QX_WORLDBATCH
+			else if (batch) {
+				QXB_Add (s->polys);
+				if (s->flags & SURF_DRAWFENCE)
+					QXB_Flush ();	// before the alpha test goes off
+			}
+#endif
 			else {
 				eglBegin(GL_POLYGON);
 				v = s->polys->verts[0];
@@ -517,6 +614,10 @@ static void R_DrawTextureChains_Multitexture_Tex (texture_t *t) //is_mirror_pass
 			rs_brushpasses++;
 		} // End if			
 	} // End for
+#ifdef QX_WORLDBATCH
+	if (batch)
+		QXB_End ();	// draws the last batch while this texture is still bound
+#endif
 	GL_DisableMultitexture(); // selects TEXTURE0
 }
 
