@@ -313,6 +313,57 @@ void GL_LerpVerts (aliashdr_t *paliashdr, lerpdata_t lerpdata, int commands_offs
 	}
 }
 
+// QuadEXQ: GL_LerpVerts already leaves the model's vertices (position, colour,
+// texcoord) and its triangles (r_lerped_indexes) in arrays, so draw them with
+// one glDrawElements instead of a vertex at a time (3-4 GL calls a vertex).
+// OpenGL builds only; qx_modelbatch 0 is the old way.
+#if !defined(DIRECT3D8_WRAPPER) && !defined(DIRECT3D9_WRAPPER) && !defined(PLATFORM_OPENGLES)
+#define QX_MODELBATCH
+static void (APIENTRY *qxm_ClientActiveTexture) (GLenum texture);
+static int qxm_tried;
+
+static cbool QXM_Draw (aliashdr_t *paliashdr)
+{
+	if (!qxm_tried) {
+		qxm_tried = true;
+		qxm_ClientActiveTexture = (void (APIENTRY *)(GLenum)) Vid_GL_GetProcAddress ("glClientActiveTextureARB");
+	}
+	if (!qx_modelbatch.value || !qxm_ClientActiveTexture || !r_num_lerped_indexes)
+		return false;
+
+	glEnableClientState (GL_VERTEX_ARRAY);
+	glVertexPointer (3, GL_FLOAT, sizeof(lerpedvert_t), r_lerped_verts[0].position);
+	if (shading) {
+		glEnableClientState (GL_COLOR_ARRAY);
+		glColorPointer (4, GL_FLOAT, sizeof(lerpedvert_t), r_lerped_verts[0].color);
+	}
+	qxm_ClientActiveTexture (renderer.TEXTURE0);
+	glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+	glTexCoordPointer (2, GL_FLOAT, sizeof(lerpedvert_t), r_lerped_verts[0].texcoord);
+	if (mtexenabled) {
+		qxm_ClientActiveTexture (renderer.TEXTURE1);
+		glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+		glTexCoordPointer (2, GL_FLOAT, sizeof(lerpedvert_t), r_lerped_verts[0].texcoord);
+	}
+
+	glDrawElements (GL_TRIANGLES, r_num_lerped_indexes, GL_UNSIGNED_INT, r_lerped_indexes);
+
+	if (mtexenabled) {
+		glDisableClientState (GL_TEXTURE_COORD_ARRAY);
+		qxm_ClientActiveTexture (renderer.TEXTURE0);
+	}
+	glDisableClientState (GL_TEXTURE_COORD_ARRAY);
+	if (shading) {
+		glDisableClientState (GL_COLOR_ARRAY);
+		eglColor4fv (r_lerped_verts[r_num_lerped_verts - 1].color);	// as the old way left it
+	}
+	glDisableClientState (GL_VERTEX_ARRAY);
+
+	rs_aliaspasses += paliashdr->numtris;
+	return true;
+}
+#endif // QX_MODELBATCH
+
 // This function prototype needs to match GL_DrawAliasFrame_QMB_Flame_And_Shadows
 // So we can transparently reroute QMB flame to here
 void GL_DrawAliasFrame_New (aliashdr_t *paliashdr, lerpdata_t lerpdata, int unused_int, cbool unused_cbool, float unused_float)
@@ -320,6 +371,11 @@ void GL_DrawAliasFrame_New (aliashdr_t *paliashdr, lerpdata_t lerpdata, int unus
 	int		*commands;
 	int		count;
 	lerpedvert_t *lv;
+
+#ifdef QX_MODELBATCH
+	if (QXM_Draw (paliashdr))
+		return;
+#endif
 
 	commands = (int *)((byte *)paliashdr + paliashdr->commands);
 	lv = r_lerped_verts;
