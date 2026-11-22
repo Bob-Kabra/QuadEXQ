@@ -1313,7 +1313,9 @@ static cbool SV_QX_EngineSafe (edict_t *pl)
 	edict_t *e;
 	int i;
 
-	if (pl->v.health < 50)
+	// QuadEXQ: half the max health if that's under 100 (Dawn of the Machine
+	// starts at 50-60: at 50 a scratch kept the checkpoint from ever saving)
+	if (pl->v.health < ((pl->v.max_health > 0 && pl->v.max_health < 100) ? pl->v.max_health * 0.5 : 50))
 		return false;
 	if (!((int)pl->v.flags & FL_ONGROUND))
 		return false;
