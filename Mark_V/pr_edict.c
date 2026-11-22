@@ -1382,6 +1382,32 @@ void PR_LoadProgs (const char *__progs_name)
 	pr_functions[i].locals = LittleLong (pr_functions[i].locals);
 	}
 
+	// QuadEXQ: the 2021 re-release's progs declare some builtins "#0:ex_name"
+	// (number 0, found by name): point them at ours. And its update 1 moved
+	// centerprint / bprint / sprint to #90 / 91 / 92: back to 73 / 23 / 24.
+	{
+		static const struct { const char *name; int num; } qx_ex[] = {
+			{"ex_centerprint", 73}, {"ex_bprint", 23}, {"ex_sprint", 24},
+			{"ex_finaleFinished", 79}, {"ex_finalefinished", 79}, {"ex_localsound", 80},
+			{"ex_CheckPlayerEXFlags", 81}, {"ex_walkpathtogoal", 81},
+		};
+		int j;
+		for (i = 0; i < progs->numfunctions; i++) {
+			dfunction_t *f = &pr_functions[i];
+			const char *name = PR_GetString (f->s_name);
+			if (f->first_statement == 0 && !f->parm_start && !f->locals) {
+				for (j = 0; j < (int)(sizeof(qx_ex) / sizeof(qx_ex[0])); j++)
+					if (!strcmp (name, qx_ex[j].name)) {
+						f->first_statement = -qx_ex[j].num;
+						break;
+					}
+			}
+			else if (f->first_statement == -90 && !strcmp (name, "centerprint"))	f->first_statement = -73;
+			else if (f->first_statement == -91 && !strcmp (name, "bprint"))		f->first_statement = -23;
+			else if (f->first_statement == -92 && !strcmp (name, "sprint"))		f->first_statement = -24;
+		}
+	}
+
 	for (i=0 ; i<progs->numglobaldefs ; i++)
 	{
 		pr_globaldefs[i].type = LittleShort (pr_globaldefs[i].type);

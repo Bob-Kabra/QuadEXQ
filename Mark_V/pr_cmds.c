@@ -48,15 +48,192 @@ static char *PR_GetTempString (void)
 ===============================================================================
 */
 
+/*
+===============
+QuadEXQ: the 2021 re-release's localization
+
+Its progs print keys ("$qc_need_gold_key") that its engine looks up in
+localization/loc_english.txt (key = "text", \n escapes, UTF-8), with {} / {N}
+standing for the next / the Nth argument. Loaded from the game's paths the
+first time a key turns up (and again after a game change). No file: the key
+is made readable ("$qc_need_gold_key" -> "need gold key").
+===============
+*/
+typedef struct { const char *key, *value; } qx_locentry_t;
+static char				*qx_loc_text;
+static qx_locentry_t	*qx_loc_entries;
+static int				qx_loc_count;
+static char				qx_loc_gamedir[MAX_OSPATH];
+
+// UTF-8 to Quake's charset: the punctuation English needs, '?' for the rest
+static void QX_Loc_FromUTF8 (char *s)
+{
+	unsigned char *src = (unsigned char *)s;
+	char *dst = s;
+
+	while (*src) {
+		unsigned int cp;
+		int more;
+		if (*src < 0x80) { *dst++ = *src++; continue; }
+		if ((*src & 0xE0) == 0xC0)		{ cp = *src & 0x1F; more = 1; }
+		else if ((*src & 0xF0) == 0xE0)	{ cp = *src & 0x0F; more = 2; }
+		else if ((*src & 0xF8) == 0xF0)	{ cp = *src & 0x07; more = 3; }
+		else { src++; continue; }
+		src++;
+		while (more-- && (*src & 0xC0) == 0x80)
+			cp = (cp << 6) | (*src++ & 0x3F);
+		switch (cp) {
+		case 0x2018: case 0x2019: case 0x00B4:	*dst++ = '\''; break;
+		case 0x201C: case 0x201D:				*dst++ = '"'; break;
+		case 0x2013: case 0x2014:				*dst++ = '-'; break;
+		case 0x2026:							*dst++ = '.'; *dst++ = '.'; *dst++ = '.'; break;	// (3 bytes in, 3 out)
+		case 0x00A0:							*dst++ = ' '; break;
+		default:								*dst++ = '?'; break;
+		}
+	}
+	*dst = 0;
+}
+
+static void QX_Loc_Load (void)
+{
+	char *cursor;
+	int max = 0;
+
+	c_strlcpy (qx_loc_gamedir, com_gamedir);
+	if (qx_loc_text)	{ free (qx_loc_text); qx_loc_text = NULL; }
+	if (qx_loc_entries)	{ free (qx_loc_entries); qx_loc_entries = NULL; }
+	qx_loc_count = 0;
+
+	if (!(qx_loc_text = (char *)COM_LoadMallocFile ("localization/loc_english.txt")))
+		return;
+	for (cursor = qx_loc_text; *cursor; cursor ++)
+		if (*cursor == '\n')
+			max ++;
+	qx_loc_entries = (qx_locentry_t *) calloc (max + 1, sizeof(qx_locentry_t));
+
+	for (cursor = qx_loc_text; *cursor; ) {
+		char *line = cursor, *eq = NULL, *end, *v, *d;
+
+		while (*cursor && *cursor != '\n') {
+			if (*cursor == '=' && !eq)
+				eq = cursor;
+			cursor ++;
+		}
+		end = cursor;
+		if (*cursor)
+			*cursor++ = 0;
+		while (*line == ' ' || *line == '\t')
+			line ++;
+		if (!eq || line[0] == '/' || qx_loc_count >= max + 1)
+			continue;
+		{	char *k = eq;		// the key, trimmed
+			while (k > line && (k[-1] == ' ' || k[-1] == '\t'))
+				k --;
+			*k = 0;
+		}
+		v = eq + 1;
+		while (*v == ' ' || *v == '\t')
+			v ++;
+		if (*v == '"')
+			v ++;
+		for (d = v; v < end && *v && *v != '"' && *v != '\r'; ) {	// the value, unescaped
+			if (*v == '\\' && v[1]) {
+				char c = v[1];
+				*d++ = (c == 'n') ? '\n' : (c == 't') ? '\t' : c;
+				v += 2;
+			}
+			else *d++ = *v++;
+		}
+		*d = 0;
+		v = eq + 1;
+		while (*v == ' ' || *v == '\t' || *v == '"')
+			v ++;
+		QX_Loc_FromUTF8 (v);
+		qx_loc_entries[qx_loc_count].key = line;
+		qx_loc_entries[qx_loc_count].value = v;
+		qx_loc_count ++;
+	}
+	Con_DPrintLinef ("Localization: %d strings", qx_loc_count);
+}
+
+// "$key" -> its text; anything else as it is
+const char *QX_Loc (const char *s)
+{
+	static char readable[4][256];
+	static int which;
+	int i;
+
+	if (!s || s[0] != '$' || !s[1])
+		return s;
+	if (strcmp (qx_loc_gamedir, com_gamedir))
+		QX_Loc_Load ();
+	for (i = 0; i < qx_loc_count; i ++)
+		if (!strcmp (qx_loc_entries[i].key, s + 1))
+			return qx_loc_entries[i].value;
+
+	if (strncmp (s, "$qc_", 4) && strncmp (s, "$mg", 3))	// only keys that look like the re-release's
+		return s;
+	{	// no text for it: "$qc_need_gold_key" -> "need gold key"
+		char *r = readable[which++ & 3], *p;
+		const char *k = strchr (s + 1, '_') ? strchr (s + 1, '_') + 1 : s + 1;
+		strlcpy (r, k, sizeof(readable[0]));	// (r is a pointer: c_strlcpy would copy only sizeof(char *))
+		for (p = r; *p; p ++)
+			if (*p == '_')
+				*p = ' ';
+		return r;
+	}
+}
+
 static char *PF_VarString (int	first)
 {
 	int		i;
 	static char out[1024]; // From Quakespasm, great idea!
+	const char *format;
 
 	out[0] = 0;
+	if (first >= pr_argc)
+		return out;
+
+	// QuadEXQ: a re-release key with {} / {N} places for the other arguments
+	format = QX_Loc (G_STRING((OFS_PARM0+first*3)));
+	if (format != G_STRING((OFS_PARM0+first*3)) && strchr (format, '{'))
+	{
+		const char *f = format;
+		int next = 0, len = 0;
+
+		while (*f && len < (int)sizeof(out) - 1) {
+			const char *g = f;
+			int n = -1;
+			if (*g == '{') {
+				g ++;
+				if (*g == '}')
+					n = next ++;
+				else if (*g >= '0' && *g <= '9') {
+					n = 0;
+					while (*g >= '0' && *g <= '9')
+						n = n * 10 + *g++ - '0';
+					if (*g != '}')
+						n = -1;
+				}
+			}
+			if (n < 0) {
+				out[len++] = *f++;
+				continue;
+			}
+			f = g + 1;
+			if (first + 1 + n < pr_argc) {
+				const char *a = QX_Loc (G_STRING((OFS_PARM0+(first+1+n)*3)));
+				while (*a && len < (int)sizeof(out) - 1)
+					out[len++] = *a++;
+			}
+		}
+		out[len] = 0;
+		return out;
+	}
+
 	for (i = first ; i < pr_argc ; i++)
 	{
-		c_strlcat (out, G_STRING((OFS_PARM0+i*3)));
+		c_strlcat (out, QX_Loc (G_STRING((OFS_PARM0+i*3))));	// QuadEXQ: QX_Loc
 	}
 	return out;
 }
@@ -1651,7 +1828,7 @@ static void PF_WriteCoord (void)
 
 static void PF_WriteString (void)
 {
-	MSG_WriteString (WriteDest(), G_STRING(OFS_PARM1));
+	MSG_WriteString (WriteDest(), QX_Loc (G_STRING(OFS_PARM1)));	// QuadEXQ: QX_Loc
 }
 
 static void PF_WriteEntity (void)
@@ -1856,6 +2033,32 @@ static void PF_Fixme (void)
 	PR_RunError ("unimplemented builtin");
 }
 
+// QuadEXQ: the 2021 re-release's builtins (its progs name them "#0:ex_..."; PR_LoadProgs points them here)
+static void PF_finalefinished (void)	// float() -- the end text has been typed out: say yes
+{
+	G_FLOAT(OFS_RETURN) = 1;
+}
+
+static void PF_localsound (void)		// void(entity client, string sample) -- a sound for one player only
+{
+	int entnum = G_EDICTNUM(OFS_PARM0);
+	const char *sample = G_STRING(OFS_PARM1);
+	client_t *client;
+
+	if (entnum < 1 || entnum > svs.maxclients_internal)
+		return;
+	client = &svs.clients[entnum - 1];
+	if (!client->active)
+		return;
+	MSG_WriteByte (&client->message, svc_stufftext);
+	MSG_WriteString (&client->message, va("play %s\n", sample));
+}
+
+static void PF_qx_ex_zero (void)		// ex_CheckPlayerEXFlags (no flags), ex_walkpathtogoal (no path: the progs uses movetogoal)
+{
+	G_FLOAT(OFS_RETURN) = 0;
+}
+
 
 static builtin_t pr_builtin[] =
 {
@@ -1945,7 +2148,12 @@ PF_precache_model,
 PF_precache_sound,		// precache_sound2 is different only for qcc
 PF_precache_file,
 
-PF_setspawnparms
+PF_setspawnparms,
+
+// QuadEXQ: the 2021 re-release's
+PF_finalefinished,	// float() finaleFinished = #79
+PF_localsound,		// void(entity client, string sample) localsound = #80
+PF_qx_ex_zero,		// #81 (no number of its own): ex_CheckPlayerEXFlags, ex_walkpathtogoal
 };
 
 builtin_t *pr_builtins = pr_builtin;

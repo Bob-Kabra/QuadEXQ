@@ -365,7 +365,9 @@ void SV_SendServerinfo (client_t *client)
 		MSG_WriteByte (&client->message, GAME_DEATHMATCH);
 	else MSG_WriteByte (&client->message, GAME_COOP);
 
-	c_strlcpy (message, PR_GetString(sv.edicts->v.message));
+	{	const char *QX_Loc (const char *s);	// pr_cmds.c (QuadEXQ: the re-release's "$key" level names)
+		c_strlcpy (message, QX_Loc (PR_GetString(sv.edicts->v.message)));
+	}
 
 	MSG_WriteString (&client->message, message);
 
