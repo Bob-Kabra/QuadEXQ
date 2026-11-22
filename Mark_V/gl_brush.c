@@ -824,6 +824,21 @@ void R_RenderDynamicLightmaps (msurface_t *fa)
 	{
 		if (d_lightstylevalue[fa->styles[maps]] != fa->cached_light[maps])
 		{
+			// QuadEXQ: only a light style changed (a flicker): redo at most
+			// qx_lightmap_budget surfaces a frame, the rest a frame or two later
+			// (their cached_light stays old, so they come back here).  A big map
+			// full of flickering lights otherwise redoes them all in one frame.
+			if (qx_lightmap_budget.value > 0 && fa->dlightframe != cl.r_framecount && !fa->cached_dlight)
+			{
+				static int budget_frame = -1, budget_used;
+				if (budget_frame != cl.r_framecount) {
+					budget_frame = cl.r_framecount;
+					budget_used = 0;
+				}
+				if (budget_used >= qx_lightmap_budget.value)
+					return;
+				budget_used ++;
+			}
 			goto dynamic;
 		}
 	}
