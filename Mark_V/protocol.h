@@ -210,6 +210,7 @@ typedef enum { ENUM_FORCE_INT_GCC_ (PROTOCOL)
 #define svc_spawnbaseline2		42  // support for large modelindex, large framenum, alpha, using flags
 #define svc_spawnstatic2		43	// support for large modelindex, large framenum, alpha, using flags
 #define	svc_spawnstaticsound2	44	// [coord3] [short] samp [byte] vol [byte] aten
+#define	svc_achievement			52	// QuadEXQ: the 2021 re-release's: [string] achievement id (read and shown in the console)
 //johnfitz
 
 //

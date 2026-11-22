@@ -87,6 +87,9 @@ const char *svc_strings[] =
 	"", // 48
 	"", // 49
 //johnfitz
+	"", // 50
+	"", // 51
+	"svc_achievement", // 52	QuadEXQ: the 2021 re-release's [string] achievement id
 };
 
 cbool warn_about_nehahra_protocol; //johnfitz
@@ -1775,6 +1778,10 @@ void CL_ParseServerMessage (cbool *found_server_command)
 
 		case svc_nop:
 //			Con_PrintLinef ("svc_nop");
+			break;
+
+		case svc_achievement:	// QuadEXQ: re-release progs (Dimension of the Machine, Dawn of the Machine ..) send these
+			Con_DPrintLinef ("Achievement: %s", MSG_ReadString ());
 			break;
 
 		case svc_time:
