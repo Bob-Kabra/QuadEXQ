@@ -225,6 +225,46 @@ void MediaPlayer_Command_Line_Disabled (void)
 }
 
 
+// QuadEXQ: a track that's only inside a pak (Arcane Dimensions keeps its
+// music in pak0.pak): DirectShow plays files, so copy it out once to the
+// temp folder (QX_music_<game>_<name>) and play that copy.
+static char *QX_Music_FromPak (const char *relname)
+{
+	static char cached[MAX_OSPATH];
+	char tmpdir[MAX_PATH];
+	const char *base = strrchr (relname, '/');
+	byte *buf;
+	int len;
+	FILE *f;
+
+	if (!GetTempPathA (sizeof(tmpdir), tmpdir))
+		return NULL;
+	if (!(buf = COM_LoadMallocFile (relname)))	// the paks too
+		return NULL;
+	len = com_filesize;
+	c_snprintf3 (cached, "%sQX_music_%s_%s", tmpdir, gamedir_shortname (), base ? base + 1 : relname);
+
+	if ((f = fopen (cached, "rb"))) {	// copied before? keep it if it's the same size
+		long have;
+		fseek (f, 0, SEEK_END);
+		have = ftell (f);
+		fclose (f);
+		if (have == len) {
+			free (buf);
+			return cached;
+		}
+	}
+	if (!(f = fopen (cached, "wb"))) {
+		free (buf);
+		return NULL;
+	}
+	fwrite (buf, 1, len, f);
+	fclose (f);
+	free (buf);
+	Con_VerbosePrintLinef ("Track %s copied out of its pak to %s", relname, cached);
+	return cached;
+}
+
 cbool MediaPlayer_Play (int tracknum, cbool looping)
 {
 	char track_file[MAX_QPATH_64];
@@ -275,6 +315,8 @@ cbool MediaPlayer_Play (int tracknum, cbool looping)
 
 	// Build absolute file name
 	absolute_filename = COM_FindFile_NoPak (track_file);
+	if (!absolute_filename)
+		absolute_filename = QX_Music_FromPak (track_file);	// QuadEXQ
 
 	if (!absolute_filename)
 	{
