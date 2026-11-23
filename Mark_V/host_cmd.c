@@ -969,6 +969,9 @@ Host_Changelevel_f
 Goes to a new map, taking all clients along
 ==================
 */
+static cbool QX_Autosave_Is_For (const char *mapname, int *slot_out);	// QuadEXQ: below
+const char *QX_Checkpoint_Name (void);
+
 void Host_Changelevel_f (lparse_t *line)
 {
 	char	newlevel[MAX_QPATH_64];
@@ -983,6 +986,22 @@ void Host_Changelevel_f (lparse_t *line)
 	{
 		Con_PrintLinef ("Only the server may changelevel");
 		return;
+	}
+
+	// QuadEXQ: as Host_Restart_f -- a changelevel to this same map while the
+	// single player is dead is the progs' respawn (the 2021 re-release's,
+	// Dawn of the Machine's .. do it this way, not with "restart"): back to
+	// this map's checkpoint instead, if there is one.
+	{
+		int slot;
+		if (qx_checkpoints.value && svs.maxclients_internal == 1 && svs.clients[0].active
+			&& svs.clients[0].edict->v.health <= 0 && !strcasecmp (line->args[1], sv.name)
+			&& QX_Autosave_Is_For (sv.name, &slot)) {
+			Con_PrintLinef ("Back to the last checkpoint (%s)", QX_Checkpoint_Name ());
+			SCR_BeginLoadingPlaque ();
+			Cbuf_AddTextLinef ("load %s", QX_Checkpoint_Name ());
+			return;
+		}
 	}
 
 	//johnfitz -- check for client having map before anything else
@@ -1018,9 +1037,6 @@ Host_Restart_f
 Restarts the current server for a dead player
 ==================
 */
-static cbool QX_Autosave_Is_For (const char *mapname, int *slot_out);
-const char *QX_Checkpoint_Name (void);
-
 void Host_Restart_f (lparse_t *unnused)
 {
 	char	mapname[MAX_QPATH_64];
