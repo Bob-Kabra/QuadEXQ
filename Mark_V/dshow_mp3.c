@@ -287,6 +287,9 @@ static char *QX_Music_FromPak (const char *relname)
 // and play that.  A long track takes ~10 seconds to decode, so it's done in
 // the background: the game goes on, and the track starts when it's ready
 // (MediaPlayer_QX_Poll).  Only the first time; after that the .wav is there.
+#ifndef INVALID_FILE_ATTRIBUTES
+#define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
+#endif
 static char qx_ogg_pending[] = "";		// QX_Music_FromOgg: "decoding, wait"
 static volatile LONG qx_dec_state;		// 0 idle, 1 decoding, 2 done, 3 failed
 static HANDLE qx_dec_thread;
@@ -358,7 +361,9 @@ static char *QX_Music_FromOgg (const char *relname)
 	char *dot;
 	byte *buf;
 	int len;
-	FILE *f;
+	FILE *f = NULL;
+	DWORD attr;
+	int attr_err;
 
 	c_strlcpy (oggname, relname);
 	if ((dot = strrchr (oggname, '.')) && !strchr (dot, '/'))
@@ -370,38 +375,41 @@ static char *QX_Music_FromOgg (const char *relname)
 
 	if (!GetTempPathA (sizeof(tmpdir), tmpdir))
 		return NULL;
-	if (!(buf = COM_LoadMallocFile (oggname)))	// a folder or a pak
+	// Only the size is wanted here (it's in the .wav's name): the whole .ogg
+	// is read only when it gets decoded
+	if (COM_FOpenFile (oggname, &f) < 0 || !f)	// a folder or a pak
 		return NULL;
+	FS_fclose (f);	// COM_FOpenFile registered it
 	len = com_filesize;
 	c_snprintf4 (cached, "%sQX_music_%s_%s_%d.wav", tmpdir, gamedir_shortname (), basename, len);
 
-	if ((f = fopen (cached, "rb"))) {	// decoded before
-		fclose (f);
-		free (buf);
+	// Decoded before?  Asked without opening it: DirectShow may still have it open
+	if ((attr = GetFileAttributesA (cached)) != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY))
 		return cached;
-	}
-	if (!strcmp (cached, qx_dec_failed)) {	// it didn't decode before
-		free (buf);
+	attr_err = (int)GetLastError ();
+	if (!strcmp (cached, qx_dec_failed))	// it didn't decode before
 		return NULL;
-	}
-	if (qx_dec_state != 0) {			// busy with a track: this one comes after it
-		free (buf);
+	if (qx_dec_state != 0)				// busy with a track: this one comes after it
 		return qx_ogg_pending;
-	}
+	if (!(buf = COM_LoadMallocFile (oggname)))
+		return NULL;
 
 	qx_dec.buf = buf;
 	qx_dec.len = len;
 	c_strlcpy (qx_dec.oggname, oggname);
 	c_strlcpy (qx_dec.cached, cached);
 	c_snprintf1 (qx_dec.partname, "%s.part", cached);	// renamed when it's all there
+	// said before the thread starts, so a log shows it even if the thread goes wrong
+	Con_VerbosePrintLinef ("Decoding %s in the background (no %s: error %d)", oggname, cached, attr_err);
 	qx_dec_state = 1;
-	if (!(qx_dec_thread = CreateThread (NULL, 0, QX_Ogg_Decode_Thread, NULL, 0, NULL))) {
+	// its stack committed up front (1 MB), not grown a page at a time
+	if (!(qx_dec_thread = CreateThread (NULL, 1024 * 1024, QX_Ogg_Decode_Thread, NULL, 0, NULL))) {
 		qx_dec_state = 0;
 		qx_dec.buf = NULL;
 		free (buf);
+		Con_PrintLinef ("Couldn't start decoding %s", oggname);
 		return NULL;
 	}
-	Con_VerbosePrintLinef ("Decoding %s in the background", oggname);
 	return qx_ogg_pending;
 }
 
