@@ -1429,7 +1429,8 @@ void SV_Autosave_Think (void)
 	if (sv_autosave_slot.value >= 1 && sv_autosave_slot.value <= 20)
 		Host_Savegame (va("s%d", (int)sv_autosave_slot.value - 1), false);
 
-	Con_DPrintLinef ("Autosaved %d:%02d", Time_Minutes((int)sv.time), Time_Seconds((int)sv.time) );
+	// QuadEXQ: always shown (top-left notify) -- the player likes to know it saved
+	Con_PrintLinef ("Autosaved %d:%02d", Time_Minutes((int)sv.time), Time_Seconds((int)sv.time) );
 
 	// Set the next auto save time
 	sv.auto_save_time = sv.time + AUTO_SAVE_INTERVAL;
