@@ -2353,6 +2353,8 @@ void FS_List_Open_f (lparse_t *unused)
 
 
 
+static cbool file_mgr_warning;	// QuadEXQ: the "over 25 files" warning is being printed
+
 static void FS_RegisterOpen (const char *filename, FILE* f)
 {
 	int i;
@@ -2367,10 +2369,15 @@ static void FS_RegisterOpen (const char *filename, FILE* f)
 
 //			Con_DPrintLinef ("FS_fopen: %p -> %s", cur->addy, cur->filename);
 
-			if (file_mgr.num_open > 25)
+			// QuadEXQ: not again from inside the warning -- with -condebug each
+			// line printed opens the log file, which came back here and warned
+			// again, forever (a stack overflow crash)
+			if (file_mgr.num_open > 25 && !file_mgr_warning)
 			{
+				file_mgr_warning = true;
 				Con_WarningLinef ("Over 25 files open!");
 				FS_List_Open_f (NULL);
+				file_mgr_warning = false;
 			}
 
 			return;
