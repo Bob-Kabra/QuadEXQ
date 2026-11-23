@@ -440,7 +440,7 @@ static int QX_Music_Rank (const char *relname)
 
 	if (COM_FOpenFile (relname, &f) < 0 || !f)
 		return -1;
-	fclose (f);
+	FS_fclose (f);	// COM_FOpenFile registered it
 	rank = COM_SearchPathRank ();
 	return rank < 0 ? 0 : rank;
 }
