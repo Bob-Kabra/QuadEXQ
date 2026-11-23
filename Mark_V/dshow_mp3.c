@@ -99,17 +99,24 @@ char last_track [MAX_OSPATH];
 void MediaPlayer_ChangeVolume (float newvolume);
 void MediaPlayer_Stop (void);
 
+// QuadEXQ: give up after a few seconds. It used to wait forever, and when
+// DirectShow never got there (the sound device busy, a track it chokes on)
+// the game froze on the loading screen.
 void WaitForFilterState (OAFilterState DesiredState)
 {
 	OAFilterState MP3FS;
 	HRESULT hr;
+	DWORD start = GetTickCount ();
 
 	while (1)
 	{
         hr = IMediaControl_GetState(pControl, 1, &MP3FS);
 
-		if (FAILED (hr)) continue;
-		if (MP3FS == DesiredState) return;
+		if (!FAILED (hr) && MP3FS == DesiredState) return;
+		if (GetTickCount () - start > 3000) {
+			Con_PrintLinef ("Music: DirectShow didn't respond, going on without waiting");
+			return;
+		}
 	}
 }
 
