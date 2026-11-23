@@ -95,6 +95,8 @@ cbool Paused;
 
 float Volume_level;
 char last_track [MAX_OSPATH];
+static int qx_want_track = -1;		// QuadEXQ: the track to start when its .ogg is decoded
+static cbool qx_want_looping;
 
 void MediaPlayer_ChangeVolume (float newvolume);
 void MediaPlayer_Stop (void);
@@ -145,6 +147,8 @@ cbool sMediaPlayer_Init (void)
 
 void MediaPlayer_Shutdown (void)
 {
+	qx_want_track = -1;		// QuadEXQ: a track waiting for its decode isn't wanted any more
+
 	if (!Initialized) return;
 
 //	Con_DPrintLinef ("********************* SHUTDOWN MP3 TRACK *********************");
@@ -280,18 +284,80 @@ static char *QX_Music_FromPak (const char *relname)
 
 // QuadEXQ: no .mp3 for the track, but an .ogg (in a folder or a pak):
 // decode it once to a .wav in the temp folder (QX_music_<game>_<name>_<size>.wav)
-// and play that.  Decoding a whole track takes a moment, only the first time.
+// and play that.  A long track takes ~10 seconds to decode, so it's done in
+// the background: the game goes on, and the track starts when it's ready
+// (MediaPlayer_QX_Poll).  Only the first time; after that the .wav is there.
+static char qx_ogg_pending[] = "";		// QX_Music_FromOgg: "decoding, wait"
+static volatile LONG qx_dec_state;		// 0 idle, 1 decoding, 2 done, 3 failed
+static HANDLE qx_dec_thread;
+static struct {
+	byte	*buf;
+	int		len;
+	char	oggname[MAX_QPATH_64];
+	char	cached[MAX_OSPATH];
+	char	partname[MAX_OSPATH];
+} qx_dec;
+static char qx_dec_failed[MAX_OSPATH];	// don't try this one again (play the .mp3 if any)
+
+// The decode thread: no engine calls in here (not thread safe), only the C library
+static DWORD WINAPI QX_Ogg_Decode_Thread (LPVOID unused)
+{
+	static short chunk[4096 * 2];
+	stb_vorbis *v;
+	stb_vorbis_info info;
+	cbool ok = false;
+	int err;
+	FILE *f;
+
+	if ((v = stb_vorbis_open_memory (qx_dec.buf, qx_dec.len, &err, NULL))) {
+		info = stb_vorbis_get_info (v);
+		// mono or stereo (the chunk is sized for 2), and the .part file opens
+		if (info.channels >= 1 && info.channels <= 2 && (f = fopen (qx_dec.partname, "wb"))) {
+			#define W32(x) (u32 = (x), fwrite (&u32, 4, 1, f))
+			#define W16(x) (u16 = (x), fwrite (&u16, 2, 1, f))
+			int channels = info.channels, rate = (int)info.sample_rate, n;
+			unsigned int datasize = 0, u32;
+			unsigned short u16;
+
+			fwrite ("RIFF", 1, 4, f);	W32 (36);	fwrite ("WAVE", 1, 4, f);	// sizes filled in below
+			fwrite ("fmt ", 1, 4, f);	W32 (16);	W16 (1);	W16 (channels);
+			W32 (rate);	W32 (rate * channels * 2);	W16 (channels * 2);	W16 (16);
+			fwrite ("data", 1, 4, f);	W32 (0);
+
+			while ((n = stb_vorbis_get_samples_short_interleaved (v, channels, chunk, 4096 * channels)) > 0) {
+				fwrite (chunk, 2, n * channels, f);
+				datasize += n * channels * 2;
+			}
+			fseek (f, 4, SEEK_SET);		W32 (36 + datasize);
+			fseek (f, 40, SEEK_SET);	W32 (datasize);
+			ok = datasize > 0 && !ferror (f);
+			fclose (f);
+			#undef W32
+			#undef W16
+		}
+		stb_vorbis_close (v);
+	}
+	free (qx_dec.buf);
+	qx_dec.buf = NULL;
+
+	if (ok) {
+		remove (qx_dec.cached);
+		ok = rename (qx_dec.partname, qx_dec.cached) == 0;
+	}
+	if (!ok)
+		remove (qx_dec.partname);
+	InterlockedExchange (&qx_dec_state, ok ? 2 : 3);
+	return 0;
+}
+
 static char *QX_Music_FromOgg (const char *relname)
 {
 	static char cached[MAX_OSPATH];
-	char oggname[MAX_QPATH_64], basename[MAX_QPATH_64], tmpdir[MAX_PATH], partname[MAX_OSPATH];
+	char oggname[MAX_QPATH_64], basename[MAX_QPATH_64], tmpdir[MAX_PATH];
 	const char *slash = strrchr (relname, '/');
 	char *dot;
 	byte *buf;
-	int len, channels, rate, err;
-	stb_vorbis *v;
-	stb_vorbis_info info;
-	cbool ok;
+	int len;
 	FILE *f;
 
 	c_strlcpy (oggname, relname);
@@ -314,66 +380,55 @@ static char *QX_Music_FromOgg (const char *relname)
 		free (buf);
 		return cached;
 	}
-
-	// Decoded a piece at a time straight into the file: decoding a whole long
-	// track into memory at once could fail (a 32-bit game has little room left).
-	if (!(v = stb_vorbis_open_memory (buf, len, &err, NULL))) {
-		free (buf);
-		Con_PrintLinef ("Couldn't decode %s (stb_vorbis error %d)", oggname, err);
-		return NULL;
-	}
-	info = stb_vorbis_get_info (v);
-	channels = info.channels;
-	rate = (int)info.sample_rate;
-	if (channels < 1 || channels > 2) {	// DirectShow and the chunk below: mono or stereo
-		stb_vorbis_close (v);
-		free (buf);
-		Con_PrintLinef ("Couldn't decode %s (%d channels)", oggname, channels);
-		return NULL;
-	}
-
-	c_snprintf1 (partname, "%s.part", cached);	// renamed when it's all there
-	if (!(f = fopen (partname, "wb"))) {
-		stb_vorbis_close (v);
+	if (!strcmp (cached, qx_dec_failed)) {	// it didn't decode before
 		free (buf);
 		return NULL;
 	}
-	{
-		#define W32(x) (u32 = (x), fwrite (&u32, 4, 1, f))
-		#define W16(x) (u16 = (x), fwrite (&u16, 2, 1, f))
-		static short chunk[4096 * 2];
-		unsigned int datasize = 0, u32;
-		unsigned short u16;
-		int n;
-
-		fwrite ("RIFF", 1, 4, f);	W32 (36);	fwrite ("WAVE", 1, 4, f);	// sizes filled in below
-		fwrite ("fmt ", 1, 4, f);	W32 (16);	W16 (1);	W16 (channels);
-		W32 (rate);	W32 (rate * channels * 2);	W16 (channels * 2);	W16 (16);
-		fwrite ("data", 1, 4, f);	W32 (0);
-
-		while ((n = stb_vorbis_get_samples_short_interleaved (v, channels, chunk, 4096 * channels)) > 0) {
-			fwrite (chunk, 2, n * channels, f);
-			datasize += n * channels * 2;
-		}
-		fseek (f, 4, SEEK_SET);		W32 (36 + datasize);
-		fseek (f, 40, SEEK_SET);	W32 (datasize);
-		ok = datasize > 0 && !ferror (f);
-		#undef W32
-		#undef W16
+	if (qx_dec_state != 0) {			// busy with a track: this one comes after it
+		free (buf);
+		return qx_ogg_pending;
 	}
-	fclose (f);
-	stb_vorbis_close (v);
-	free (buf);
 
-	if (!ok) {
-		remove (partname);
-		Con_PrintLinef ("Couldn't decode %s", oggname);
+	qx_dec.buf = buf;
+	qx_dec.len = len;
+	c_strlcpy (qx_dec.oggname, oggname);
+	c_strlcpy (qx_dec.cached, cached);
+	c_snprintf1 (qx_dec.partname, "%s.part", cached);	// renamed when it's all there
+	qx_dec_state = 1;
+	if (!(qx_dec_thread = CreateThread (NULL, 0, QX_Ogg_Decode_Thread, NULL, 0, NULL))) {
+		qx_dec_state = 0;
+		qx_dec.buf = NULL;
+		free (buf);
 		return NULL;
 	}
-	remove (cached);
-	rename (partname, cached);
-	Con_VerbosePrintLinef ("Track %s decoded to %s", oggname, cached);
-	return cached;
+	Con_VerbosePrintLinef ("Decoding %s in the background", oggname);
+	return qx_ogg_pending;
+}
+
+// Every frame (CDAudio_Update): when a background decode is done, start the
+// track that was waiting for it, if it's still the one wanted.
+void MediaPlayer_QX_Poll (void)
+{
+	LONG state = qx_dec_state;
+	int track;
+
+	if (state != 2 && state != 3)
+		return;
+
+	WaitForSingleObject (qx_dec_thread, INFINITE);	// it has finished: returns at once
+	CloseHandle (qx_dec_thread);
+	qx_dec_thread = NULL;
+	if (state == 3) {
+		Con_PrintLinef ("Couldn't decode %s", qx_dec.oggname);
+		c_strlcpy (qx_dec_failed, qx_dec.cached);
+	}
+	else Con_VerbosePrintLinef ("Track %s decoded to %s", qx_dec.oggname, qx_dec.cached);
+	qx_dec_state = 0;
+
+	if ((track = qx_want_track) >= 0) {
+		qx_want_track = -1;
+		CDAudio_Play ((byte)track, qx_want_looping);	// the .wav now, or the .mp3 if it failed
+	}
 }
 
 // QuadEXQ: where in the search path a file is (0 = the mod, higher = towards
@@ -463,6 +518,13 @@ cbool MediaPlayer_Play (int tracknum, cbool looping)
 		absolute_filename = QX_Music_FromPak (track_file);	// QuadEXQ
 	if (!absolute_filename)
 		absolute_filename = QX_Music_FromOgg (track_file);	// QuadEXQ
+
+	if (absolute_filename == qx_ogg_pending)	// QuadEXQ: being decoded, starts when it's done
+	{
+		qx_want_track = tracknum;
+		qx_want_looping = looping;
+		return true;
+	}
 
 	if (!absolute_filename)
 	{
@@ -571,6 +633,8 @@ void MediaPlayer_Force_Off (void)
 
 void MediaPlayer_ChangeVolume (float newvolume)
 {
+	Volume_level = newvolume;	// QuadEXQ: kept even when nothing plays yet (a track waiting for its decode uses it)
+
 	if (!Initialized) return; // don't try anything if we couldn't start COM
 	if (!Playing) return; // don' t try to pause if we're not even playing!!!
 

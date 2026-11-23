@@ -43,6 +43,7 @@ void MediaPlayer_Command_Line_Disabled (void);
 
 cbool MediaPlayer_Play (int tracknum, cbool looping);
 cbool MediaPlayer_Force_On (void);
+void MediaPlayer_QX_Poll (void);	// QuadEXQ
 
 //cmd void Set_Music_f (void);
 

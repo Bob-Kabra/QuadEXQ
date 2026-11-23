@@ -543,6 +543,8 @@ void CDAudio_Update(void)
 //		return;
 
 #ifdef SUPPORTS_MP3_MUSIC // Baker change
+	MediaPlayer_QX_Poll ();	// QuadEXQ: a track whose .ogg finished decoding starts now
+
 	if (using_directshow)
 	{
 		extern cbool muted;
