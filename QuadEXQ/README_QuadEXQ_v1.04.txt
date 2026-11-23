@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v1.03
+  QuadEXQ  v1.04
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -515,8 +515,10 @@ fork), which adds the HUD, music switching, checkpoints and more.
     picture loses pixels and colours and the crosshair turns into the old
     "+". At the slowest (Quad) it is 640x480 in the Quake palette with
     point-sampled textures. Console and menus stay sharp.
-  - MP3 music (music\trackXX.mp3), with the boss theme switching in and
-    out.
+  - MP3 and Ogg Vorbis music (music\trackXX.mp3 / .ogg, in a folder or
+    a pak), with the boss theme switching in and out. A mod's own music
+    comes before id1's. An .ogg is turned into a .wav in your temp folder
+    the first time it plays (in the background: the game doesn't wait).
   - Checkpoints: when you die, you go back to the map's latest autosave
     instead of the start of the map. If there is no autosave yet, the map
     restarts, with at least 100 health. PlayerSkill keeps its death penalty
@@ -525,13 +527,15 @@ fork), which adds the HUD, music switching, checkpoints and more.
       - when it happens: 10 seconds into a map, every 90 seconds after
         that, right after a boss dies, and when you open the menu or quit
         (so stopping right after a map change keeps the new map)
-      - only when it is calm: 50+ health, on the ground, out of liquids,
+      - only when it is calm: 50+ health (half your max health if that is
+        under 100), on the ground, out of liquids,
         not hit for 4 seconds, no bullet time, and no enemy in sight that
         is after you. Otherwise it waits, so a checkpoint never drops you
         into a hopeless spot.
       - it is written to qx_continue.sav, which the CONTINUE menu entry
         loads -- a file of its own, so saving over a load slot can't lose
         it -- and copied to load slot 20 (s19.sav) for the Load menu
+      - "Autosaved 3:25" shows at the top left each time it saves
   - PlayerSkill saved in your config.
   - Runes work as in stock Quake: they live in your game and its saves.
     CONTINUE (or loading a save) keeps them, NEW GAME starts without them.
@@ -606,6 +610,13 @@ fork), which adds the HUD, music switching, checkpoints and more.
   qx_hitchlog 30           stutters? log every frame over 30 ms and where
                            its time went (console, quadexq_hitch.txt).
                            0 = off (default)
+  qx_worldbatch 1          draw the world's walls in batches (much faster
+                           on big maps). 0 = the old way
+  qx_modelbatch 1          draw monsters and items in one go each.
+                           0 = the old way
+  qx_lightmap_budget 256   flickering lights redo at most this many
+                           surfaces a frame, so big maps don't stutter.
+                           0 = no limit
   sv_protocol 999          network protocol (default 999, as QuakeSpasm:
                            big maps past +-4096; 666 = FitzQuake)
   crosshair 0-9            0 none, 1 Quake "+", 2 dot, 3 dot + arcs,
@@ -650,6 +661,30 @@ fork), which adds the HUD, music switching, checkpoints and more.
 ==============================================================================
  13. Version history
 ==============================================================================
+
+  v1.04
+    QuadEXQ engine:
+    - Faster on big maps (Arcane Dimensions and the like): the world and
+      the models are drawn in batches (qx_worldbatch, qx_modelbatch), and
+      flickering lights are spread over a few frames (qx_lightmap_budget).
+    - Music inside a pak plays (Arcane Dimensions has its music now).
+    - Ogg Vorbis music (.ogg), as the 2021 re-release add-ons use, and a
+      mod's own music comes before id1's. A long track is decoded in the
+      background, so a map change never waits for it.
+    - The 2021 re-release progs (Dimension of the Past / the Machine,
+      Dawn of the Machine ..): their messages show as text (from
+      localization/loc_english.txt) instead of "$qc_..", their ex_
+      functions work, and their achievements no longer drop the game.
+    - Checkpoints in the re-release add-ons: dying goes back to the
+      checkpoint there too (they restart the map in their own way), and
+      a game that starts you at 50 health still autosaves (the "calm"
+      health is half your max health when that is under 100).
+    - "Autosaved 3:25" shows at the top left each time the checkpoint is
+      saved.
+    - Fixed: the game could freeze on the loading screen when the music
+      player didn't answer (it now gives up after 3 seconds).
+    - Fixed: with -condebug, a crash once more than 25 files were open
+      (Mark V's warning about it called itself forever).
 
   v1.03
     QuadEXQ engine:
