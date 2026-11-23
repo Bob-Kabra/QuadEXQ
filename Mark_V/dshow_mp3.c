@@ -281,8 +281,10 @@ static char *QX_Music_FromOgg (const char *relname)
 	const char *slash = strrchr (relname, '/');
 	char *dot;
 	byte *buf;
-	short *pcm = NULL;
-	int len, channels, rate, samples;
+	int len, channels, rate, err;
+	stb_vorbis *v;
+	stb_vorbis_info info;
+	cbool ok;
 	FILE *f;
 
 	c_strlcpy (oggname, relname);
@@ -306,35 +308,65 @@ static char *QX_Music_FromOgg (const char *relname)
 		return cached;
 	}
 
-	samples = stb_vorbis_decode_memory (buf, len, &channels, &rate, &pcm);
-	free (buf);
-	if (samples <= 0 || !pcm) {
-		Con_PrintLinef ("Couldn't decode %s", oggname);
-		if (pcm) free (pcm);
+	// Decoded a piece at a time straight into the file: decoding a whole long
+	// track into memory at once could fail (a 32-bit game has little room left).
+	if (!(v = stb_vorbis_open_memory (buf, len, &err, NULL))) {
+		free (buf);
+		Con_PrintLinef ("Couldn't decode %s (stb_vorbis error %d)", oggname, err);
+		return NULL;
+	}
+	info = stb_vorbis_get_info (v);
+	channels = info.channels;
+	rate = (int)info.sample_rate;
+	if (channels < 1 || channels > 2) {	// DirectShow and the chunk below: mono or stereo
+		stb_vorbis_close (v);
+		free (buf);
+		Con_PrintLinef ("Couldn't decode %s (%d channels)", oggname, channels);
 		return NULL;
 	}
 
 	c_snprintf1 (partname, "%s.part", cached);	// renamed when it's all there
-	if ((f = fopen (partname, "wb"))) {
-		unsigned int datasize = (unsigned int) samples * channels * 2;
-		unsigned int u32;
-		unsigned short u16;
+	if (!(f = fopen (partname, "wb"))) {
+		stb_vorbis_close (v);
+		free (buf);
+		return NULL;
+	}
+	{
 		#define W32(x) (u32 = (x), fwrite (&u32, 4, 1, f))
 		#define W16(x) (u16 = (x), fwrite (&u16, 2, 1, f))
-		fwrite ("RIFF", 1, 4, f);	W32 (36 + datasize);	fwrite ("WAVE", 1, 4, f);
+		static short chunk[4096 * 2];
+		unsigned int datasize = 0, u32;
+		unsigned short u16;
+		int n;
+
+		fwrite ("RIFF", 1, 4, f);	W32 (36);	fwrite ("WAVE", 1, 4, f);	// sizes filled in below
 		fwrite ("fmt ", 1, 4, f);	W32 (16);	W16 (1);	W16 (channels);
 		W32 (rate);	W32 (rate * channels * 2);	W16 (channels * 2);	W16 (16);
-		fwrite ("data", 1, 4, f);	W32 (datasize);
-		fwrite (pcm, 1, datasize, f);
+		fwrite ("data", 1, 4, f);	W32 (0);
+
+		while ((n = stb_vorbis_get_samples_short_interleaved (v, channels, chunk, 4096 * channels)) > 0) {
+			fwrite (chunk, 2, n * channels, f);
+			datasize += n * channels * 2;
+		}
+		fseek (f, 4, SEEK_SET);		W32 (36 + datasize);
+		fseek (f, 40, SEEK_SET);	W32 (datasize);
+		ok = datasize > 0 && !ferror (f);
 		#undef W32
 		#undef W16
-		fclose (f);
-		remove (cached);
-		rename (partname, cached);
 	}
-	free (pcm);
+	fclose (f);
+	stb_vorbis_close (v);
+	free (buf);
+
+	if (!ok) {
+		remove (partname);
+		Con_PrintLinef ("Couldn't decode %s", oggname);
+		return NULL;
+	}
+	remove (cached);
+	rename (partname, cached);
 	Con_VerbosePrintLinef ("Track %s decoded to %s", oggname, cached);
-	return (f ? cached : NULL);
+	return cached;
 }
 
 // QuadEXQ: where in the search path a file is (0 = the mod, higher = towards
