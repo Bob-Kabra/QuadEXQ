@@ -550,4 +550,6 @@ void CL_UpdateTEnts (void)
 
 		} // End of while
 	}
+
+	QX_Ghost_Frame (CL_NewTempEntity);	// QuadEXQ: the map's best run, see-through, along with you
 }

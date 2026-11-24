@@ -793,6 +793,11 @@ see it slow, as it was played. A MAP BEST saves the replay by itself as
 QX_<game>_<map>_0000.dem (and qx_best_<map>.dem, the map's best), and
 qx_replay_save keeps one any time it isn't being recorded.
 
+The ghost: alongside the recording, where the player is goes into a small
+track of its own (qx_replay.ghost, 20 a second); a MAP BEST keeps it as
+qx_best_<map>.ghost, and next time on that map the best run plays along as
+a see-through player, by the map's clock (qx_ghost 0 hides it).
+
 ==============================================================================
 */
 
@@ -812,6 +817,124 @@ static cbool	qx_replay_mapbest;		// the map report says MAP BEST
 static cbool	qx_replay_best_saved;	// .. and it has been kept
 static cbool	qx_pace_set;			// QX_Replay_Frame set cls.demospeed for bullet time
 extern cbool	keydown[];
+
+// The ghost track
+typedef struct
+{
+	float	time;		// cl.time
+	float	origin[3];
+	float	angles[3];
+	int		frame;
+} qx_ghost_t;
+
+#define QX_GHOST_MAX		(20 * 60 * 30)	// 30 minutes at 20 a second
+#define QX_GHOST_STEP		0.05
+static qx_ghost_t	*qx_ghost_rec;			// this try, as it goes
+static int			qx_ghost_rec_count;
+static qx_ghost_t	*qx_ghost_best;			// the map's best, playing along
+static int			qx_ghost_best_count, qx_ghost_cursor;
+
+static void QX_Ghost_Write (const char *name)
+{
+	char url[MAX_OSPATH];
+	FILE *f;
+
+	FS_FullPath_From_QPath (url, name);
+	if (!qx_ghost_rec || !qx_ghost_rec_count || !(f = fopen (url, "wb")))
+		return;
+	fwrite ("QXG1", 1, 4, f);
+	fwrite (&qx_ghost_rec_count, sizeof(int), 1, f);
+	fwrite (qx_ghost_rec, sizeof(qx_ghost_t), qx_ghost_rec_count, f);
+	fclose (f);
+}
+
+// Signon: this map's best run, if there is one
+static void QX_Ghost_Load (const char *map)
+{
+	char name[MAX_QPATH_64], url[MAX_OSPATH], magic[4];
+	int count = 0;
+	FILE *f;
+
+	qx_ghost_best_count = qx_ghost_cursor = 0;
+	if (!qx_ghost.value || !map[0])
+		return;
+	c_snprintf1 (name, "qx_best_%s.ghost", map);
+	FS_FullPath_From_QPath (url, name);
+	if (!(f = fopen (url, "rb")))
+		return;
+	if (fread (magic, 1, 4, f) == 4 && !memcmp (magic, "QXG1", 4)
+		&& fread (&count, sizeof(int), 1, f) == 1 && count > 0 && count <= QX_GHOST_MAX)
+	{
+		if (!qx_ghost_best)
+			qx_ghost_best = (qx_ghost_t *) malloc (QX_GHOST_MAX * sizeof(qx_ghost_t));
+		if (qx_ghost_best)
+			qx_ghost_best_count = (int)fread (qx_ghost_best, sizeof(qx_ghost_t), count, f);
+	}
+	fclose (f);
+}
+
+static float QX_LerpAngle (float a, float b, float f)
+{
+	float d = b - a;
+	while (d > 180) d -= 360;
+	while (d < -180) d += 360;
+	return a + d * f;
+}
+
+// CL_UpdateTEnts, every frame: keep the track, and show the best run
+void QX_Ghost_Frame (entity_t *(*new_ent)(void))
+{
+	entity_t	*me, *ent;
+	qx_ghost_t	*a, *b;
+	float		f;
+	int			i;
+
+	if (cls.demoplayback || cls.state != ca_connected || cls.signon != SIGNONS || cl.intermission)
+		return;
+	me = &cl_entities[cl.viewentity_player];
+
+	// the track of this try
+	if (qx_replay_recording && me->model)
+	{
+		if (!qx_ghost_rec)
+			qx_ghost_rec = (qx_ghost_t *) malloc (QX_GHOST_MAX * sizeof(qx_ghost_t));
+		if (qx_ghost_rec && qx_ghost_rec_count < QX_GHOST_MAX
+			&& (!qx_ghost_rec_count || cl.time >= qx_ghost_rec[qx_ghost_rec_count - 1].time + QX_GHOST_STEP))
+		{
+			qx_ghost_t *g = &qx_ghost_rec[qx_ghost_rec_count++];
+			g->time = cl.time;
+			VectorCopy (me->origin, g->origin);
+			VectorCopy (me->angles, g->angles);
+			g->frame = me->frame;
+		}
+	}
+
+	// the best run, along with you
+	if (!qx_ghost.value || qx_ghost_best_count < 2 || !me->model)
+		return;
+	if (cl.time < qx_ghost_best[0].time || cl.time > qx_ghost_best[qx_ghost_best_count - 1].time)
+		return;
+	if (qx_ghost_cursor >= qx_ghost_best_count - 1 || qx_ghost_best[qx_ghost_cursor].time > cl.time)
+		qx_ghost_cursor = 0;	// time went back (a load): from the start
+	while (qx_ghost_cursor < qx_ghost_best_count - 2 && qx_ghost_best[qx_ghost_cursor + 1].time <= cl.time)
+		qx_ghost_cursor++;
+	a = &qx_ghost_best[qx_ghost_cursor];
+	b = a + 1;
+	f = b->time > a->time ? (cl.time - a->time) / (b->time - a->time) : 0;
+	f = CLAMP (0, f, 1);
+
+	if (!(ent = new_ent ()))
+		return;
+	for (i = 0; i < 3; i++)
+	{
+		ent->origin[i] = a->origin[i] + (b->origin[i] - a->origin[i]) * f;
+		ent->angles[i] = QX_LerpAngle (a->angles[i], b->angles[i], f);
+	}
+	ent->model = me->model;
+	ent->frame = f < 0.5 ? a->frame : b->frame;
+	ent->alpha = ENTALPHA_ENCODE (0.35f);
+	ent->lerpflags = LERP_RESETANIM | LERP_RESETMOVE;
+}
 
 // Keeps a copy of qx_replay.dem: QX_<game>_<map>_0000.dem (the first free
 // number), or the given name
@@ -865,6 +988,8 @@ static void QX_Replay_SaveBest (void)
 	{
 		c_snprintf1 (best, "qx_best_%s.dem", qx_replay_map);
 		QX_Replay_Copy (best);	// the map's best, for later
+		c_snprintf1 (best, "qx_best_%s.ghost", qx_replay_map);
+		QX_Ghost_Write (best);	// .. and its ghost
 	}
 }
 
@@ -963,6 +1088,8 @@ void QX_Replay_Signon (void)
 	qx_replay_recording = cls.demorecording;
 	c_strlcpy (qx_replay_map, cl.worldname);
 	qx_replay_mapbest = qx_replay_best_saved = false;
+	qx_ghost_rec_count = 0;			// the ghost track starts over with it
+	QX_Ghost_Load (qx_replay_map);	// and the map's best plays along
 }
 
 // svc_intermission, svc_finale, svc_cutscene
@@ -972,6 +1099,7 @@ void QX_Replay_Intermission (void)
 		return;
 	QX_Replay_StopRecording ();
 	qx_replay_ready = true;
+	QX_Ghost_Write ("qx_replay.ghost");
 	QX_Replay_SaveBest ();	// if the map report came first
 }
 
