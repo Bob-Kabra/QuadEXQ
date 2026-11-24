@@ -408,6 +408,8 @@ void QX_Replay_Intermission (void);
 void QX_Replay_Buttons (int bits);
 void QX_Replay_Frame (void);
 void QX_Replay_Draw (void);
+void QX_Replay_MapBest (void);
+void QX_Replay_Save_f (lparse_t *unused);
 //cmd void CL_Record_f (void);
 void CL_PlayDemo_f (lparse_t *line);
 //cmd void CL_PlayDemo_NextStartDemo_f (void);

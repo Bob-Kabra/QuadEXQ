@@ -126,6 +126,7 @@ CMD_DEF (Host_Init   , DEP_HOST__  , "tell"                      , Host_Tell_f		
 CMD_DEF (Host_Init   , DEP_HOST__  , "version"                   , Host_Version_f			, "Display the version information about the game."			)
 
 CMD_DEF (Host_Init   , DEP_CLIENT  , "startdemos"                , Host_Startdemos_f		, "Used to list a queue of demos which should be played back by the demos command."			)
+CMD_DEF (Host_Init   , DEP_CLIENT  , "qx_replay_save"            , QX_Replay_Save_f			, "QuadEXQ: keep the last map's replay as QX_<game>_<map>_0000.dem (at the intermission or while it plays)."			)
 CMD_DEF (Host_Init   , DEP_CLIENT  , "stopdemo"                  , Host_Stopdemo_f			, "Stop the playback of a demo."			)
 CMD_DEF (Host_Init   , DEP_NONE    , "_host_post_initialized"    , Host_Post_Initialization_f,"Internal command."            )
 CMD_DEF (Host_Init   , DEP_HOST    , "mcache"                    , Mod_Print				, "Display information about all cached models."			)

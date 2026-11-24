@@ -788,6 +788,11 @@ world's timescale x100) is played back sped up by as much as it slowed the
 world, so the whole map goes by as fast as it was really fought.
 qx_replay 0 turns it all off.
 
+Any demo (playdemo too) plays bullet time at that real pace; hold SHIFT to
+see it slow, as it was played. A MAP BEST saves the replay by itself as
+QX_<game>_<map>_0000.dem (and qx_best_<map>.dem, the map's best), and
+qx_replay_save keeps one any time it isn't being recorded.
+
 ==============================================================================
 */
 
@@ -802,6 +807,84 @@ static cbool	qx_replay_resuming;		// loading qx_replay_resume after it
 static double	qx_replay_started;
 static float	qx_replay_chase;		// chase_active before it (JUMP switches the camera in it)
 static cbool	qx_replay_jump_held;
+static char		qx_replay_map[MAX_QPATH_64];	// the map in it
+static cbool	qx_replay_mapbest;		// the map report says MAP BEST
+static cbool	qx_replay_best_saved;	// .. and it has been kept
+static cbool	qx_pace_set;			// QX_Replay_Frame set cls.demospeed for bullet time
+extern cbool	keydown[];
+
+// Keeps a copy of qx_replay.dem: QX_<game>_<map>_0000.dem (the first free
+// number), or the given name
+static cbool QX_Replay_Copy (const char *to_name)
+{
+	char from_url[MAX_OSPATH], to_url[MAX_OSPATH], name[MAX_QPATH_64];
+	int i;
+
+	FS_FullPath_From_QPath (from_url, QX_REPLAY_NAME ".dem");
+	if (!File_Exists (from_url))
+	{
+		Con_PrintLinef ("No replay to save");
+		return false;
+	}
+
+	if (to_name)
+		c_strlcpy (name, to_name);
+	else for (i = 0; ; i++)
+	{
+		if (i == 10000)
+		{
+			Con_PrintLinef ("Replay: couldn't find an unused file name");
+			return false;
+		}
+		c_snprintf3 (name, "QX_%s_%s_%04d.dem", gamedir_shortname (), qx_replay_map[0] ? qx_replay_map : "map", i);
+		FS_FullPath_From_QPath (to_url, name);
+		if (!File_Exists (to_url))
+			break;
+	}
+
+	FS_FullPath_From_QPath (to_url, name);
+	if (!File_Copy (from_url, to_url))
+	{
+		Con_PrintLinef ("Replay: couldn't write %s", name);
+		return false;
+	}
+	if (!to_name)
+		Con_PrintLinef ("Replay saved as %s", name);
+	return true;
+}
+
+// A MAP BEST, once the map's recording is complete: keep it
+static void QX_Replay_SaveBest (void)
+{
+	char best[MAX_QPATH_64];
+
+	if (!qx_replay_mapbest || !qx_replay_ready || qx_replay_best_saved)
+		return;
+	qx_replay_best_saved = true;
+	if (QX_Replay_Copy (NULL))
+	{
+		c_snprintf1 (best, "qx_best_%s.dem", qx_replay_map);
+		QX_Replay_Copy (best);	// the map's best, for later
+	}
+}
+
+// Sbar_QX_StatCard_f: the map report's gold line has MAP BEST in it
+void QX_Replay_MapBest (void)
+{
+	qx_replay_mapbest = true;
+	QX_Replay_SaveBest ();	// if the intermission came first
+}
+
+// qx_replay_save: keep the replay (once the map is over, or while it plays)
+void QX_Replay_Save_f (lparse_t *unused)
+{
+	if (qx_replay_recording && cls.demorecording)
+	{
+		Con_PrintLinef ("The map is still being recorded: save it at the intermission or in the replay");
+		return;
+	}
+	QX_Replay_Copy (NULL);
+}
 
 // Stops it, also in the middle of reading a server message (signon 4, the
 // intermission): CL_Stop_f writes its svc_disconnect into net_message, which
@@ -878,6 +961,8 @@ void QX_Replay_Signon (void)
 	Cmd_ExecuteString ("record " QX_REPLAY_NAME, src_command);	// (puts its own buffer in net_message, and back)
 	qx_replay_quiet = false;
 	qx_replay_recording = cls.demorecording;
+	c_strlcpy (qx_replay_map, cl.worldname);
+	qx_replay_mapbest = qx_replay_best_saved = false;
 }
 
 // svc_intermission, svc_finale, svc_cutscene
@@ -887,6 +972,7 @@ void QX_Replay_Intermission (void)
 		return;
 	QX_Replay_StopRecording ();
 	qx_replay_ready = true;
+	QX_Replay_SaveBest ();	// if the map report came first
 }
 
 // CL_SendMove, at an intermission: the last of JUMP / FIRE pressed decides
@@ -903,20 +989,39 @@ void QX_Replay_Buttons (int bits)
 // Every frame, before the frame time is worked out
 void QX_Replay_Frame (void)
 {
+	// Any demo: bullet time at the real pace (SHIFT held: slow, as it was played)
+	if (cls.demoplayback && cls.demonum == -1 && !cls.timedemo)
+	{
+		int t = cl.stats[STAT_QX_TIME];
+
+		if (t > 0 && t < 100)
+		{
+			cls.demospeed = (keydown[K_LSHIFT] || keydown[K_RSHIFT]) ? 1.0f : 100.0f / t;
+			qx_pace_set = true;
+		}
+		else if (qx_pace_set || qx_replay_playing)
+		{
+			cls.demospeed = qx_replay_playing ? 1.0f : 0;	// the replay: never host_timescale
+			qx_pace_set = false;
+		}
+	}
+	else if (qx_pace_set)
+	{
+		cls.demospeed = 0;
+		qx_pace_set = false;
+	}
+
 	if (!qx_replay_playing)
 		return;
 
 	if (cls.demoplayback)
 	{
-		int t = cl.stats[STAT_QX_TIME];
-
 		if (qx_replay_playing == 1)
 		{	// it has just begun
 			qx_replay_playing = 2;
 			qx_replay_chase = chase_active.value;
 			qx_replay_jump_held = true;		// not the JUMP that asked for it
 		}
-		cls.demospeed = (t > 0 && t < 100) ? 100.0f / t : 1.0f;	// bullet time sped back up
 		if (!(in_jump.state & 1))
 			qx_replay_jump_held = false;
 		else if (!qx_replay_jump_held && key_dest == key_game)
@@ -950,7 +1055,15 @@ void QX_Replay_Draw (void)
 	const char *s = NULL, *s2 = NULL;
 
 	if (qx_replay_playing && cls.demoplayback)
-		s = "REPLAY - JUMP: camera  FIRE: skip";
+	{
+		s2 = (qx_pace_set && cls.demospeed == 1.0f) ? "REPLAY (SLOW, AS PLAYED)" : "REPLAY (REAL SPEED)";
+		s = "SHIFT: slow  JUMP: camera  FIRE: skip";
+	}
+	else if (qx_pace_set && cls.demoplayback)	// a saved one, in bullet time
+	{
+		s2 = cls.demospeed == 1.0f ? "SLOW, AS PLAYED" : "REAL SPEED";
+		s = "SHIFT: slow";
+	}
 	else if (cl.intermission == 1 && qx_replay_ready && !cls.demoplayback)
 	{
 		s2 = "ARE YOU READY TO LAUGH?";
