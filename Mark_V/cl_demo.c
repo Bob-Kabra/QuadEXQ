@@ -285,6 +285,9 @@ int CL_GetMessage (void)
 }
 
 
+// QuadEXQ: the replay (see the end of this file)
+static cbool qx_replay_quiet;		// CL_Record_f / CL_Stop_f: nothing in the console
+
 /*
 ====================
 CL_Stop_f
@@ -315,7 +318,9 @@ void CL_Stop_f (lparse_t *unused)
 	cls.demofile = NULL;
 	cls.demorecording = false;
 	Lists_Update_Demolist ();
-	if (!cls.autodemo)
+	if (qx_replay_quiet || !strcmp (File_URL_SkipPath (cls.demo_url), "qx_replay.dem"))
+		;	// QuadEXQ: the replay's own recording
+	else if (!cls.autodemo)
 		Con_PrintLinef ("Completed demo %s, type " QUOTEDSTR ("showfile") " to open folder", File_URL_SkipPath (cls.demo_url));
 	else
 	{
@@ -437,7 +442,7 @@ void CL_Record_f (lparse_t *line)
 // open the demo file
 	File_URL_Edit_Force_Extension (record_name_url, ".dem", sizeof(record_name_url));
 
-	if (!is_automatic)
+	if (!is_automatic && !qx_replay_quiet)	// QuadEXQ: not for the replay's own
 		Con_PrintLinef ("recording to %s", record_name_url);
 	else Con_DPrintLinef ("recording to %s", record_name_url);
 
@@ -764,4 +769,199 @@ void CL_TimeDemo_f (lparse_t *line)
 	SCR_BeginLoadingPlaque_Force_NoTransition ();
 	Key_SetDest (key_game);
 	console1.visible_pct = 0;
+}
+
+
+/*
+==============================================================================
+
+QuadEXQ: THE REPLAY
+
+Every map is recorded to qx_replay.dem from the moment you are in (a
+checkpoint or a load starts it over, so it holds the last try). When the
+map ends in an intermission, JUMP there means "show me": the next map is
+saved the moment it is in (qx_replay_resume.sav), the replay plays, and the
+game goes on from that save. FIRE skips the replay.
+
+The replay runs at the game's real pace: bullet time (STAT_QX_TIME, the
+world's timescale x100) is played back sped up by as much as it slowed the
+world, so the whole map goes by as fast as it was really fought.
+qx_replay 0 turns it all off.
+
+==============================================================================
+*/
+
+#define QX_REPLAY_NAME		"qx_replay"
+#define QX_REPLAY_RESUME	"qx_replay_resume"
+
+static cbool	qx_replay_recording;	// this map is going into qx_replay.dem
+static cbool	qx_replay_ready;		// it holds a map that ended in an intermission
+static cbool	qx_replay_wanted;		// JUMP at that intermission
+static int		qx_replay_playing;		// 1 = asked to play, 2 = playing
+static cbool	qx_replay_resuming;		// loading qx_replay_resume after it
+static double	qx_replay_started;
+static float	qx_replay_chase;		// chase_active before it (JUMP switches the camera in it)
+static cbool	qx_replay_jump_held;
+
+// Stops it, also in the middle of reading a server message (signon 4, the
+// intermission): CL_Stop_f writes its svc_disconnect into net_message, which
+// would wreck the message being read, so it gets a buffer of its own for that.
+static void QX_Replay_StopRecording (void)
+{
+	static byte	scratch[16];
+	sizebuf_t	saved = net_message;
+
+	if (!qx_replay_recording)
+		return;
+	qx_replay_recording = false;
+	if (!cls.demorecording)
+		return;
+
+	net_message.data = scratch;
+	net_message.maxsize = sizeof(scratch);
+	net_message.cursize = 0;
+	qx_replay_quiet = true;
+	Cmd_ExecuteString ("stop", src_command);
+	qx_replay_quiet = false;
+	net_message = saved;
+}
+
+// CL_SignonReply, signon 4: fully in a map (a new one, a load, a checkpoint)
+void QX_Replay_Signon (void)
+{
+	char resume_url[MAX_OSPATH];
+
+	if (cls.demoplayback)
+		return;
+
+	if (qx_replay_resuming)
+	{	// back from the replay
+		qx_replay_resuming = false;
+		if (key_dest == key_console)
+			Key_SetDest (key_game);	// the demo's end left the console up
+	}
+
+	if (!sv.active || svs.maxclients_internal != 1)	// single player only
+	{
+		qx_replay_wanted = qx_replay_ready = false;
+		return;
+	}
+
+	if (qx_replay_wanted && qx_replay_ready)
+	{	// the last map's replay, before this one starts: save this map as it is now ..
+		qx_replay_wanted = qx_replay_ready = false;
+		QX_Replay_StopRecording ();
+		Cmd_ExecuteString ("save " QX_REPLAY_RESUME, src_command);
+		FS_FullPath_From_QPath (resume_url, QX_REPLAY_RESUME ".sav");
+		if (File_Exists (resume_url))
+		{	// .. play the replay (not in the middle of this message: after it), then load it back
+			CL_Clear_Demos_Queue ();
+			qx_replay_playing = 1;
+			qx_replay_started = realtime;
+			Cbuf_AddTextLine ("playdemo " QX_REPLAY_NAME);
+			return;
+		}
+		Con_PrintLinef ("Replay: couldn't save the game, so no replay");
+	}
+	qx_replay_wanted = qx_replay_ready = false;
+
+	if (!qx_replay.value)
+	{
+		QX_Replay_StopRecording ();
+		return;
+	}
+	if (cls.demorecording && !qx_replay_recording)
+		return;		// a demo of the player's own (record, cl_autodemo): leave it be
+
+	QX_Replay_StopRecording ();	// first, safely (record would stop it right into net_message)
+	qx_replay_quiet = true;
+	Cmd_ExecuteString ("record " QX_REPLAY_NAME, src_command);	// (puts its own buffer in net_message, and back)
+	qx_replay_quiet = false;
+	qx_replay_recording = cls.demorecording;
+}
+
+// svc_intermission, svc_finale, svc_cutscene
+void QX_Replay_Intermission (void)
+{
+	if (cls.demoplayback || !qx_replay_recording)
+		return;
+	QX_Replay_StopRecording ();
+	qx_replay_ready = true;
+}
+
+// CL_SendMove, at an intermission: the last of JUMP / FIRE pressed decides
+void QX_Replay_Buttons (int bits)
+{
+	if (!qx_replay_ready || cl.intermission != 1)
+		return;
+	if (bits & 2)
+		qx_replay_wanted = true;
+	else if (bits & 1)
+		qx_replay_wanted = false;
+}
+
+// Every frame, before the frame time is worked out
+void QX_Replay_Frame (void)
+{
+	if (!qx_replay_playing)
+		return;
+
+	if (cls.demoplayback)
+	{
+		int t = cl.stats[STAT_QX_TIME];
+
+		if (qx_replay_playing == 1)
+		{	// it has just begun
+			qx_replay_playing = 2;
+			qx_replay_chase = chase_active.value;
+			qx_replay_jump_held = true;		// not the JUMP that asked for it
+		}
+		cls.demospeed = (t > 0 && t < 100) ? 100.0f / t : 1.0f;	// bullet time sped back up
+		if (!(in_jump.state & 1))
+			qx_replay_jump_held = false;
+		else if (!qx_replay_jump_held && key_dest == key_game)
+		{	// JUMP: first person <-> third person
+			qx_replay_jump_held = true;
+			Cvar_SetValueQuick (&chase_active, chase_active.value ? 0 : 1);
+		}
+		if ((in_attack.state & 1) && key_dest == key_game && realtime > qx_replay_started + 1)
+			Cbuf_AddTextLine ("stopdemo");	// FIRE: skip it
+		return;
+	}
+
+	if (qx_replay_playing == 1 && realtime < qx_replay_started + 3)
+		return;		// playdemo hasn't run yet
+
+	// over (or it never started): back to the game, unless something else has begun
+	if (qx_replay_playing == 2)
+		Cvar_SetValueQuick (&chase_active, qx_replay_chase);	// the camera as it was
+	qx_replay_playing = 0;
+	cls.demospeed = 0;
+	if (cls.state == ca_disconnected && !sv.active)
+	{
+		qx_replay_resuming = true;
+		Cbuf_AddTextLine ("load " QX_REPLAY_RESUME);
+	}
+}
+
+// The prompt at the intermission, and the label while it plays (SCR_UpdateScreen)
+void QX_Replay_Draw (void)
+{
+	const char *s = NULL, *s2 = NULL;
+
+	if (qx_replay_playing && cls.demoplayback)
+		s = "REPLAY - JUMP: camera  FIRE: skip";
+	else if (cl.intermission == 1 && qx_replay_ready && !cls.demoplayback)
+	{
+		s2 = "ARE YOU READY TO LAUGH?";
+		s = qx_replay_wanted ? "REPLAY NEXT  -  FIRE: no replay" : "JUMP: watch the replay";
+	}
+
+	if (!s)
+		return;
+	// The menu canvas is 320x200 and the map card fills it from y 24 down: so on top
+	Draw_SetCanvas (CANVAS_MENU);
+	if (s2)
+		Draw_String ((320 - (int)strlen (s2) * 8) / 2, 2, s2);
+	Draw_String ((320 - (int)strlen (s) * 8) / 2, s2 ? 12 : 2, s);
 }

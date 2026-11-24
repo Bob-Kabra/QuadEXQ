@@ -681,6 +681,8 @@ cbool Host_FilterTime (double time)
 	host_timeslice = host_frametime_ = realtime - oldrealtime;
 	oldrealtime = realtime;
 
+	QX_Replay_Frame ();	// QuadEXQ: the replay's speed (bullet time sped back up), and back to the game after it
+
 	//johnfitz -- host_timescale is more intuitive than host_framerate
 	if (cls.demoplayback && cls.demospeed && !cls.timedemo && !cls.capturedemo && cls.demonum == -1)
 	{

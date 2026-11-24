@@ -439,6 +439,9 @@ void CL_SendMove (const usercmd_t *cmd)
 
 	in_jump.state &= ~2;
 
+	if (cl.intermission)
+		QX_Replay_Buttons (bits);	// QuadEXQ: JUMP here = watch the replay
+
     MSG_WriteByte (&buf, bits);
 
     MSG_WriteByte (&buf, in_impulse);

@@ -2102,6 +2102,7 @@ void CL_ParseServerMessage (cbool *found_server_command)
 			else
 				cl.intermission = 1;
 			cl.completed_time = cl.time;
+			QX_Replay_Intermission ();	// QuadEXQ: the map is over: its replay is ready
 			vid.recalc_refdef = true;	// go to full screen
 			break;
 
@@ -2111,6 +2112,7 @@ void CL_ParseServerMessage (cbool *found_server_command)
 			else
 				cl.intermission = 2;
 			cl.completed_time = cl.time;
+			QX_Replay_Intermission ();	// QuadEXQ: the map is over: its replay is ready
 			vid.recalc_refdef = true;	// go to full screen
 			//johnfitz -- log centerprints to console
 			str = MSG_ReadString ();
@@ -2125,6 +2127,7 @@ void CL_ParseServerMessage (cbool *found_server_command)
 			else
 				cl.intermission = 3;
 			cl.completed_time = cl.time;
+			QX_Replay_Intermission ();	// QuadEXQ: the map is over: its replay is ready
 			vid.recalc_refdef = true;	// go to full screen
 			//johnfitz -- log centerprints to console
 			str = MSG_ReadString ();

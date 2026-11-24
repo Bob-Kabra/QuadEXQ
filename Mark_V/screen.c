@@ -1709,6 +1709,7 @@ void SCR_UpdateScreen (void)
 		else if (cl.intermission == 2)   Sbar_FinaleOverlay ();
 
 		if (cl.intermission > 1)   SCR_CheckDrawCenterString (); //
+		QX_Replay_Draw ();	// QuadEXQ: "JUMP: watch the replay"
 		SCR_DrawPause ();
 		SCR_DrawConsole ();
 		M_Draw (); // March 10 2018 --- Hmmmm.  Everyone ends with M_Draw.
@@ -1722,6 +1723,7 @@ void SCR_UpdateScreen (void)
 		SCR_DrawNet ();
 		SCR_DrawTurtle ();
 		SCR_DrawPause ();
+		QX_Replay_Draw ();	// QuadEXQ: "REPLAY" while it plays
 		{	// QuadEXQ: in bullet time the view and HUD slide back to 1996 (qx_retro)
 			float QX_Retro_Level (void);
 			void QX_Retro_Apply (float t);

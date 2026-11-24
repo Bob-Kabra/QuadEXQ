@@ -280,6 +280,7 @@ void CL_SignonReply (void)
 
 	case 4:
 		SCR_EndLoadingPlaque ();		// allow normal screen updates
+		QX_Replay_Signon ();			// QuadEXQ: record the map for its replay (or play the last one's)
 		if (cl_autodemo.value && !cls.demoplayback && !cls.demorecording && (cl_autodemo.value >= 2 || host_maxfps.value == 72))
 		{
 			// Baker: host_maxfps > 72 will lead to really big demos.

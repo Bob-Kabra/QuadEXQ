@@ -385,6 +385,7 @@ extern	kbutton_t	in_mlook, in_klook;
 extern 	kbutton_t 	in_strafe;
 extern 	kbutton_t 	in_speed;
 extern	kbutton_t	in_attack;
+extern	kbutton_t	in_jump;	// QuadEXQ: the replay's camera
 
 void CL_InitInput (void);
 void CL_SendCmd (void);
@@ -402,6 +403,11 @@ void CL_StopPlayback (void);
 int CL_GetMessage (void);
 
 void CL_Stop_f (lparse_t *unused);
+void QX_Replay_Signon (void);			// QuadEXQ: the replay (cl_demo.c)
+void QX_Replay_Intermission (void);
+void QX_Replay_Buttons (int bits);
+void QX_Replay_Frame (void);
+void QX_Replay_Draw (void);
 //cmd void CL_Record_f (void);
 void CL_PlayDemo_f (lparse_t *line);
 //cmd void CL_PlayDemo_NextStartDemo_f (void);
