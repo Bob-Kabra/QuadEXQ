@@ -62,6 +62,44 @@ void(string a, string b, string c, string d) QX_CenterAll =
 	}
 };
 
+// QuadEXQ: a Quad from impulse 255 on this map, and out the exit: QUAD
+// CHEATER -- and you go to bits, there at the exit, for all to see (the
+// changelevel waits a moment for it: changelevel_touch). Not a death: the
+// level still ends, the next map starts you whole again.
+void(entity p) QX_QuadCheater =
+{
+	local entity oself;
+
+	qx_quadcheated = FALSE;
+	QX_Center (p, "\n\n\nQUAD CHEATER", "", "", "");
+
+	WriteByte (MSG_BROADCAST, SVC_TEMPENTITY);
+	WriteByte (MSG_BROADCAST, TE_EXPLOSION);
+	WriteCoord (MSG_BROADCAST, p.origin_x);
+	WriteCoord (MSG_BROADCAST, p.origin_y);
+	WriteCoord (MSG_BROADCAST, p.origin_z);
+	sound (p, CHAN_VOICE, "player/udeath.wav", 1, ATTN_NONE);
+
+	oself = self;
+	self = p;
+	ThrowGib ("progs/gib1.mdl", -150);
+	ThrowGib ("progs/gib2.mdl", -150);
+	ThrowGib ("progs/gib3.mdl", -150);
+	ThrowGib ("progs/gib1.mdl", -150);
+	ThrowGib ("progs/gib3.mdl", -150);
+	self = oself;
+
+	// what's left: eyes on the floor, nothing more to do
+	p.modelindex = 0;
+	p.weaponmodel = "";
+	p.view_ofs = '0 0 -8';
+	p.velocity = '0 0 0';
+	p.movetype = MOVETYPE_NONE;
+	p.takedamage = DAMAGE_NO;
+	p.attack_finished = time + 10;
+	p.deadflag = DEAD_DYING;	// (no moving, no shooting, and no model back from the powerups: not a death)
+};
+
 entity() QX_FindLivePlayer =
 {
 	local entity p;

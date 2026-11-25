@@ -2483,6 +2483,7 @@ void() QuadCheat =
 	self.super_time = 1;
 	self.super_damage_finished = time + 30;
 	self.items = self.items | IT_QUAD;
+	qx_quadcheated = TRUE;		// QuadEXQ: and the exit will know (QX_QuadCheater)
 	dprint ("quad cheat\n");
 };
 

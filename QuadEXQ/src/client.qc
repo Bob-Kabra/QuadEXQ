@@ -326,6 +326,20 @@ void() changelevel_touch =
 
 	QX_StatMapEnd (other);	// QuadEXQ: map report
 
+	if (qx_quadcheated && !deathmatch && !coop)
+	{	// QuadEXQ: QUAD CHEATER -- to bits, then the level ends as always
+		QX_QuadCheater (other);
+		nextmap = self.map;
+		SUB_UseTargets ();
+		self.touch = SUB_Null;
+		if (self.spawnflags & 1)
+			self.think = GotoNextMap;	// (NO_INTERMISSION)
+		else
+			self.think = execute_changelevel;
+		self.nextthink = time + 2;
+		return;
+	}
+
 	if (coop || deathmatch)
 	{
 		bprint (other.netname);

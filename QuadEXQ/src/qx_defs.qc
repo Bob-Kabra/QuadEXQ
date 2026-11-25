@@ -287,6 +287,8 @@ void(entity targ, entity attacker, float take) QX_StatHurt;
 void(entity targ, entity attacker) QX_StatKill;
 void(float oldskill) QX_StatDeath;
 void(entity p) QX_StatMapEnd;
+float	qx_quadcheated;		// impulse 255 on this map: out the exit, QUAD CHEATER (and to bits)
+void(entity p) QX_QuadCheater;
 void()	QX_StatInterFrame;
 void(float s) QX_SetTimescale;
 void()	QX_AutoMelee;
