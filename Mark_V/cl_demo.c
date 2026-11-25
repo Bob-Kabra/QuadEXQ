@@ -777,6 +777,9 @@ void CL_TimeDemo_f (lparse_t *line)
 
 QuadEXQ: THE REPLAY
 
+QuadEXQ only (the quadexq folder, or progs that say they are QuadEXQ), once
+it's unlocked (Shub-Niggurath down). All its files go in the mod's demos folder.
+
 Every map is recorded to qx_replay.dem from the moment you are in (a
 checkpoint or a load starts it over, so it holds the last try). When the
 map ends in an intermission, JUMP there means "show me": the next map is
@@ -801,7 +804,8 @@ a see-through player, by the map's clock (qx_ghost 0 hides it).
 ==============================================================================
 */
 
-#define QX_REPLAY_NAME		"qx_replay"
+#define QX_DEMO_DIR			"demos"					// the replays, map bests and ghosts go in here
+#define QX_REPLAY_NAME		QX_DEMO_DIR "/qx_replay"
 #define QX_REPLAY_RESUME	"qx_replay_resume"
 
 static cbool	qx_replay_recording;	// this map is going into qx_replay.dem
@@ -858,7 +862,7 @@ static void QX_Ghost_Load (const char *map)
 	qx_ghost_best_count = qx_ghost_cursor = 0;
 	if (!qx_ghost.value || !map[0])
 		return;
-	c_snprintf1 (name, "qx_best_%s.ghost", map);
+	c_snprintf1 (name, QX_DEMO_DIR "/qx_best_%s.ghost", map);
 	FS_FullPath_From_QPath (url, name);
 	if (!(f = fopen (url, "rb")))
 		return;
@@ -936,6 +940,84 @@ void QX_Ghost_Frame (entity_t *(*new_ent)(void))
 	ent->lerpflags = LERP_RESETANIM | LERP_RESETMOVE;
 }
 
+// The replay, the ghost and the title demos are QuadEXQ's, and they are
+// unlocked by beating the game once: Shub-Niggurath down (the progs set
+// qx_unlocked then), or a save that already has the QUAD! achievement
+// (THE ENDER finished, which only comes after her).
+static cbool QX_Replay_Unlocked (void)
+{
+	return qx_unlocked.value || ((int)qx_ach.value & 4096 /* QX_ACH_QUAD */);
+}
+
+static cbool QX_Replay_IsQuadEXQ (void)
+{
+	return String_Does_Match_Caseless (gamedir_shortname (), "quadexq") || (cl.stats[STAT_QX_FLAGS] & QX_F_ACTIVE);
+}
+
+// startdemos (the title screen's demo loop): your newest map bests come
+// first -- qx_titledemos of them, the newest first -- then the game's own.
+// Returns the new number of demos in cls.demos.
+int QX_TitleDemos (int count)
+{
+	char	names[8][MAX_DEMONAME_64];
+	double	times[8];
+	int		n = 0, i, j, want = CLAMP (0, (int)qx_titledemos.value, 8);
+	DIR		*dir_p;
+	struct dirent *dir_t;
+
+	char	dir_url[MAX_OSPATH];
+
+	FS_FullPath_From_QPath (dir_url, QX_DEMO_DIR);
+	if (!want || !QX_Replay_Unlocked () || !QX_Replay_IsQuadEXQ () || !(dir_p = opendir (dir_url)))
+		return count;
+	while ((dir_t = readdir (dir_p)) != NULL)
+	{
+		char url[MAX_OSPATH], name[MAX_DEMONAME_64];
+		size_t len = strlen (dir_t->d_name);
+		double t;
+
+		if (len < 13 || len + sizeof(QX_DEMO_DIR) >= sizeof(name) || !String_Does_Start_With_Caseless (dir_t->d_name, "qx_best_")
+			|| !String_Does_End_With_Caseless (dir_t->d_name, ".dem"))
+			continue;
+		c_snprintf2 (url, "%s/%s", dir_url, dir_t->d_name);
+		t = File_Time (url);
+		c_snprintf1 (name, QX_DEMO_DIR "/%s", dir_t->d_name);
+		name[strlen (name) - 4] = 0;	// playdemo takes it without .dem
+
+		// keep the newest 'want', newest first
+		for (i = 0; i < n && times[i] >= t; i++)
+			;
+		if (i >= want)
+			continue;
+		for (j = c_min (n, want - 1); j > i; j--)
+		{
+			times[j] = times[j - 1];
+			c_strlcpy (names[j], names[j - 1]);
+		}
+		times[i] = t;
+		c_strlcpy (names[i], name);
+		if (n < want)
+			n++;
+	}
+	closedir (dir_p);
+
+	if (!n)
+		return count;
+	count = c_min (count, MAX_DEMOS_32 - n);	// the game's own, after them
+	for (i = count - 1; i >= 0; i--)
+		c_strlcpy (cls.demos[i + n], cls.demos[i]);
+	for (i = 0; i < n; i++)
+		c_strlcpy (cls.demos[i], names[i]);
+	Con_DPrintLinef ("Title demos: %d map best(s) first", n);
+	return count + n;
+}
+
+// host.c: bullet time sped back up in a title-screen demo too
+cbool QX_Demo_Paced (void)
+{
+	return qx_pace_set;
+}
+
 // Keeps a copy of qx_replay.dem: QX_<game>_<map>_0000.dem (the first free
 // number), or the given name
 static cbool QX_Replay_Copy (const char *to_name)
@@ -959,7 +1041,7 @@ static cbool QX_Replay_Copy (const char *to_name)
 			Con_PrintLinef ("Replay: couldn't find an unused file name");
 			return false;
 		}
-		c_snprintf3 (name, "QX_%s_%s_%04d.dem", gamedir_shortname (), qx_replay_map[0] ? qx_replay_map : "map", i);
+		c_snprintf3 (name, QX_DEMO_DIR "/QX_%s_%s_%04d.dem", gamedir_shortname (), qx_replay_map[0] ? qx_replay_map : "map", i);
 		FS_FullPath_From_QPath (to_url, name);
 		if (!File_Exists (to_url))
 			break;
@@ -986,9 +1068,9 @@ static void QX_Replay_SaveBest (void)
 	qx_replay_best_saved = true;
 	if (QX_Replay_Copy (NULL))
 	{
-		c_snprintf1 (best, "qx_best_%s.dem", qx_replay_map);
+		c_snprintf1 (best, QX_DEMO_DIR "/qx_best_%s.dem", qx_replay_map);
 		QX_Replay_Copy (best);	// the map's best, for later
-		c_snprintf1 (best, "qx_best_%s.ghost", qx_replay_map);
+		c_snprintf1 (best, QX_DEMO_DIR "/qx_best_%s.ghost", qx_replay_map);
 		QX_Ghost_Write (best);	// .. and its ghost
 	}
 }
@@ -1073,7 +1155,9 @@ void QX_Replay_Signon (void)
 	}
 	qx_replay_wanted = qx_replay_ready = false;
 
-	if (!qx_replay.value)
+	// QuadEXQ only (the progs say so, or it's the quadexq folder: the stats may not be in yet),
+	// once it's unlocked
+	if (!qx_replay.value || !QX_Replay_IsQuadEXQ () || !QX_Replay_Unlocked ())
 	{
 		QX_Replay_StopRecording ();
 		return;
@@ -1082,6 +1166,11 @@ void QX_Replay_Signon (void)
 		return;		// a demo of the player's own (record, cl_autodemo): leave it be
 
 	QX_Replay_StopRecording ();	// first, safely (record would stop it right into net_message)
+	{
+		char dir_url[MAX_OSPATH];
+		FS_FullPath_From_QPath (dir_url, QX_DEMO_DIR);
+		File_Mkdir (dir_url);	// the first time (already there: nothing happens)
+	}
 	qx_replay_quiet = true;
 	Cmd_ExecuteString ("record " QX_REPLAY_NAME, src_command);	// (puts its own buffer in net_message, and back)
 	qx_replay_quiet = false;
@@ -1099,7 +1188,7 @@ void QX_Replay_Intermission (void)
 		return;
 	QX_Replay_StopRecording ();
 	qx_replay_ready = true;
-	QX_Ghost_Write ("qx_replay.ghost");
+	QX_Ghost_Write (QX_DEMO_DIR "/qx_replay.ghost");
 	QX_Replay_SaveBest ();	// if the map report came first
 }
 
@@ -1117,8 +1206,8 @@ void QX_Replay_Buttons (int bits)
 // Every frame, before the frame time is worked out
 void QX_Replay_Frame (void)
 {
-	// Any demo: bullet time at the real pace (SHIFT held: slow, as it was played)
-	if (cls.demoplayback && cls.demonum == -1 && !cls.timedemo)
+	// Any demo, the title screen's too: bullet time at the real pace (SHIFT held: slow, as it was played)
+	if (cls.demoplayback && !cls.timedemo)
 	{
 		int t = cl.stats[STAT_QX_TIME];
 

@@ -684,7 +684,7 @@ cbool Host_FilterTime (double time)
 	QX_Replay_Frame ();	// QuadEXQ: the replay's speed (bullet time sped back up), and back to the game after it
 
 	//johnfitz -- host_timescale is more intuitive than host_framerate
-	if (cls.demoplayback && cls.demospeed && !cls.timedemo && !cls.capturedemo && cls.demonum == -1)
+	if (cls.demoplayback && cls.demospeed && !cls.timedemo && !cls.capturedemo && (cls.demonum == -1 || QX_Demo_Paced ()))	// QuadEXQ: a title demo in bullet time too
 	{
 		host_frametime_ *= cls.demospeed;
 	}

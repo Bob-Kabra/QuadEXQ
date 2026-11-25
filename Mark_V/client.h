@@ -411,6 +411,8 @@ void QX_Replay_Draw (void);
 void QX_Replay_MapBest (void);
 void QX_Replay_Save_f (lparse_t *unused);
 void QX_Ghost_Frame (entity_t *(*new_ent)(void));
+int QX_TitleDemos (int count);
+cbool QX_Demo_Paced (void);
 //cmd void CL_Record_f (void);
 void CL_PlayDemo_f (lparse_t *line);
 //cmd void CL_PlayDemo_NextStartDemo_f (void);

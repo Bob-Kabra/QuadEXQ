@@ -2977,6 +2977,7 @@ void Host_Startdemos_f (lparse_t *line)
 
 
 warpspasm_skip:
+	i = QX_TitleDemos (i - 1) + 1;	// QuadEXQ: your own map bests lead the loop
 
 	// LordHavoc: clear the remaining slots
 	for ( ; i <= MAX_DEMOS_32; i++)
