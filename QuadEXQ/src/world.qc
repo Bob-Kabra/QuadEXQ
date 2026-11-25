@@ -197,6 +197,7 @@ void() worldspawn =
 	precache_sound ("player/plyrjmp8.wav");		// player jump
 	precache_sound ("player/land.wav");			// player landing
 	precache_sound ("player/land2.wav");		// player hurt landing
+	precache_sound ("qx/achieve.wav");			// QuadEXQ: the achievement fanfare
 	precache_sound ("player/drown1.wav");		// drowning pain
 	precache_sound ("player/drown2.wav");		// drowning pain
 	precache_sound ("player/gasp1.wav");		// gasping for air

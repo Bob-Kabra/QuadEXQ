@@ -163,7 +163,7 @@ void(string cv, float bit, string name, string desc) QX_AchIn =
 	QX_CenterAll ("ACHIEVEMENT UNLOCKED\n\n", name, "\n", desc);
 	p = find (world, classname, "player");
 	if (p)
-		sound (p, CHAN_ITEM, "misc/talk.wav", 1, ATTN_NONE);
+		sound (p, CHAN_ITEM, "qx/achieve.wav", 1, ATTN_NONE);	// the fanfare (sound/qx/achieve.wav)
 	qx_rep_to = world;
 	QX_LB ();
 	QX_LS ("    ACHIEVEMENT: ");

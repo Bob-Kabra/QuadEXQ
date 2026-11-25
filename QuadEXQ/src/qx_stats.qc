@@ -542,6 +542,8 @@ void(entity p) QX_StatMapEnd =
 			localcmd (ftos (qx_st_endt));
 			localcmd ("\n");
 			QX_AchFastest (QX_CvAdd ("qx_fast_count", 1));
+			if (p)
+				sound (p, CHAN_ITEM, "qx/achieve.wav", 1, ATTN_NONE);	// the fanfare, as for an achievement
 		}
 	}
 
