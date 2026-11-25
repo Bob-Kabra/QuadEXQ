@@ -382,6 +382,8 @@ void(entity targ, entity attacker) QX_AchRJump;
 void(entity inflictor) QX_AchBFGDelta;
 void() QX_AchShubGate;
 void() QX_AchShubLord;
+void(float n) QX_AchFastest;
+float(string name, float add) QX_CvAdd;
 void() QX_AchBFGSniper;
 void(float deltahere) QX_AchDeltaPride;
 void() QX_AchMapStart;

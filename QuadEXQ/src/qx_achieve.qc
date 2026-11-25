@@ -61,6 +61,7 @@ float	QX_A2_BFGSNIPER		= 65536;
 float	QX_A2_DELTAPRIDE	= 131072;
 float	QX_A2_NOFF			= 262144;
 float	QX_A2_KILLBLOCK		= 524288;
+float	QX_A2_QDQ			= 1048576;
 
 float	QX_RS_JET			= 22;	// (deaths only) a jet charge to the face
 
@@ -454,6 +455,13 @@ void(entity inflictor) QX_AchBFGDelta =
 void() QX_AchShubGate =
 {
 	QX_Ach2 (QX_A2_SHUBGATE, "Shub's Revenge", "Get telefragged by Shub-Niggurath's gate");
+};
+
+// a map's fastest clear was set (n: how many times now)
+void(float n) QX_AchFastest =
+{
+	if (n >= 100)
+		QX_Ach2 (QX_A2_QDQ, "Quad Done Quick", "Set a map's fastest clear 100 times");
 };
 
 // finale_1 (Shub-Niggurath is done)

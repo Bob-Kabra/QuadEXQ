@@ -29,6 +29,8 @@ float	qx_st_streak;		// this map's place in the no-death streak (0 = died)
 float	qx_st_runnew;		// the map report: this run just made a new high score
 float	qx_st_mapnew;		// ... and a new best for this map
 float	qx_st_mapprev;		// (the map's best before)
+float	qx_st_fastnew;		// ... and its fastest clear (the map's clock)
+float	qx_st_fastprev;		// (the fastest before, 0 = never cleared)
 
 // QuadEXQ / Mark V engines concatenate up to 8 strings and keep 16 ftos results
 void(entity client, string s1, string s2, string s3, string s4, string s5, string s6, string s7, string s8) qx_cprint8 = #73;
@@ -528,6 +530,20 @@ void(entity p) QX_StatMapEnd =
 			localcmd ("\n");
 		}
 	}
+	qx_st_fastnew = FALSE;
+	qx_st_fastprev = 0;
+	if (qx_newengine)
+	{	// this map's fastest clear (the engine keeps it, and the replay and ghost of it)
+		qx_st_fastprev = cvar ("qx_map_fast");
+		if (!qx_st_fastprev || qx_st_endt < qx_st_fastprev)
+		{
+			qx_st_fastnew = TRUE;
+			localcmd ("qx_mapfast ");
+			localcmd (ftos (qx_st_endt));
+			localcmd ("\n");
+			QX_AchFastest (QX_CvAdd ("qx_fast_count", 1));
+		}
+	}
 
 	qx_rep_to = p;
 	QX_LB (); QX_LE ();
@@ -578,6 +594,19 @@ void(entity p) QX_StatMapEnd =
 					QX_LN (qx_st_mapprev);
 					QX_LS (")");
 				}
+			}
+			QX_LE ();
+		}
+		if (qx_st_fastnew)
+		{
+			QX_LB ();
+			QX_LS ("  *** FASTEST CLEAR! *** ");
+			QX_LT (qx_st_endt);
+			if (qx_st_fastprev > 0)
+			{
+				QX_LS (" (was ");
+				QX_LT (qx_st_fastprev);
+				QX_LS (")");
 			}
 			QX_LE ();
 		}
@@ -728,6 +757,19 @@ void(entity p) QX_StatMapEnd =
 			QX_LS ("NEW HIGH SCORE!  ");
 		if (qx_st_mapnew)
 			QX_LS ("MAP BEST!");
+		QX_CE ();
+	}
+	if (qx_st_fastnew)
+	{	// in gold too
+		QX_CB ("text");
+		QX_LS ("*FASTEST CLEAR!  ");
+		QX_LT (qx_st_endt);
+		if (qx_st_fastprev > 0)
+		{
+			QX_LS ("  (was ");
+			QX_LT (qx_st_fastprev);
+			QX_LS (")");
+		}
 		QX_CE ();
 	}
 

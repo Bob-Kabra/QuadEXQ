@@ -114,6 +114,8 @@ void() finale_1 =
 	intermission_exittime = time + 10000000;	// never allow exit
 	intermission_running = 1;
 	QX_AchShubLord ();		// QuadEXQ
+	if (qx_newengine)
+		cvar_set ("qx_unlocked", "1");	// QuadEXQ: the game beaten once: the QX engine's replay and ghost are yours
 	if (serverflags & QX_ENDER_WON)
 		QX_AchQuad ();		// QuadEXQ: (its banner is lost under the end text; the run page counts it)
 	pl = find (world, classname, "player");
