@@ -1607,6 +1607,65 @@ static int SV_QX_BestRead (const char *file, char names[][MAX_QPATH_64], int *sc
 static char	qx_best_names[QX_BEST_MAX][MAX_QPATH_64];
 static int	qx_best_scores[QX_BEST_MAX];
 
+// QuadEXQ: cheats. One cheat on a map and that clear sets no records: no map
+// best, no fastest clear, no replay or ghost kept, no achievements (the
+// progs reads qx_cheated). A new start of the map clears it; loading a save
+// of the same map does not (cheat, save, load is still a cheat).
+static cbool	sv_qx_cheated;
+static char		sv_qx_cheat_map[MAX_QPATH_64];
+
+cbool SV_QX_Cheated (void)
+{
+	return sv.active && sv_qx_cheated;
+}
+
+void SV_QX_Cheat (const char *what)
+{
+	if (!sv.active || pr_global_struct->deathmatch)
+		return;
+	if (!sv_qx_cheated)
+		Con_PrintLinef ("%s: cheats used -- no records for this map", what);
+	sv_qx_cheated = true;
+	c_strlcpy (sv_qx_cheat_map, sv.name);
+	Cvar_SetValueQuick (&qx_cheated, 1);
+}
+
+static void SV_QX_Cheat_NewMap (const char *map)
+{
+	if (in_load_game && sv_qx_cheated && !strcasecmp (map, sv_qx_cheat_map))
+	{
+		Cvar_SetValueQuick (&qx_cheated, 1);	// (a save of the same map: still)
+		return;
+	}
+	sv_qx_cheated = false;
+	sv_qx_cheat_map[0] = 0;
+	Cvar_SetValueQuick (&qx_cheated, 0);
+}
+
+// "qx_cheat": the progs says a cheat (or a test) was used
+void SV_QX_Cheat_f (lparse_t *line)
+{
+	SV_QX_Cheat (line->count > 1 ? line->args[1] : "qx_cheat");
+}
+
+// a cheat by cvar: a change typed in (or bound) during the game, not one the
+// progs makes (cvar_set) -- the game's speed and its physics
+void SV_QX_CheatCvar (cvar_t *var, const char *newvalue)
+{
+	static const char *cheat_cvars[] = { "host_timescale", "host_framerate", "sv_gravity", "sv_maxspeed",
+		"sv_friction", "sv_edgefriction", "sv_accelerate", "sv_stopspeed", "sv_maxvelocity", "sv_nostep", NULL };
+	int i;
+
+	if (!sv.active || sv.state != ss_active || cls.signon != SIGNONS || !strcmp (var->string, newvalue))
+		return;
+	for (i = 0; cheat_cvars[i]; i++)
+		if (!strcasecmp (var->name, cheat_cvars[i]))
+		{
+			SV_QX_Cheat (var->name);
+			return;
+		}
+}
+
 // a map starts: its best goes to qx_map_best, its fastest clear (seconds)
 // to qx_map_fast (0 = never cleared)
 void SV_QX_MapBest_Load (const char *map)
@@ -1631,7 +1690,7 @@ void SV_QX_MapFast_f (lparse_t *line)
 	int i, n, tenths;
 	FILE *f;
 
-	if (!sv.active || line->count < 2)
+	if (!sv.active || line->count < 2 || sv_qx_cheated)
 		return;
 	tenths = (int)(atof (line->args[1]) * 10 + 0.5);
 	if (tenths <= 0)
@@ -1667,7 +1726,7 @@ void SV_QX_MapBest_f (lparse_t *line)
 	int i, n, sc;
 	FILE *f;
 
-	if (!sv.active || line->count < 2)
+	if (!sv.active || line->count < 2 || sv_qx_cheated)
 		return;
 	sc = atoi (line->args[1]);
 	n = SV_QX_BestRead (QX_SCORES_TXT, qx_best_names, qx_best_scores);
@@ -2256,6 +2315,7 @@ void SV_SpawnServer (const char *server)
 		}
 		{	void SV_QX_MapBest_Load (const char *map);
 			SV_QX_MapBest_Load (server);	// qx_map_best, for the progs' map report
+			SV_QX_Cheat_NewMap (server);	// a new start: no cheats yet
 		}
 	}
 

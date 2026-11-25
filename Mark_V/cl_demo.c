@@ -820,6 +820,7 @@ static double	qx_replay_started;
 static float	qx_replay_chase;		// chase_active before it (JUMP switches the camera in it)
 static cbool	qx_replay_jump_held;
 static char		qx_replay_map[MAX_QPATH_64];	// the map in it
+static cbool	qx_replay_cheated;		// cheats on that map: watch it, keep nothing (SV_QX_Cheated)
 static cbool	qx_replay_quadexq;		// .. and QuadEXQ's (else another game, qx_replay_mods on)
 static cbool	qx_replay_mapbest;		// the map report says MAP BEST
 static cbool	qx_replay_fastest;		// .. or FASTEST CLEAR
@@ -1076,7 +1077,7 @@ static void QX_Replay_SaveBest (void)
 {
 	char name[MAX_QPATH_64];
 
-	if (!qx_replay_ready)
+	if (!qx_replay_ready || qx_replay_cheated)
 		return;
 	if ((qx_replay_mapbest && !qx_replay_best_saved) || (qx_replay_fastest && !qx_replay_fast_saved))
 	if (!qx_replay_numbered)
@@ -1211,7 +1212,7 @@ void QX_Replay_Signon (void)
 	qx_replay_recording = cls.demorecording;
 	c_strlcpy (qx_replay_map, cl.worldname);
 	qx_replay_mapbest = qx_replay_best_saved = false;
-	qx_replay_fastest = qx_replay_fast_saved = qx_replay_numbered = false;
+	qx_replay_fastest = qx_replay_fast_saved = qx_replay_numbered = qx_replay_cheated = false;
 	qx_ghost_rec_count = 0;			// the ghost track starts over with it
 	QX_Ghost_Load (qx_replay_map);	// and the map's best plays along
 }
@@ -1269,8 +1270,9 @@ void QX_Replay_Intermission (void)
 		return;
 	QX_Replay_StopRecording ();
 	qx_replay_ready = true;
+	qx_replay_cheated = SV_QX_Cheated ();
 	QX_Ghost_Write (QX_DEMO_DIR "/qx_replay.ghost");
-	if (!qx_replay_quadexq)
+	if (!qx_replay_quadexq && !qx_replay_cheated)
 		QX_Replay_FastestHere ();	// another game: the engine keeps the times
 	QX_Replay_SaveBest ();	// if the map report came first
 }
@@ -1366,7 +1368,7 @@ void QX_Replay_Draw (void)
 	}
 	else if (cl.intermission == 1 && qx_replay_ready && !cls.demoplayback)
 	{
-		s2 = qx_replay_quadexq ? "ARE YOU READY TO LAUGH?" : NULL;	// (QuadEXQ's joke only)
+		s2 = qx_replay_cheated ? "CHEATS USED - NO RECORD" : qx_replay_quadexq ? "ARE YOU READY TO LAUGH?" : NULL;	// (QuadEXQ's joke only)
 		s = qx_replay_wanted ? "REPLAY NEXT  -  FIRE: no replay" : "JUMP: watch the replay";
 	}
 

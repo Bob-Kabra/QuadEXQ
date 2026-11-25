@@ -313,6 +313,11 @@ void SV_Host_Frame_RunClients (double frametime); // MH had this as a float, not
 void SV_Host_Changelevel_SaveSpawnparms (); // Obv, only called by changelevel
 void SV_SpawnServer (const char *server); // Called by "map", "changelevel", "restart", "load <savegame>">
 
+// QuadEXQ: cheats on this map -- no records (sv_main.c)
+cbool SV_QX_Cheated (void);
+void SV_QX_Cheat (const char *what);
+void SV_QX_CheatCvar (cvar_t *var, const char *newvalue);
+
 void SV_Legacy_FreezeAll_f (lparse_t *unused);
 void SV_Hints_List_f (lparse_t *unused);
 void SV_Map_Rotation_Refresh_f (cvar_t *var);

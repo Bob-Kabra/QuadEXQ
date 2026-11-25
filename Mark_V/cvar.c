@@ -1001,6 +1001,9 @@ cbool	Cvar_Command (cbool src_server, cvar_t *var, lparse_t *line)
 		return true;
 	}
 
+	if (!src_server)
+		SV_QX_CheatCvar (var, line->args[1]);	// QuadEXQ: the game's speed, its physics: no records
+
 #ifdef SUPPORTS_CUTSCENE_PROTECTION
 // Baker:
 	if (src_server == true) // From demo or server

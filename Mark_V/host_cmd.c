@@ -526,6 +526,7 @@ void Host_God_f (lparse_t *line)
 		return;
 	}
 
+	SV_QX_Cheat ("god");	// QuadEXQ: no records for this map
 	//johnfitz -- allow user to explicitly set god mode to on or off
 	switch (line->count)
 	{
@@ -577,6 +578,7 @@ void Host_Notarget_f (lparse_t *line)
 		return;
 	}
 
+	SV_QX_Cheat ("notarget");	// QuadEXQ: no records for this map
 	//johnfitz -- allow user to explicitly set notarget to on or off
 	switch (line->count)
 	{
@@ -629,6 +631,7 @@ void Host_Noclip_f (lparse_t *line)
 		return;
 	}
 
+	SV_QX_Cheat ("noclip");	// QuadEXQ: no records for this map
 	//johnfitz -- allow user to explicitly set noclip to on or off
 	switch (line->count)
 	{
@@ -692,6 +695,7 @@ void Host_Fly_f (lparse_t *line)
 		return;
 	}
 
+	SV_QX_Cheat ("fly");	// QuadEXQ: no records for this map
 	//johnfitz -- allow user to explicitly set noclip to on or off
 	switch (line->count)
 	{
@@ -2654,6 +2658,7 @@ void Host_Give_f (lparse_t *line)
 		SV_ClientPrintLinef ("No cheats allowed, use sv_cheats 1 and restart level to enable.");
 		return;
 	}
+	SV_QX_Cheat ("give");	// QuadEXQ: no records for this map
 
 	if (line->count == 1)
 	{

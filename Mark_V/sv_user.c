@@ -483,6 +483,14 @@ void SV_ReadClientMove (usercmd_t *move)
 	i = MSG_ReadByte ();
 
 	if (i) host_client->edict->v.impulse = i;
+
+	// QuadEXQ: the cheat impulses (all weapons, the runes, Quad) -- and
+	// QuadEXQ's own test ones (the revenge, the arena, Delta Team now, THE
+	// ENDER, the ending) -- and this clear sets no records
+	if (i == 9 || i == 11 || i == 255)
+		SV_QX_Cheat ("impulse");
+	else if (i >= 154 && i <= 158 && String_Does_Match_Caseless (gamedir_shortname (), "quadexq"))
+		SV_QX_Cheat ("impulse (test)");
 }
 
 /*
