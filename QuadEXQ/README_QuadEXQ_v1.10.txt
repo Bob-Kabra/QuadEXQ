@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v1.04
+  QuadEXQ  v1.10
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -19,6 +19,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
   - A score and a play report for every map you clear.
   - Die, and you're back at the last safe checkpoint, not the start of the
     map.
+  - Beat the game once and every map gets a replay at the real speed, and
+    your fastest run on it comes back as a ghost to race.
 
 
 ------------------------------------------------------------------------------
@@ -59,6 +61,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
         music\track12.mp3       <- "Quad EXQ Theme", the end map's
                                    music (included)
         sound\player\taunt.wav  <- auto-melee shout (optional)
+        demos\             <- your replays, fastest clears and ghosts
+                              (QX.exe makes it)
       QX.exe             <- the QuadEXQ engine (recommended)
 
   Run:
@@ -72,6 +76,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
       - death checkpoints and safe autosaves
       - keeping PlayerSkill between launches
       - the play log file
+      - the replay, the ghost and the fastest clears
   * Single player only. Some systems switch off in coop and deathmatch.
 
 
@@ -480,6 +485,26 @@ fork), which adds the HUD, music switching, checkpoints and more.
     (quadexq_scores.txt). The map report says RUN SCORE / HIGH SCORE /
     map best, and NEW HIGH SCORE! or MAP BEST! in gold when you set one.
 
+  Fastest clear (QuadEXQ engine):
+    Every map also keeps its fastest clear, by the map's own clock (the
+    time the report shows; quadexq_times.txt). Beat it -- or clear the map
+    for the first time -- and the report and the card say FASTEST CLEAR!
+    in gold, with the old time, and the fanfare plays. The run becomes
+    that map's ghost (section 10). Set 100 of them for Quad Done Quick.
+
+  Cheats:
+    god, noclip, fly, notarget, give, impulse 9 / 11 / 255, the test
+    impulses 154-158, or changing the game's speed or physics in the
+    console during a map (host_timescale, host_framerate, sv_gravity,
+    sv_maxspeed, sv_friction ..), and that map sets no records: no map
+    best, no fastest clear, no replay or ghost kept, no achievements, and
+    its score doesn't go into the run. The report says CHEATS USED - NO
+    RECORD. Starting the map again clears it; loading a save of the same
+    map doesn't.
+    And a Quad from impulse 255 taken out of the exit gets you a QUAD
+    CHEATER -- and you go to bits, right there at the exit. (It isn't a
+    death: the next map starts you whole.)
+
   Play log (QuadEXQ engine):
     quadexq_stats.txt in the QuadEXQ folder grows with every session. It
     records:
@@ -543,6 +568,28 @@ fork), which adds the HUD, music switching, checkpoints and more.
     that at the next level change).
   - The play log, quadexq_stats.txt.
   - CONTINUE / NEW GAME in the Single Player menu.
+  - The replay and the ghost -- unlocked once you've beaten the game
+    (Shub-Niggurath down):
+      - every map is recorded (its last try: a checkpoint starts it over).
+        At the intermission, JUMP: watch the replay -- at the real speed,
+        bullet time sped back up, before the next map. Hold SHIFT to see
+        it slow, as you played it. JUMP in it switches to the chase
+        camera, FIRE skips it. ARE YOU READY TO LAUGH?
+      - a MAP BEST or a FASTEST CLEAR keeps its replay as a demo in the
+        demos folder (QX_quadexq_<map>_0000.dem, qx_best_<map>.dem,
+        qx_fast_<map>.dem). qx_replay_save keeps any replay you like.
+        Any demo plays bullet time at the real speed (SHIFT: slow).
+      - the ghost: your fastest clear of a map plays along the next time
+        you're there, as a see-through you, by the map's clock.
+      - the title screen's demo loop starts with your newest map bests,
+        then the game's own (qx_titledemos).
+    In other games (plain Quake, other mods): off, unless you turn it on
+    for that game -- Options > QuadEXQ Settings > Replay & Ghost. There
+    the engine times each clear itself (the intermission's time, as
+    speedrunners count it): a faster one prints FASTEST CLEAR! in the
+    console and keeps its replay and ghost (that game's demos folder,
+    qx_times.txt).
+  - Achievements get a fanfare.
   - Fixed a stock Mark V bug where the fire button could stay held after
     you let go (lost mouse-button events with fast mice).
 
@@ -598,6 +645,19 @@ fork), which adds the HUD, music switching, checkpoints and more.
                            1 = stock)
   qx_centerreadtime <s>    a longer message stays up this much longer for
                            each line (default 0.6, 0 = stock)
+  qx_replay 0/1            record every map and offer its replay at the
+                           intermission (default 1; unlocked by beating
+                           QuadEXQ)
+  qx_ghost 0/1             your fastest run on the map plays along
+                           (default 1)
+  qx_replay_save           keep the last map's replay as a demo
+                           (demos\QX_<game>_<map>_0000.dem)
+  qx_titledemos 0-8        how many of your newest map bests lead the
+                           title screen's demo loop (default 3, 0 = only
+                           the game's own)
+  qx_replay_mods 0/1       the replay and the ghost in another game
+                           (default 0; kept per game; QuadEXQ itself
+                           unlocks them by being beaten)
   qx_achievements          list the achievements (the ones still to find
                            about THE ENDER show as ???)
   qx_runstats              your stats over every game: kills and deaths
@@ -630,8 +690,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
 
   Options > QuadEXQ Settings has the QuadEXQ settings in one place: Retro
   1996, the QX HUD, weapon auto switch, checkpoints, message size and
-  time, and the crosshair (shape, colour, alpha, scale, with a preview),
-  per-weapon crosshairs and the status bar scale.
+  time, the replay and ghost in other games, and the crosshair (shape,
+  colour, alpha, scale, with a preview), per-weapon crosshairs and the
+  status bar scale.
 
   The crosshair, status bar (viewsize, scr_sbar*, scr_qxhud), the message
   size and time and the qx_ settings are also saved to qx_config.cfg in the game's own folder on
@@ -661,6 +722,37 @@ fork), which adds the HUD, music switching, checkpoints and more.
 ==============================================================================
  13. Version history
 ==============================================================================
+
+  v1.10
+    - Beat the game once (Shub-Niggurath down) and the replay and the
+      ghost are yours (QuadEXQ engine):
+      - The replay: every map is recorded, and JUMP at the intermission
+        plays it at the real speed -- bullet time sped back up -- before
+        the next map. SHIFT: slow, as played. JUMP in it: the chase
+        camera. FIRE: skip.
+      - A MAP BEST or a FASTEST CLEAR keeps its replay as a demo, in the
+        new demos folder; qx_replay_save keeps any. Every demo plays
+        bullet time at the real speed.
+      - The ghost: your fastest clear of the map plays along as a
+        see-through you.
+      - Your newest map bests open the title screen's demo loop, before
+        the stock ones.
+    - Fastest clear: every map keeps its fastest clear by the map's clock
+      (quadexq_times.txt). FASTEST CLEAR! in gold on the report and the
+      card.
+    - A new achievement: Quad Done Quick -- set a map's fastest clear 100
+      times (43 in all).
+    - Achievements and fastest clears get a fanfare.
+    - Cheats (god, noclip, give, impulse 9 / 255 .., or the game's speed
+      and physics changed in the console) and the map sets no records and
+      no achievements: CHEATS USED - NO RECORD.
+    - QUAD CHEATER: take a Quad from impulse 255 out of the exit and find
+      out.
+    QuadEXQ engine:
+    - The replay and the ghost work in plain Quake and other mods too, if
+      you turn them on for that game (Options > QuadEXQ Settings > Replay
+      & Ghost): the engine keeps that game's fastest clears itself, by the
+      intermission's time. For the speedrunners.
 
   v1.04
     QuadEXQ engine:
