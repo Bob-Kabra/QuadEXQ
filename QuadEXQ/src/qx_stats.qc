@@ -31,6 +31,7 @@ float	qx_st_mapnew;		// ... and a new best for this map
 float	qx_st_mapprev;		// (the map's best before)
 float	qx_st_fastnew;		// ... and its fastest clear (the map's clock)
 float	qx_st_fastprev;		// (the fastest before, 0 = never cleared)
+float	qx_st_cheated;		// cheats on this map (the engine's qx_cheated): no records
 
 // QuadEXQ / Mark V engines concatenate up to 8 strings and keep 16 ftos results
 void(entity client, string s1, string s2, string s3, string s4, string s5, string s6, string s7, string s8) qx_cprint8 = #73;
@@ -516,10 +517,14 @@ void(entity p) QX_StatMapEnd =
 	qx_st_endt = QX_RunTime (time);
 	qx_st_score = QX_StatScore ();
 	QX_AchMapEnd (qx_st_endt, qx_st_score);	// the run stats
-	qx_st_runnew = QX_RunAdd (qx_st_score);		// this run, and the high score
+	qx_st_cheated = qx_newengine && cvar ("qx_cheated");
+	if (qx_st_cheated)
+		qx_st_runnew = QX_RunAdd (0);			// a cheated map scores nothing for the run
+	else
+		qx_st_runnew = QX_RunAdd (qx_st_score);		// this run, and the high score
 	qx_st_mapnew = FALSE;
 	qx_st_mapprev = 0;
-	if (qx_newengine)
+	if (qx_newengine && !qx_st_cheated)
 	{	// this map's best
 		qx_st_mapprev = cvar ("qx_map_best");
 		if (qx_st_score > qx_st_mapprev)
@@ -532,7 +537,7 @@ void(entity p) QX_StatMapEnd =
 	}
 	qx_st_fastnew = FALSE;
 	qx_st_fastprev = 0;
-	if (qx_newengine)
+	if (qx_newengine && !qx_st_cheated)
 	{	// this map's fastest clear (the engine keeps it, and the replay and ghost of it)
 		qx_st_fastprev = cvar ("qx_map_fast");
 		if (!qx_st_fastprev || qx_st_endt < qx_st_fastprev)
@@ -556,6 +561,12 @@ void(entity p) QX_StatMapEnd =
 	QX_LN (qx_st_score);
 	QX_LS (" ===");
 	QX_LE ();
+	if (qx_st_cheated)
+	{
+		QX_LB ();
+		QX_LS ("  CHEATS USED - NO RECORD");
+		QX_LE ();
+	}
 	if (qx_st_streak)
 	{
 		QX_LB ();
@@ -759,6 +770,12 @@ void(entity p) QX_StatMapEnd =
 			QX_LS ("NEW HIGH SCORE!  ");
 		if (qx_st_mapnew)
 			QX_LS ("MAP BEST!");
+		QX_CE ();
+	}
+	if (qx_st_cheated)
+	{
+		QX_CB ("text");
+		QX_LS ("CHEATS USED - NO RECORD");
 		QX_CE ();
 	}
 	if (qx_st_fastnew)

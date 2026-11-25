@@ -153,8 +153,8 @@ void(string cv, float bit, string name, string desc) QX_AchIn =
 	local float a;
 	local entity p;
 
-	if (!qx_newengine || deathmatch)
-		return;
+	if (!qx_newengine || deathmatch || cvar ("qx_cheated"))
+		return;		// (no achievements with cheats on this map: the engine says)
 	a = cvar (cv);
 	if (a & bit)
 		return;
