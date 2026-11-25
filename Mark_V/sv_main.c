@@ -1529,6 +1529,7 @@ static const qx_ach_t qx_achs[] = {
 	{ "Delta's Pride",			"Down the Cyber Delta with Delta Team, and lose no man", 1 },	// 131072
 	{ "It's alright! No friendly fire!", "Hit Delta Team with the BFG 10 times", 1 },	// 262144
 	{ "Kill block!",			"Kill an Ogre with its own shot, swatted back", 0 },	// 524288
+	{ "Quad Done Quick",		"Set a map's fastest clear 100 times",		0 },	// 1048576
 };
 #define QX_ACH_COUNT	((int)(sizeof(qx_achs) / sizeof(qx_achs[0])))
 #define QX_ACH_WORD		22		// entries in qx_ach; the rest are in qx_ach2 (a float holds 24 bits)
@@ -1580,15 +1581,18 @@ void SV_QX_RunReset_f (lparse_t *line)
 	// (the high score, qx_hiscore, and the map bests in quadexq_scores.txt stay: they are records)
 }
 
-// ---- map best scores: quadexq_scores.txt, a line "<map> <score>" per map
+// ---- map best scores: quadexq_scores.txt, a line "<map> <score>" per map;
+// and the fastest clears: quadexq_times.txt, "<map> <tenths of a second>"
 #define QX_BEST_MAX 1024
-static int SV_QX_BestRead (char names[][MAX_QPATH_64], int *scores)
+#define QX_SCORES_TXT	"quadexq_scores.txt"
+#define QX_TIMES_TXT	"quadexq_times.txt"
+static int SV_QX_BestRead (const char *file, char names[][MAX_QPATH_64], int *scores)
 {
 	char path[MAX_OSPATH], name[MAX_QPATH_64];
 	int n = 0, sc;
 	FILE *f;
 
-	FS_FullPath_From_QPath (path, "quadexq_scores.txt");
+	FS_FullPath_From_QPath (path, file);
 	f = FS_fopen_read (path, "r");
 	if (!f)
 		return 0;
@@ -1603,14 +1607,57 @@ static int SV_QX_BestRead (char names[][MAX_QPATH_64], int *scores)
 static char	qx_best_names[QX_BEST_MAX][MAX_QPATH_64];
 static int	qx_best_scores[QX_BEST_MAX];
 
-// a map starts: its best goes to qx_map_best (0 = never cleared)
+// a map starts: its best goes to qx_map_best, its fastest clear (seconds)
+// to qx_map_fast (0 = never cleared)
 void SV_QX_MapBest_Load (const char *map)
 {
-	int i, n = SV_QX_BestRead (qx_best_names, qx_best_scores);
+	int i, n = SV_QX_BestRead (QX_SCORES_TXT, qx_best_names, qx_best_scores);
 	Cvar_SetValueQuick (&qx_map_best, 0);
 	for (i = 0; i < n; i++)
 		if (!strcasecmp (qx_best_names[i], map))
 			Cvar_SetValueQuick (&qx_map_best, qx_best_scores[i]);
+
+	n = SV_QX_BestRead (QX_TIMES_TXT, qx_best_names, qx_best_scores);
+	Cvar_SetValueQuick (&qx_map_fast, 0);
+	for (i = 0; i < n; i++)
+		if (!strcasecmp (qx_best_names[i], map))
+			Cvar_SetValueQuick (&qx_map_fast, qx_best_scores[i] / 10.0f);
+}
+
+// "qx_mapfast <seconds>": keep it as this map's fastest clear, if it is
+void SV_QX_MapFast_f (lparse_t *line)
+{
+	char path[MAX_OSPATH];
+	int i, n, tenths;
+	FILE *f;
+
+	if (!sv.active || line->count < 2)
+		return;
+	tenths = (int)(atof (line->args[1]) * 10 + 0.5);
+	if (tenths <= 0)
+		return;
+	n = SV_QX_BestRead (QX_TIMES_TXT, qx_best_names, qx_best_scores);
+	for (i = 0; i < n; i++)
+		if (!strcasecmp (qx_best_names[i], sv.name))
+			break;
+	if (i < n && qx_best_scores[i] <= tenths)
+		return;
+	if (i == n) {
+		if (n >= QX_BEST_MAX)
+			return;
+		c_strlcpy (qx_best_names[n], sv.name);
+		n ++;
+	}
+	qx_best_scores[i] = tenths;
+	Cvar_SetValueQuick (&qx_map_fast, tenths / 10.0f);
+
+	FS_FullPath_From_QPath (path, QX_TIMES_TXT);
+	f = FS_fopen_write (path, "w");
+	if (!f)
+		return;
+	for (i = 0; i < n; i++)
+		fprintf (f, "%s %d\n", qx_best_names[i], qx_best_scores[i]);
+	FS_fclose (f);
 }
 
 // "qx_mapbest <score>": keep it as this map's best, if it is
@@ -1623,7 +1670,7 @@ void SV_QX_MapBest_f (lparse_t *line)
 	if (!sv.active || line->count < 2)
 		return;
 	sc = atoi (line->args[1]);
-	n = SV_QX_BestRead (qx_best_names, qx_best_scores);
+	n = SV_QX_BestRead (QX_SCORES_TXT, qx_best_names, qx_best_scores);
 	for (i = 0; i < n; i++)
 		if (!strcasecmp (qx_best_names[i], sv.name))
 			break;
@@ -1638,7 +1685,7 @@ void SV_QX_MapBest_f (lparse_t *line)
 	qx_best_scores[i] = sc;
 	Cvar_SetValueQuick (&qx_map_best, sc);
 
-	FS_FullPath_From_QPath (path, "quadexq_scores.txt");
+	FS_FullPath_From_QPath (path, QX_SCORES_TXT);
 	f = FS_fopen_write (path, "w");
 	if (!f)
 		return;

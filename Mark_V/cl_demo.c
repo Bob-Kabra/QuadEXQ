@@ -797,9 +797,10 @@ QX_<game>_<map>_0000.dem (and qx_best_<map>.dem, the map's best), and
 qx_replay_save keeps one any time it isn't being recorded.
 
 The ghost: alongside the recording, where the player is goes into a small
-track of its own (qx_replay.ghost, 20 a second); a MAP BEST keeps it as
-qx_best_<map>.ghost, and next time on that map the best run plays along as
-a see-through player, by the map's clock (qx_ghost 0 hides it).
+track of its own (qx_replay.ghost, 20 a second); the map's fastest clear
+(FASTEST CLEAR on the map report) keeps it as qx_fast_<map>.ghost, with
+the replay as qx_fast_<map>.dem, and next time on that map the fastest run
+plays along as a see-through player, by the map's clock (qx_ghost 0 hides it).
 
 ==============================================================================
 */
@@ -818,7 +819,8 @@ static float	qx_replay_chase;		// chase_active before it (JUMP switches the came
 static cbool	qx_replay_jump_held;
 static char		qx_replay_map[MAX_QPATH_64];	// the map in it
 static cbool	qx_replay_mapbest;		// the map report says MAP BEST
-static cbool	qx_replay_best_saved;	// .. and it has been kept
+static cbool	qx_replay_fastest;		// .. or FASTEST CLEAR
+static cbool	qx_replay_best_saved, qx_replay_fast_saved, qx_replay_numbered;	// .. and they have been kept
 static cbool	qx_pace_set;			// QX_Replay_Frame set cls.demospeed for bullet time
 extern cbool	keydown[];
 
@@ -862,10 +864,15 @@ static void QX_Ghost_Load (const char *map)
 	qx_ghost_best_count = qx_ghost_cursor = 0;
 	if (!qx_ghost.value || !map[0])
 		return;
-	c_snprintf1 (name, QX_DEMO_DIR "/qx_best_%s.ghost", map);
+	c_snprintf1 (name, QX_DEMO_DIR "/qx_fast_%s.ghost", map);	// the fastest you
 	FS_FullPath_From_QPath (url, name);
 	if (!(f = fopen (url, "rb")))
-		return;
+	{
+		c_snprintf1 (name, QX_DEMO_DIR "/qx_best_%s.ghost", map);	// (from before there were fastest clears)
+		FS_FullPath_From_QPath (url, name);
+		if (!(f = fopen (url, "rb")))
+			return;
+	}
 	if (fread (magic, 1, 4, f) == 4 && !memcmp (magic, "QXG1", 4)
 		&& fread (&count, sizeof(int), 1, f) == 1 && count > 0 && count <= QX_GHOST_MAX)
 	{
@@ -1058,28 +1065,50 @@ static cbool QX_Replay_Copy (const char *to_name)
 	return true;
 }
 
-// A MAP BEST, once the map's recording is complete: keep it
+// A record, once the map's recording is complete: keep it -- one numbered
+// copy (QX_<game>_<map>_0000.dem), and the map's best score
+// (qx_best_<map>.dem, for the title screen) and fastest clear
+// (qx_fast_<map>.dem, and its ghost)
 static void QX_Replay_SaveBest (void)
 {
-	char best[MAX_QPATH_64];
+	char name[MAX_QPATH_64];
 
-	if (!qx_replay_mapbest || !qx_replay_ready || qx_replay_best_saved)
+	if (!qx_replay_ready)
 		return;
-	qx_replay_best_saved = true;
-	if (QX_Replay_Copy (NULL))
+	if ((qx_replay_mapbest && !qx_replay_best_saved) || (qx_replay_fastest && !qx_replay_fast_saved))
+	if (!qx_replay_numbered)
 	{
-		c_snprintf1 (best, QX_DEMO_DIR "/qx_best_%s.dem", qx_replay_map);
-		QX_Replay_Copy (best);	// the map's best, for later
-		c_snprintf1 (best, QX_DEMO_DIR "/qx_best_%s.ghost", qx_replay_map);
-		QX_Ghost_Write (best);	// .. and its ghost
+		qx_replay_numbered = true;
+		QX_Replay_Copy (NULL);
+	}
+	if (qx_replay_mapbest && !qx_replay_best_saved)
+	{
+		qx_replay_best_saved = true;
+		c_snprintf1 (name, QX_DEMO_DIR "/qx_best_%s.dem", qx_replay_map);
+		QX_Replay_Copy (name);
+	}
+	if (qx_replay_fastest && !qx_replay_fast_saved)
+	{
+		qx_replay_fast_saved = true;
+		c_snprintf1 (name, QX_DEMO_DIR "/qx_fast_%s.dem", qx_replay_map);
+		QX_Replay_Copy (name);
+		c_snprintf1 (name, QX_DEMO_DIR "/qx_fast_%s.ghost", qx_replay_map);
+		QX_Ghost_Write (name);	// the ghost is the fastest you
 	}
 }
 
-// Sbar_QX_StatCard_f: the map report's gold line has MAP BEST in it
+// Sbar_QX_StatCard_f: the map report's gold line has MAP BEST in it ..
 void QX_Replay_MapBest (void)
 {
 	qx_replay_mapbest = true;
 	QX_Replay_SaveBest ();	// if the intermission came first
+}
+
+// .. or FASTEST CLEAR
+void QX_Replay_Fastest (void)
+{
+	qx_replay_fastest = true;
+	QX_Replay_SaveBest ();
 }
 
 // qx_replay_save: keep the replay (once the map is over, or while it plays)
@@ -1177,6 +1206,7 @@ void QX_Replay_Signon (void)
 	qx_replay_recording = cls.demorecording;
 	c_strlcpy (qx_replay_map, cl.worldname);
 	qx_replay_mapbest = qx_replay_best_saved = false;
+	qx_replay_fastest = qx_replay_fast_saved = qx_replay_numbered = false;
 	qx_ghost_rec_count = 0;			// the ghost track starts over with it
 	QX_Ghost_Load (qx_replay_map);	// and the map's best plays along
 }

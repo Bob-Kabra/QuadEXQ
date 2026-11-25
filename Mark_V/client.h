@@ -409,6 +409,7 @@ void QX_Replay_Buttons (int bits);
 void QX_Replay_Frame (void);
 void QX_Replay_Draw (void);
 void QX_Replay_MapBest (void);
+void QX_Replay_Fastest (void);
 void QX_Replay_Save_f (lparse_t *unused);
 void QX_Ghost_Frame (entity_t *(*new_ent)(void));
 int QX_TitleDemos (int count);

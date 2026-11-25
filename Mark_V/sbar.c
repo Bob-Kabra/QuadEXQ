@@ -1752,6 +1752,8 @@ void Sbar_QX_StatCard_f (lparse_t *line)
 		c_strlcpy (qx_card_text[qx_card_ntext++], arg);
 		if (arg[0] == '*' && strstr (arg, "MAP BEST"))
 			QX_Replay_MapBest ();	// QuadEXQ: keep this map's replay
+		if (arg[0] == '*' && strstr (arg, "FASTEST CLEAR"))
+			QX_Replay_Fastest ();	// .. and the fastest one, with its ghost
 	}
 	else if (!strcmp (what, "row") && qx_card_nrows < QX_CARD_ROWS)
 		c_strlcpy (qx_card_rows[qx_card_nrows++], arg);
