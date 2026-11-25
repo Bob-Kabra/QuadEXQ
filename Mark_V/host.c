@@ -322,6 +322,7 @@ static const char *qx_shared_cvars[] = {
 	"viewsize", "scr_sbaralpha", "scr_sbarcentered", "scr_sbarscale", "scr_scaleauto", "scr_qxhud",
 	"qx_retro", "qx_autoswitch", "qx_checkpoints",
 	"crosshair_color", "crosshair_alpha", "qx_centerscale", "qx_centerreadtime",	// the QuadEXQ Settings menu has them all
+	"qx_replay_mods",
 	NULL
 };
 

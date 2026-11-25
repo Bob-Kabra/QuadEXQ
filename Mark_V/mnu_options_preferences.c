@@ -397,6 +397,7 @@ static qxset_t qxset_table[] = {
 	{ "QX HUD",				"Adrenaline, PlayerSkill, jet, boss compass",	&scr_qxhud,				2, {0, 1},					"Off,On" },
 	{ "Auto Switch",		"Switch to a weapon you pick up?",			&qx_autoswitch,			3, {0, 1, 2},				"Never,Thunderbolt Only,Always" },
 	{ "Checkpoints",		"After a death, load the map's autosave",	&qx_checkpoints,		2, {0, 1},					"Off,On" },
+	{ "Replay & Ghost",		"In this game (QuadEXQ: beat it once)",		&qx_replay_mods,		2, {0, 1},					"Off,On" },
 #ifdef GLQUAKE_RENDERER_SUPPORT
 	{ "Message Size",		"Center messages and the end text",			&qx_centerscale,		5, {1, 1.5f, 2, 2.5f, 3},	"1x,1.5x,2x,2.5x,3x" },
 #endif

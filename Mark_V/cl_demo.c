@@ -777,8 +777,10 @@ void CL_TimeDemo_f (lparse_t *line)
 
 QuadEXQ: THE REPLAY
 
-QuadEXQ only (the quadexq folder, or progs that say they are QuadEXQ), once
-it's unlocked (Shub-Niggurath down). All its files go in the mod's demos folder.
+QuadEXQ (the quadexq folder, or progs that say they are QuadEXQ), once it's
+unlocked; in another game, if the player turns it on there (qx_replay_mods,
+Options > QuadEXQ Settings, kept per game) -- the engine then times each
+clear itself for the fastest one. All its files go in the game's demos folder.
 
 Every map is recorded to qx_replay.dem from the moment you are in (a
 checkpoint or a load starts it over, so it holds the last try). When the
@@ -818,6 +820,7 @@ static double	qx_replay_started;
 static float	qx_replay_chase;		// chase_active before it (JUMP switches the camera in it)
 static cbool	qx_replay_jump_held;
 static char		qx_replay_map[MAX_QPATH_64];	// the map in it
+static cbool	qx_replay_quadexq;		// .. and QuadEXQ's (else another game, qx_replay_mods on)
 static cbool	qx_replay_mapbest;		// the map report says MAP BEST
 static cbool	qx_replay_fastest;		// .. or FASTEST CLEAR
 static cbool	qx_replay_best_saved, qx_replay_fast_saved, qx_replay_numbered;	// .. and they have been kept
@@ -1186,7 +1189,9 @@ void QX_Replay_Signon (void)
 
 	// QuadEXQ only (the progs say so, or it's the quadexq folder: the stats may not be in yet),
 	// once it's unlocked
-	if (!qx_replay.value || !QX_Replay_IsQuadEXQ () || !QX_Replay_Unlocked ())
+	// .. or any other game where the player has turned it on (qx_replay_mods, kept per game)
+	qx_replay_quadexq = QX_Replay_IsQuadEXQ ();
+	if (!qx_replay.value || (qx_replay_quadexq ? !QX_Replay_Unlocked () : !qx_replay_mods.value))
 	{
 		QX_Replay_StopRecording ();
 		return;
@@ -1211,6 +1216,52 @@ void QX_Replay_Signon (void)
 	QX_Ghost_Load (qx_replay_map);	// and the map's best plays along
 }
 
+// Another game (no QuadEXQ map report): the engine keeps each map's fastest
+// clear itself, in demos/qx_times.txt ("<map> <tenths of a second>"), by the
+// time the intermission shows -- Quake's own "Time", the speedrunners' too.
+static void QX_Replay_FastestHere (void)
+{
+	char	url[MAX_OSPATH], names[256][MAX_QPATH_64], name[MAX_QPATH_64];
+	int		tenths[256], n = 0, i, t, now = (int)(cl.completed_time * 10 + 0.5);
+	FILE	*f;
+
+	if (now <= 0 || !qx_replay_map[0])
+		return;
+	FS_FullPath_From_QPath (url, QX_DEMO_DIR "/qx_times.txt");
+	if ((f = fopen (url, "r")))
+	{
+		while (n < 256 && fscanf (f, "%63s %d", name, &t) == 2)
+		{
+			c_strlcpy (names[n], name);
+			tenths[n++] = t;
+		}
+		fclose (f);
+	}
+	for (i = 0; i < n; i++)
+		if (!strcasecmp (names[i], qx_replay_map))
+			break;
+	if (i < n && tenths[i] <= now)
+		return;		// not faster
+	if (i < n)
+		Con_PrintLinef ("FASTEST CLEAR!  %d:%02d  (was %d:%02d)", now / 600, (now / 10) % 60, tenths[i] / 600, (tenths[i] / 10) % 60);
+	else if (n < 256)
+	{
+		Con_PrintLinef ("FASTEST CLEAR!  %d:%02d", now / 600, (now / 10) % 60);
+		c_strlcpy (names[n], qx_replay_map);
+		n++;
+	}
+	else return;
+	tenths[i] = now;
+
+	if ((f = fopen (url, "w")))
+	{
+		for (i = 0; i < n; i++)
+			fprintf (f, "%s %d\n", names[i], tenths[i]);
+		fclose (f);
+	}
+	qx_replay_fastest = true;	// keep the replay and its ghost
+}
+
 // svc_intermission, svc_finale, svc_cutscene
 void QX_Replay_Intermission (void)
 {
@@ -1219,6 +1270,8 @@ void QX_Replay_Intermission (void)
 	QX_Replay_StopRecording ();
 	qx_replay_ready = true;
 	QX_Ghost_Write (QX_DEMO_DIR "/qx_replay.ghost");
+	if (!qx_replay_quadexq)
+		QX_Replay_FastestHere ();	// another game: the engine keeps the times
 	QX_Replay_SaveBest ();	// if the map report came first
 }
 
@@ -1313,7 +1366,7 @@ void QX_Replay_Draw (void)
 	}
 	else if (cl.intermission == 1 && qx_replay_ready && !cls.demoplayback)
 	{
-		s2 = "ARE YOU READY TO LAUGH?";
+		s2 = qx_replay_quadexq ? "ARE YOU READY TO LAUGH?" : NULL;	// (QuadEXQ's joke only)
 		s = qx_replay_wanted ? "REPLAY NEXT  -  FIRE: no replay" : "JUMP: watch the replay";
 	}
 
