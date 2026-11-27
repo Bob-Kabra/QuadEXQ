@@ -337,6 +337,29 @@ float	QX_VORE_DEFLECT_RANGE	= 180;	// a Vore Lord swats your rockets / grenades 
 float	QX_VORELORD_CHANCE	= 0.25;	// a Vore is a Vore Lord this often
 .float	qx_vorelord;			// a Vore Lord: blood red, swats your shots back
 .float	qx_vore_swat;			// a Vore's next swat
+
+// The Jet Knight Stalker: it comes for your Quad, out of a raging slipgate. A legendary
+// knight in gold, and undead: only one hit big enough to take all its health
+// at once ends it (in pieces) -- anything less, and it's back to full. A big
+// hit knocks it down, and it gets back up. Swats your rockets and grenades
+// back with its own Golden Left Hand, and its sword (or a jet charge) takes
+// your Quad.
+float	QX_STALKER_CHANCE	= 0.5;	// a Quad you pick up calls the Stalker this often (one at a time)
+float	QX_STALKER_HP		= 360;	// x your damage growth: a Quad rocket's worth, more or less
+float	QX_STALKER_DOWN		= 0.25;	// a hit this much of its health knocks it down
+.float	qx_stalker;				// the Jet Knight Stalker
+.float	qx_stalk_quad;			// .. with your Quad until then
+.float	qx_stalk_down;			// .. down on the floor until then
+.float	qx_stalk_msg;			// .. its next "UNYIELDING"
+.float	qx_stalk_qseen;			// (you) this Quad has rolled for the Stalker already
+void() QX_StalkerQuadCheck;
+void(entity attacker, float take) QX_StalkerPain;
+void() QX_StalkerDie;
+void() QX_StalkerLie;
+void() QX_StalkerRisen;
+void(entity st, entity p) QX_StalkerSteal;
+void() QX_StalkerTest;
+void() QX_RiftWarn;
 void() QX_VoreDeflect;
 float	QX_FIST_ADREN		= 10;	// Golden Left Hand, per hit (3 hits a swing): adrenaline % / this
 float	QX_FIST_SPEED		= 15;	//   + your speed / this (QuadUTF had 50 + speed / 3)	// the eel's electric zap was brutal: x0.75

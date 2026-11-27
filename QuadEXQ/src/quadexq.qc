@@ -263,6 +263,16 @@ void() QX_WorldSpawn =
 	precache_model ("maps/b_batt0.bsp");
 	precache_model ("maps/b_batt1.bsp");
 	precache_sound ("weapons/lock4.wav");
+	precache_model ("progs/knight.mdl");		// the Jet Knight Stalker can come out of any raging slipgate
+	precache_model ("progs/h_knight.mdl");
+	precache_sound ("knight/kdeath.wav");
+	precache_sound ("knight/khurt.wav");
+	precache_sound ("knight/ksight.wav");
+	precache_sound ("knight/sword1.wav");
+	precache_sound ("knight/sword2.wav");
+	precache_sound ("knight/idle.wav");
+	precache_sound ("knight/ax1.wav");
+	precache_sound ("weapons/rocket1i.wav");	// (its jetpack)
 
 	// Runes work as in stock Quake: they live in the game and in its savegames
 	// (CONTINUE keeps them, NEW GAME starts without them).
@@ -1063,6 +1073,7 @@ void() QX_VoreDeflect =
 		if (!(e.flags & (FL_MONSTER | FL_CLIENT | FL_ITEM)))
 		if (e.movetype == MOVETYPE_FLYMISSILE || e.movetype == MOVETYPE_BOUNCE || e.movetype == MOVETYPE_FLY || e.movetype == MOVETYPE_TOSS)
 		if (e.think != Plasma_Fly)		// not the plasma cannon's balls (too much)
+		if (!self.qx_stalker || e.classname == "missile" || e.classname == "grenade")	// (the Stalker: rockets and grenades)
 		if (e.touch)
 		if (vlen (e.velocity) > 50)
 		{
@@ -1096,7 +1107,10 @@ void() QX_VoreDeflect =
 		if (time > self.enemy.qx_deflect_msg)
 		{
 			self.enemy.qx_deflect_msg = time + 1.5;
-			QX_Center (self.enemy, "VORE LORD DEFLECTS!", "", "", "");
+			if (self.qx_stalker)
+				QX_Center (self.enemy, "STALKER DEFLECTS!", "", "", "");
+			else
+				QX_Center (self.enemy, "VORE LORD DEFLECTS!", "", "", "");
 		}
 	}
 };
@@ -1319,6 +1333,7 @@ void() QX_PlayerFrame =
 		return;
 
 	QX_StatTick ();
+	QX_StalkerQuadCheck ();		// a new Quad: the Stalker may come for it
 
 	// last safe footing: a revenge match / arena challenge brings you back here
 	if (self.health > 0)
@@ -1681,7 +1696,7 @@ void() QX_MonsterSync =
 	// telefrag), so PlayerSkill must not scale it
 	if (self.classname == "monster_boss" || self.classname == "monster_oldone")
 		return;
-	if (self.classname == "monster_runehunter" || self.qx_delta)
+	if (self.classname == "monster_runehunter" || self.qx_delta || self.qx_stalker)
 		return;				// its stats are set when it spawns
 
 	if (!self.qx_init)
@@ -1803,6 +1818,17 @@ void() QX_AIHook =
 
 	if (self.qx_vorelord)
 		QX_VoreDeflect ();			// the Vore Lord has a Golden Left Hand too
+	if (self.qx_stalker)
+	{
+		QX_VoreDeflect ();			// .. and so has the Stalker (rockets and grenades)
+		if (self.qx_stalk_quad)
+		if (time > self.qx_stalk_quad)
+		{	// your Quad has run out on it
+			self.qx_stalk_quad = 0;
+			self.effects = self.effects - (self.effects & EF_BRIGHTLIGHT);
+		}
+		self.effects = self.effects | EF_DIMLIGHT;	// it shines (the jet's landing turns lights off)
+	}
 
 	// a revenant comes back angry
 	if (self.qx_hunt)
@@ -2177,7 +2203,11 @@ void() QX_EliteMove =
 
 // ---------------------------------------------------------------- jet knight
 
-void(entity attacker, float damage) QX_NoPain = {};
+void(entity attacker, float damage) QX_NoPain =
+{
+	if (self.qx_stalker)
+		self.health = self.max_health;	// (the Stalker mid-flight: still undead)
+};
 
 void() QX_JetEnd =
 {
@@ -2187,7 +2217,7 @@ void() QX_JetEnd =
 	self.touch = SUB_Null;
 	if (self.qx_savepain)
 		self.th_pain = self.qx_savepain;
-	if (!self.qx_elite)
+	if (!self.qx_elite && !self.qx_stalker)
 		self.effects = self.effects - (self.effects & EF_DIMLIGHT);
 	self.velocity = '0 0 0';
 	self.avelocity = '0 0 0';		// (a shotgun / BFG zap mid-flight set it spinning)
@@ -2379,6 +2409,8 @@ float(entity attacker, entity targ) QX_DamageMult =
 	m = 1 + 0.5 * QX_F ();
 	if (attacker.qx_elite)
 		m = m * 1.3;
+	if (attacker.qx_stalk_quad > time)
+		m = m * 4;				// the Stalker with your Quad
 	return m;
 };
 
@@ -2417,10 +2449,264 @@ float(string c) QX_CallSpawn =
 	return FALSE;
 };
 
+// ---------------------------------------------------------------- the Jet Knight Stalker
+
+// one at a time
+float() QX_StalkerAround =
+{
+	local entity e;
+
+	e = find (world, classname, "monster_knight");
+	while (e)
+	{
+		if (e.qx_stalker)
+		if (e.health > 0)
+			return TRUE;
+		e = find (e, classname, "monster_knight");
+	}
+	e = find (world, classname, "qx_revive");
+	while (e)
+	{
+		if (e.qx_stalker)
+			return TRUE;		// (on its way)
+		e = find (e, classname, "qx_revive");
+	}
+	return FALSE;
+};
+
+// a spot for its slipgate: dist away from p at yaw, on a floor, room to stand
+vector	qx_stalk_spot;
+float(entity p, float yaw, float dist) QX_StalkerSpotAt =
+{
+	local vector dir, side, end, spot;
+
+	makevectors ('0 1 0' * yaw);
+	dir = v_forward;
+	side = v_right;
+	traceline (p.origin, p.origin + dir * dist, TRUE, p);
+	end = trace_endpos - dir * 40;
+	if (vlen (end - p.origin) < 140)
+		return FALSE;			// a wall in your face
+	traceline (end + '0 0 16', end - '0 0 300', TRUE, p);
+	if (trace_startsolid || trace_fraction == 1)
+		return FALSE;			// in a wall, or over a pit
+	spot = trace_endpos + '0 0 26';	// (a knight's feet are 24 below its origin)
+	if (pointcontents (spot) != CONTENT_EMPTY)
+		return FALSE;			// water, slime, lava
+	traceline (spot, spot + '0 0 40', TRUE, p);
+	if (trace_fraction < 1)
+		return FALSE;			// no headroom
+	traceline (spot - side * 20, spot + side * 20, TRUE, p);
+	if (trace_fraction < 1 || trace_startsolid)
+		return FALSE;
+	traceline (spot - dir * 20, spot + dir * 20, TRUE, p);
+	if (trace_fraction < 1 || trace_startsolid)
+		return FALSE;
+	qx_stalk_spot = spot;
+	return TRUE;
+};
+
+// open its slipgate near p (QX_RiftWarn, then QX_ReviveThink brings it out)
+void(entity p, vector spot, float delay) QX_StalkerCall =
+{
+	local entity t;
+
+	t = spawn ();
+	t.classname = "qx_revive";
+	t.qx_spawnclass = "monster_knight";
+	t.qx_stalker = 1;
+	t.qx_home = spot;
+	t.qx_homeang = '0 0 0';
+	t.qx_homeang_y = vectoyaw (p.origin - spot);	// facing you
+	t.qx_gen = 9;
+	t.think = QX_RiftWarn;
+	t.nextthink = time + delay;
+};
+
+// (self = you, every frame) a Quad just picked up calls the Stalker, now and then
+void() QX_StalkerQuadCheck =
+{
+	local float i;
+
+	if (self.super_damage_finished <= time)
+	{
+		self.qx_stalk_qseen = 0;
+		return;
+	}
+	if (self.qx_stalk_qseen)
+		return;
+	self.qx_stalk_qseen = 1;		// this Quad has had its roll
+	if (deathmatch || coop || qx_arena || qx_duel || self.health <= 0)
+		return;
+	if (random () >= QX_STALKER_CHANCE)
+		return;
+	if (QX_StalkerAround ())
+		return;
+	i = 0;
+	while (i < 16)
+	{
+		if (QX_StalkerSpotAt (self, random () * 360, 250 + random () * 300))
+		{
+			QX_StalkerCall (self, qx_stalk_spot, 2 + random () * 3);
+			return;
+		}
+		i = i + 1;
+	}
+};
+
+float() QX_StalkerHP =
+{
+	return QX_STALKER_HP * (1 + QX_PLAYER_DMG_SCALE * QX_F ());	// as your damage grows
+};
+
+// self = a knight just spawned (monster_knight): make it the Stalker
+void() QX_MakeStalker =
+{
+	self.qx_stalker = 1;
+	self.classname = "monster_knight";
+	self.netname = "Jet Knight Stalker";
+	self.skin = 0;
+	self.qx_init = 1;			// (QX_MonsterSync leaves it alone: no rolls, no rescaling)
+	self.qx_hpmul = 1;
+	self.qx_tempo = 1.25;		// reckless
+	self.qx_gen = 9;			// no revenant of it: it gets up by itself
+	self.qx_revenant = 0;
+	self.qx_jet = 1;			// the jetpack, of course
+	self.qx_jet_next = time + 1;
+	self.health = QX_StalkerHP ();
+	self.max_health = self.health;
+	self.qx_basehp = self.health;
+	self.th_melee = knight_atk;
+	self.th_missile = knight_atka1;	// a running slash from further out
+	self.th_pain = QX_StalkerPain;
+	self.th_die = QX_StalkerDie;
+	self.effects = self.effects | EF_DIMLIGHT;
+	if (cvar ("qx_colormap_ok") >= 3)
+		self.colormap = 253;		// QuadEXQ engine: drawn in gold
+};
+
+// any hit: back to full health (only one hit of all of it at once gets through)
+void(entity attacker, float take) QX_StalkerPain =
+{
+	self.max_health = QX_StalkerHP ();
+	self.health = self.max_health;
+	if (self.qx_stalk_down)
+		return;				// down already: it gets up when it gets up
+	if (take >= self.max_health * QX_STALKER_DOWN)
+	{	// a big one: down it goes
+		self.qx_stalk_down = time + 3 + random () * 2;
+		sound (self, CHAN_VOICE, "knight/kdeath.wav", 1, ATTN_NORM);
+		qx_stalk_down1 ();
+		return;
+	}
+	if (attacker.flags & FL_CLIENT)
+	if (time > self.qx_stalk_msg)
+	{	// you're hitting it, and it doesn't care
+		self.qx_stalk_msg = time + 3;
+		QX_Center (attacker, "THE STALKER IS UNYIELDING\n\nonly one blow can end it", "", "", "");
+	}
+	knight_pain (attacker, take);
+};
+
+// on the floor (qx_stalk_down10, every 0.1 s): time to get up?
+void() QX_StalkerLie =
+{
+	if (time >= self.qx_stalk_down)
+	{
+		sound (self, CHAN_VOICE, "knight/ksight.wav", 1, ATTN_NORM);
+		particle (self.origin, '0 0 60', 111, 40);
+		qx_stalk_up1 ();
+	}
+};
+
+void() QX_StalkerRisen =
+{
+	local entity p;
+
+	self.qx_stalk_down = 0;
+	self.health = self.max_health;
+	p = QX_FindLivePlayer ();
+	if (p)
+	{
+		QX_Center (p, "THE STALKER RISES AGAIN", "", "", "");
+		if (self.enemy != p)
+		{
+			self.enemy = p;
+			FoundTarget ();
+		}
+	}
+};
+
+// one hit took all of it: in pieces, and this time it stays down
+void() QX_StalkerDie =
+{
+	local entity p;
+
+	self.skin = 0;
+	sound (self, CHAN_VOICE, "player/udeath.wav", 1, ATTN_NONE);
+	ThrowGib ("progs/gib1.mdl", self.health);
+	ThrowGib ("progs/gib2.mdl", self.health);
+	ThrowGib ("progs/gib3.mdl", self.health);
+	ThrowGib ("progs/gib2.mdl", self.health);
+	ThrowHead ("progs/h_knight.mdl", self.health);
+	p = find (world, classname, "player");
+	while (p)
+	{
+		QX_Center (p, "JET KNIGHT STALKER\n\nIN PIECES!", "", "", "");
+		p = find (p, classname, "player");
+	}
+	QX_MsgAll ("The Jet Knight Stalker is in pieces. For good.\n", "", "", "");
+};
+
+// impulse 159 (self = you): a raging slipgate a little way ahead, and out
+// of it the Stalker. A test: this map sets no records.
+void() QX_StalkerTest =
+{
+	local float i;
+
+	if (QX_StalkerAround ())
+		return;
+	if (!QX_StalkerSpotAt (self, self.v_angle_y, 300))	// ahead, or anywhere it fits
+	{
+		i = 0;
+		while (i < 16)
+		{
+			if (QX_StalkerSpotAt (self, random () * 360, 250 + random () * 300))
+				i = 99;
+			i = i + 1;
+		}
+		if (i < 99)
+		{
+			sprint (self, "No room for the Stalker here.\n");
+			return;
+		}
+	}
+	QX_StalkerCall (self, qx_stalk_spot, 0.1);
+	localcmd ("qx_cheat \"impulse 159\"\n");	// (the QuadEXQ engine: no records for this map)
+};
+
+// its sword (or jet charge) hit you with your Quad on: the Quad is its now
+void(entity st, entity p) QX_StalkerSteal =
+{
+	local float left;
+
+	if (st.health <= 0)
+		return;
+	left = p.super_damage_finished - time;
+	if (left < 5)
+		left = 5;
+	p.super_damage_finished = time - 0.01;	// CheckPowerups takes it off..
+	p.super_time = time + 5;		// .. without "wearing off"
+	st.qx_stalk_quad = time + left;
+	st.effects = st.effects | EF_BRIGHTLIGHT;
+	sound (st, CHAN_ITEM, "items/damage.wav", 1, ATTN_NONE);
+	QX_Center (p, "THE STALKER TOOK YOUR QUAD!", "", "", "");
+};
+
 void() QX_ReviveThink =
 {
 	local entity m, p, oself;
-	local float ok;
+	local float ok, stalker;
 
 	if (intermission_running)
 	{	// the level is over (the end text, a score card): no more comebacks
@@ -2453,16 +2739,39 @@ void() QX_ReviveThink =
 	m.qx_hunt = 1;
 	setorigin (m, self.qx_home);
 
+	// the Stalker's slipgate (QX_StalkerCall)
+	stalker = self.qx_stalker;
+	if (stalker)
+	{
+		m.qx_spawnclass = "monster_knight";
+		m.classname = "monster_knight";
+	}
+
 	oself = self;
 	self = m;
 	qx_respawning = TRUE;
 	ok = QX_CallSpawn (m.qx_spawnclass);
 	qx_respawning = FALSE;
+	if (ok)
+	if (stalker)
+		QX_MakeStalker ();
 	self = oself;
 
 	if (!ok)
 	{
 		remove (m);
+		remove (self);
+		return;
+	}
+	if (m.qx_stalker)
+	{
+		spawn_tfog (self.qx_home);
+		WriteByte (MSG_ALL, 3);		// svc_updatestat
+		WriteByte (MSG_ALL, 12);	// STAT_TOTALMONSTERS
+		WriteLong (MSG_ALL, total_monsters);
+		QX_RiftTell (self.qx_home, "!!! JET KNIGHT STALKER !!!");
+		QX_MsgAll ("A golden knight steps out of the slipgate. It doesn't die.\n", "", "", "");
+		sound (m, CHAN_AUTO, "weapons/lstart.wav", 1, ATTN_NONE);
 		remove (self);
 		return;
 	}

@@ -2528,6 +2528,9 @@ void() ImpulseCommands =
 	if (self.impulse == 158)		// QuadEXQ: test the ending -- the Cyber Delta goes down now
 	if (!deathmatch && !coop)
 		QX_EnderSkip ();
+	if (self.impulse == 159)		// QuadEXQ: test the Jet Knight Stalker -- a raging slipgate in front of you
+	if (!deathmatch && !coop)
+		QX_StalkerTest ();
 	if (self.impulse == 151)		// QuadEXQ: reset PlayerSkill
 	{
 		QX_SetSkill (QX_StartSkill ());

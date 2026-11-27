@@ -152,6 +152,13 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 // QuadEXQ: PlayerSkill makes monsters hit harder
 	damage = damage * QX_DamageMult (attacker, targ);
 
+// QuadEXQ: the Jet Knight Stalker's sword (or its jet charge) takes your Quad
+	if (attacker.qx_stalker)
+	if (inflictor == attacker)
+	if (targ.super_damage_finished > time)
+	if (targ.flags & FL_CLIENT)
+		QX_StalkerSteal (attacker, targ);
+
 // save damage based on the target's armor level
 
 	save = ceil(targ.armortype*damage);

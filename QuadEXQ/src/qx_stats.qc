@@ -21,6 +21,7 @@ float	QX_SC_KILL	= 10;
 float	QX_SC_SCOUT	= 20;
 float	QX_SC_ELITE	= 30;
 float	QX_SC_BOSS	= 300;
+float	QX_SC_STALKER	= 3000;	// the Jet Knight Stalker, in pieces
 float	QX_SC_SECRET	= 100;
 float	QX_SC_DEATH	= 200;
 float	QX_SC_NODEATH	= 3000;	// (was 300) x the no-death streak
@@ -330,7 +331,9 @@ void(entity targ, entity attacker) QX_StatKill =
 	qx_st_kills = qx_st_kills + 1;
 	QX_AchKill (targ, attacker);		// the run stats, achievements
 
-	if (targ.qx_isboss)
+	if (targ.qx_stalker)
+		qx_st_points = qx_st_points + QX_SC_STALKER;
+	else if (targ.qx_isboss)
 		qx_st_points = qx_st_points + QX_SC_ELITE + QX_SC_BOSS;
 	else if (targ.qx_elite)
 	{

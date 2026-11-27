@@ -285,6 +285,27 @@ void()	knight_dieb9	=[	$deathb9,	knight_dieb10] {};
 void()	knight_dieb10 = [	$deathb10,	knight_dieb11] {};
 void()	knight_dieb11 = [	$deathb11,	knight_dieb11] {};
 
+// QuadEXQ: the Jet Knight Stalker knocked down (QX_StalkerPain) -- and back up
+void()	qx_stalk_down1	=[	$death1,	qx_stalk_down2	] {};
+void()	qx_stalk_down2	=[	$death2,	qx_stalk_down3	] {};
+void()	qx_stalk_down3	=[	$death3,	qx_stalk_down4	] {};
+void()	qx_stalk_down4	=[	$death4,	qx_stalk_down5	] {};
+void()	qx_stalk_down5	=[	$death5,	qx_stalk_down6	] {};
+void()	qx_stalk_down6	=[	$death6,	qx_stalk_down7	] {};
+void()	qx_stalk_down7	=[	$death7,	qx_stalk_down8	] {};
+void()	qx_stalk_down8	=[	$death8,	qx_stalk_down9	] {};
+void()	qx_stalk_down9	=[	$death9,	qx_stalk_down10	] {};
+void()	qx_stalk_down10	=[	$death10,	qx_stalk_down10	] {QX_StalkerLie ();};
+void()	qx_stalk_up1	=[	$death9,	qx_stalk_up2	] {};
+void()	qx_stalk_up2	=[	$death8,	qx_stalk_up3	] {};
+void()	qx_stalk_up3	=[	$death7,	qx_stalk_up4	] {};
+void()	qx_stalk_up4	=[	$death6,	qx_stalk_up5	] {};
+void()	qx_stalk_up5	=[	$death5,	qx_stalk_up6	] {};
+void()	qx_stalk_up6	=[	$death4,	qx_stalk_up7	] {};
+void()	qx_stalk_up7	=[	$death3,	qx_stalk_up8	] {};
+void()	qx_stalk_up8	=[	$death2,	qx_stalk_up9	] {};
+void()	qx_stalk_up9	=[	$death1,	knight_run1	] {QX_StalkerRisen ();};
+
 void() knight_atk =
 {
 	sound (self, CHAN_VOICE, "knight/ksight.wav", 1, ATTN_NORM);
