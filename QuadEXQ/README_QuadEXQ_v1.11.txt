@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v1.10
+  QuadEXQ  v1.11
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -335,6 +335,22 @@ fork), which adds the HUD, music switching, checkpoints and more.
                engine a Vore Lord just glows.)
   Spike mines  The homing mines some Wizards fire can be shot down: any
                hit makes them blow up early.
+  Jet Knight Stalker (rare)
+               Pick up a Quad and, now and then (half the time), a slipgate
+               rages nearby and the Stalker comes out: a knight in gold,
+               with a jetpack, and undead.
+                 - Any hit, and it's back to full health. Only one blow
+                   that takes all of it at once ends it -- in pieces (3000
+                   points). A Quad rocket at close range will do; so will
+                   the BFG.
+                 - A big hit knocks it down. It gets back up.
+                 - Its Golden Left Hand swats your rockets and grenades
+                   back.
+                 - Its sword or its jet charge takes your Quad: it hits
+                   four times as hard until the Quad runs out.
+               impulse 159 calls it (a test: no records for that map).
+               (The gold needs the QuadEXQ engine; on another engine it
+               just glows.)
 
   Almost every enemy drops an ammo backpack. Elites drop double, bosses
   triple.
@@ -494,7 +510,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
 
   Cheats:
     god, noclip, fly, notarget, give, impulse 9 / 11 / 255, the test
-    impulses 154-158, or changing the game's speed or physics in the
+    impulses 154-159, or changing the game's speed or physics in the
     console during a map (host_timescale, host_framerate, sv_gravity,
     sv_maxspeed, sv_friction ..), and that map sets no records: no map
     best, no fastest clear, no replay or ghost kept, no achievements, and
@@ -615,6 +631,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
   impulse 156              Delta team test: call them in now.
   impulse 158              THE ENDER test: the Cyber Delta goes down now,
                            and the ending goes on as if you'd won
+  impulse 159              Jet Knight Stalker test: a raging slipgate near
+                           you, and out it comes
 
   QuadEXQ engine:
   scr_qxhud 0/1            show the HUD (default 1)
@@ -722,6 +740,14 @@ fork), which adds the HUD, music switching, checkpoints and more.
 ==============================================================================
  13. Version history
 ==============================================================================
+
+  v1.11
+    - A new rare enemy: the Jet Knight Stalker. Pick up a Quad and it may
+      come for it -- a knight in gold, with a jetpack, undead, swatting
+      your rockets and grenades back and taking your Quad. Only one blow
+      that takes all of it at once ends it (section 6).
+    QuadEXQ engine:
+    - Draws the Stalker in gold.
 
   v1.10
     - Beat the game once (Shub-Niggurath down) and the replay and the
