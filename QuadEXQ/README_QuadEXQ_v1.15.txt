@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v1.11
+  QuadEXQ  v1.15
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -741,7 +741,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
  13. Version history
 ==============================================================================
 
-  v1.11
+  v1.15
     - A new rare enemy: the Jet Knight Stalker. Pick up a Quad and it may
       come for it -- a knight in gold, with a jetpack, undead, swatting
       your rockets and grenades back and taking your Quad. Only one blow
