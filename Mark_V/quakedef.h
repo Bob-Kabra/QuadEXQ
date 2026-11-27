@@ -720,6 +720,7 @@ extern build_t build;
 #define QX_COLORMAP_BASE 32
 #define QX_COLORMAP_RED 255		// QuadEXQ: a non-player model drawn blood red (the Vore Lord)
 #define QX_COLORMAP_GREEN 254	// QuadEXQ: a sprite drawn glowing green (the BFG ball)
+#define QX_COLORMAP_GOLD 253	// QuadEXQ: a non-player model drawn shining gold (the Jet Knight Stalker)
 
 #endif // ! __QUAKEDEF_H__
 

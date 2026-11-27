@@ -847,6 +847,13 @@ void R_DrawAliasModel (entity_t *e)
 		lightcolor[1] = lum * 0.22f;
 		lightcolor[2] = lum * 0.18f;
 	}
+	if (e->colormap == QX_COLORMAP_GOLD && e != &cl.viewent_gun && (cl.stats[STAT_QX_FLAGS] & QX_F_ACTIVE))
+	{	// QuadEXQ: shining gold (the Jet Knight Stalker): the Golden Left Hand's glow, all over
+		float pulse = 1.15f + 0.25f * (float) sin (cl.ctime * 6.0);
+		lightcolor[0] = 1.00f * pulse;
+		lightcolor[1] = 0.78f * pulse;
+		lightcolor[2] = 0.30f * pulse;
+	}
 	if (qx_mirror)
 	{	// QuadEXQ: the Golden Left Hand glows -- bright, warm, pulsing
 		float pulse = 1.25f + 0.25f * (float) sin (cl.ctime * 9.0);
