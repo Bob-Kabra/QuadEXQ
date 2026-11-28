@@ -352,8 +352,9 @@ fork), which adds the HUD, music switching, checkpoints and more.
                    line of sight.
                  - Any hit, and it's back to full health. Only one blow
                    that takes all of it at once ends it -- in pieces (3000
-                   points). A Quad rocket at close range will do -- and any
-                   hit of the BFG (the ball or its lightning) does.
+                   points). A Quad rocket at close range will do -- and so
+                   does the BFG's ball, square on. (Its lightning only
+                   knocks it down.)
                  - A big hit, or 400 damage in all, knocks it down. It
                    gets back up.
                  - Its Golden Left Hand swats your rockets and grenades
@@ -760,7 +761,8 @@ fork), which adds the HUD, music switching, checkpoints and more.
       Death Knight size, battered gold, a torn cape, odd eyes, a jetpack
       on its back), a long wind-up and then three times as fast, a maxed
       jetpack, a left-hand lightning that drags you in. Down after 400
-      damage in all. Any BFG hit puts it in pieces. Delta Team is its bane. Its golden backpack gives you
+      damage in all. A BFG ball square on puts it in pieces (its lightning
+      knocks it down). Delta Team is its bane. Its golden backpack gives you
       the Golden Left Hand for the rest of the map. Its swats can't be
       swatted back. It joins the Cyber Delta fight at PlayerSkill 50+.
     - The Golden Left Hand swats on its own from 300% adrenaline (was
