@@ -350,6 +350,9 @@ float	QX_STALKER_HP		= 360;	// x your damage growth: a Quad rocket's worth, more
 float	QX_STALKER_DOWN		= 0.25;	// a hit this much of its health knocks it down
 float	QX_STALKER_DOWN_SUM	= 400;	// .. and so does this much in all, like a Zombie (x your damage growth)
 .float	qx_stalk_dmg;			// .. taken since it last got up
+.float	qx_stalkswat;			// (a shot) swatted by the Stalker: the real Golden Left Hand -- no return
+.float	qx_lefthand;			// (you) the Stalker's backpack: your Golden Left Hand is on, all this map
+void() QX_StalkerPackDrop;
 .float	qx_stalker;				// the Jet Knight Stalker
 .float	qx_stalk_quad;			// .. with your Quad until then
 .float	qx_stalk_down;			// .. down on the floor until then

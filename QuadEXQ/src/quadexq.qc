@@ -1048,7 +1048,7 @@ void(float dash) QX_FireFist =
 	}
 };
 
-// Adrenaline 250%+ (or Quad): enemy shots coming at you get swatted back --
+// Adrenaline 250%+ (or Quad, or the Stalker's backpack): enemy shots coming at you get swatted back --
 // rockets, grenades, nails, magic. Back at whoever fired them (homing ones
 // home in on them), and they are yours now. Left side: the Golden Left
 // Hand, right side: the axe.
@@ -1093,6 +1093,8 @@ void() QX_VoreDeflect =
 				e.angles = vectoangles (e.velocity);
 				e.owner = self;
 				e.qx_ach_vlord = 1;		// (Lord of the Swat, if you swat it again)
+				if (self.qx_stalker)
+					e.qx_stalkswat = 1;	// (the real thing: you can't send it back)
 				if (e.enemy == self)
 					e.enemy = p;			// homing nails home in on you
 				sound (e, CHAN_AUTO, "weapons/ric2.wav", 1, ATTN_NORM);
@@ -1125,12 +1127,20 @@ void() QX_AutoDeflect =
 
 	if (!self.ishuman || self.health <= 0)
 		return;
-	if (self.qx_adren < QX_DEFLECT_ADREN && self.super_damage_finished <= time)
+	if (self.qx_adren < QX_DEFLECT_ADREN && self.super_damage_finished <= time && !self.qx_lefthand)
 		return;
 
 	e = findradius (self.origin, QX_DEFLECT_RANGE);
 	while (e)
 	{
+		if (e.qx_stalkswat)				// the Stalker's swat: the real Golden Left Hand
+		if (e.velocity * (self.origin - e.origin) > 0)
+		if (time > self.qx_deflect_msg)
+		{
+			self.qx_deflect_msg = time + 1.5;
+			QX_Center (self, "THE STALKER'S SWAT -- NO RETURN!", "", "", "");
+			sound (self, CHAN_AUTO, "weapons/tink1.wav", 1, ATTN_NORM);
+		}
 		if (e.qx_nodeflect)				// the Cyber Delta's big rockets: say so
 		if (e.owner.flags & FL_MONSTER)
 		if (e.velocity * (self.origin - e.origin) > 0)
@@ -1142,6 +1152,7 @@ void() QX_AutoDeflect =
 		}
 		if (e.owner.flags & FL_MONSTER)
 		if (!e.qx_nodeflect)			// (the Cyber Delta boss's rockets)
+		if (!e.qx_stalkswat)			// (the Stalker's)
 		if (!(e.flags & (FL_MONSTER | FL_CLIENT | FL_ITEM)))
 		if (e.movetype == MOVETYPE_FLYMISSILE || e.movetype == MOVETYPE_BOUNCE || e.movetype == MOVETYPE_FLY || e.movetype == MOVETYPE_TOSS)
 		if (e.touch)
@@ -2868,6 +2879,52 @@ void() QX_StalkerDie =
 		p = find (p, classname, "player");
 	}
 	QX_MsgAll ("The Jet Knight Stalker is in pieces. For good.\n", "", "", "");
+	QX_StalkerPackDrop ();
+};
+
+// Its backpack, glowing gold: its Golden Left Hand is yours -- your shots
+// get swatted back for you all the rest of this map, adrenaline or not --
+// and a load of ammo. The fanfare plays.
+void() QX_StalkerPackTouch =
+{
+	local entity oself;
+
+	if (other.classname != "player" || other.health <= 0)
+		return;
+	other.ammo_shells = other.ammo_shells + 20;
+	other.ammo_nails = other.ammo_nails + 40;
+	other.ammo_rockets = other.ammo_rockets + 10;
+	other.ammo_cells = other.ammo_cells + 30;
+	other.qx_lefthand = 1;
+	oself = self;
+	self = other;
+	bound_other_ammo ();
+	W_SetCurrentAmmo ();
+	self = oself;
+	sound (other, CHAN_ITEM, "qx/achieve.wav", 1, ATTN_NONE);
+	stuffcmd (other, "bf\n");
+	QX_Center (other, "THE GOLDEN LEFT HAND IS YOURS\n\nit swats them back for you\nall the rest of this map", "", "", "");
+	sprint (other, "You get the Jet Knight Stalker's backpack: the Golden Left Hand, and ammo\n");
+	remove (self);
+};
+
+void() QX_StalkerPackDrop =
+{
+	local entity item;
+
+	item = spawn ();
+	item.classname = "qx_stalkerpack";
+	setorigin (item, self.origin - '0 0 24');
+	item.velocity = '0 0 300';
+	item.flags = FL_ITEM;
+	item.solid = SOLID_TRIGGER;
+	item.movetype = MOVETYPE_TOSS;
+	setmodel (item, "progs/backpack.mdl");
+	setsize (item, '-16 -16 0', '16 16 56');
+	item.effects = EF_DIMLIGHT;		// it glows
+	item.touch = QX_StalkerPackTouch;
+	item.nextthink = time + 600;		// (it waits a long while for you)
+	item.think = SUB_Remove;
 };
 
 // impulse 159 (self = you): a raging slipgate a little way ahead, and out
@@ -3145,6 +3202,8 @@ void(entity m) QX_DropAmmo =
 	// nothing to drop / unreachable
 	if (c == "monster_boss" || c == "monster_oldone" || c == "monster_smine")
 		return;
+	if (m.qx_stalker)
+		return;				// (its own golden backpack: QX_StalkerPackDrop)
 	if (c == "monster_fish" || c == "monster_eel")
 		return;
 
