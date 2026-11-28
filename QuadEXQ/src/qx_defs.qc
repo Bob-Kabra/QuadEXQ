@@ -382,6 +382,7 @@ float() QX_StalkerAround;
 float(entity p, float yaw, float dist) QX_StalkerSpotAt;
 void(entity p, vector spot, float delay) QX_StalkerCall;
 vector	qx_stalk_spot;
+float	qx_stalk_clear;		// (QX_StalkerSpotAt) the whole way to the spot in clear sight: no pillar in between
 void() QX_RiftWarn;
 void() QX_VoreDeflect;
 float	QX_FIST_ADREN		= 10;	// Golden Left Hand, per hit (3 hits a swing): adrenaline % / this

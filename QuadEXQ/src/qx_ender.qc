@@ -552,6 +552,21 @@ void(entity p) QX_EnderStalker =
 
 	if (qx_pskill < 50 || QX_StalkerAround ())
 		return;
+	// where you can see it come: ahead of you, 300-450 away, nothing in between
+	qx_stalk_clear = TRUE;
+	i = 0;
+	while (i < 24)
+	{
+		if (QX_StalkerSpotAt (p, p.v_angle_y + crandom () * 35, 300 + random () * 150))
+		{
+			qx_stalk_clear = FALSE;
+			QX_StalkerCall (p, qx_stalk_spot, 4 + random () * 4);
+			return;
+		}
+		i = i + 1;
+	}
+	qx_stalk_clear = FALSE;
+	// (no room ahead: anywhere around you)
 	i = 0;
 	while (i < 16)
 	{

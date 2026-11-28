@@ -2557,6 +2557,8 @@ float(entity p, float yaw, float dist) QX_StalkerSpotAt =
 	dir = v_forward;
 	side = v_right;
 	traceline (p.origin, p.origin + dir * dist, TRUE, p);
+	if (qx_stalk_clear && trace_fraction < 1)
+		return FALSE;			// a pillar (or a wall) in the way: not here
 	end = trace_endpos - dir * 40;
 	if (vlen (end - p.origin) < 140)
 		return FALSE;			// a wall in your face
