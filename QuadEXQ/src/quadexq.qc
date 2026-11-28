@@ -2278,7 +2278,10 @@ void() QX_JetThink =
 	self.angles_z = 0;
 
 	// jet flame
-	particle (self.origin - normalize (self.velocity) * 24, '0 0 0' - self.velocity * 0.1, 230, 12);
+	if (self.qx_stalker)
+		QX_StalkerFlames (14);		// out of both its tanks
+	else
+		particle (self.origin - normalize (self.velocity) * 24, '0 0 0' - self.velocity * 0.1, 230, 12);
 	self.nextthink = time + 0.05;
 };
 
@@ -2708,6 +2711,34 @@ void() QX_StalkerBeamStart =
 	QX_StalkerBeamThink ();
 };
 
+// Fire out of both of its jetpack's nozzles (progs/jks.mdl: two tanks on its
+// back, nozzles 10 behind, 4 to each side, just below the waist)
+void(float n) QX_StalkerFlames =
+{
+	local vector back, down;
+
+	makevectors (self.angles);
+	back = self.origin - v_forward * 10 + '0 0 -3';
+	down = '0 0 -160' - self.velocity * 0.15 - v_forward * 40;
+	particle (back - v_right * 4, down, 232, n);
+	particle (back + v_right * 4, down, 232, n);
+};
+
+// Crimson sparks off the raised sword (the wind-up pose: progs/jks.mdl's
+// attackb1 -- hilt 7 ahead, 8 right, 32 up; tip 15 ahead, 8 right, 70 up)
+void() QX_StalkerSwordSparks =
+{
+	local float f;
+	local vector p;
+
+	makevectors (self.angles);
+	f = 0.5 + random () * 0.5;			// the upper half of the blade, mostly
+	p = self.origin + v_forward * (7 + 8 * f) + v_right * 8 + '0 0 1' * (32 + 38 * f);
+	particle (p, '0 0 30' + v_forward * (random () * 40 - 20), 228, 3);	// (crimson embers: palette 224-231)
+	if (random () < 0.4)
+		particle (self.origin + v_forward * 15 + v_right * 8 + '0 0 70', '0 0 50', 228, 2);	// (the tip)
+};
+
 // Its wind-up: it stops, raises the sword, its eyes flare -- then it comes,
 // three times as fast. While it winds up it doesn't swat anything.
 void() QX_StalkerWindThink =
@@ -2723,6 +2754,9 @@ void() QX_StalkerWindThink =
 	{
 		if (random () < 0.5)
 			particle (self.origin + '0 0 26', '0 0 20', 73, 6);	// (blood red, from the eyes up)
+		if (self.qx_stalk_mode == 3)
+			QX_StalkerFlames (4);	// (the jets lighting up: here it comes)
+		QX_StalkerSwordSparks ();
 		self.think = QX_StalkerWindThink;
 		self.nextthink = time + 0.05;
 		return;

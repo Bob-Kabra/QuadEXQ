@@ -360,6 +360,8 @@ float	QX_STALKER_BEAM_PULL	= 260;	// the beam drags you in this fast (you run at
 float	QX_STALKER_WIND		= 0.8;	// its wind-up, in seconds: your window
 // its look: progs/jks.mdl -- the knight, a Death Knight's size, the fallen hero's skin
 void(float mode) QX_StalkerWind;
+void(float n) QX_StalkerFlames;
+void() QX_StalkerSwordSparks;
 void() QX_StalkerMelee;
 void() QX_StalkerMissile;
 .float	qx_stalk_qseen;			// (you) this Quad has rolled for the Stalker already
