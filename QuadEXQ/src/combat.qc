@@ -163,6 +163,12 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 			damage = damage * 3;
 	}
 
+// QuadEXQ: your BFG -- the ball or its lightning -- and the Stalker is in pieces
+	if (targ.qx_stalker)
+	if (inflictor.classname == "b1")
+	if (inflictor.owner.flags & FL_CLIENT)
+		damage = targ.max_health + 1;
+
 // QuadEXQ: the Jet Knight Stalker's sword (or its jet charge) takes your Quad
 	if (attacker.qx_stalker)
 	if (inflictor == attacker)
