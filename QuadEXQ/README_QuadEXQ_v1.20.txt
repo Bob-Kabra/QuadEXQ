@@ -1,5 +1,5 @@
 ==============================================================================
-  QuadEXQ  v1.15
+  QuadEXQ  v1.20
   "The harder you fight, the slower the world gets.
    The better you play, the smarter they get."
 ==============================================================================
@@ -336,21 +336,35 @@ fork), which adds the HUD, music switching, checkpoints and more.
   Spike mines  The homing mines some Wizards fire can be shot down: any
                hit makes them blow up early.
   Jet Knight Stalker (rare)
-               Pick up a Quad and, now and then (half the time), a slipgate
-               rages nearby and the Stalker comes out: a knight in gold,
-               with a jetpack, and undead.
+               A fallen hero: a knight as big as a Death Knight, in battered
+               gold, a torn cape, dead skin showing through, one eye blue
+               and one blood red -- and undead. Pick up a Quad and, now and
+               then (half the time), a slipgate rages nearby and out it
+               comes, for your Quad. (At PlayerSkill 50 or more it crashes
+               the Cyber Delta fight too.)
+                 - A long wind-up -- it stops, raises the sword, crimson
+                   sparks fly off it -- then it moves three times as fast.
+                   While it winds up it swats nothing: your window.
+                 - Its jetpack is maxed out: fire out of both tanks, and a
+                   charge every second or two.
+                 - Out of sword's reach, its left hand's lightning grabs
+                   you and drags you in. Run against it, or break its
+                   line of sight.
                  - Any hit, and it's back to full health. Only one blow
                    that takes all of it at once ends it -- in pieces (3000
-                   points). A Quad rocket at close range will do; so will
-                   the BFG.
-                 - A big hit knocks it down. It gets back up.
+                   points). A Quad rocket at close range will do -- and any
+                   hit of the BFG (the ball or its lightning) does.
+                 - A big hit, or 400 damage in all, knocks it down. It
+                   gets back up.
                  - Its Golden Left Hand swats your rockets and grenades
-                   back.
+                   back -- and those you can't send back again.
                  - Its sword or its jet charge takes your Quad: it hits
                    four times as hard until the Quad runs out.
+                 - Delta Team is its bane: one of their rockets and it's in
+                   pieces, and it can't swat theirs.
+                 - It drops a golden backpack: your Golden Left Hand swats
+                   for you all the rest of that map, adrenaline or not.
                impulse 159 calls it (a test: no records for that map).
-               (The gold needs the QuadEXQ engine; on another engine it
-               just glows.)
 
   Almost every enemy drops an ammo backpack. Elites drop double, bosses
   triple.
@@ -740,6 +754,20 @@ fork), which adds the HUD, music switching, checkpoints and more.
 ==============================================================================
  13. Version history
 ==============================================================================
+
+  v1.20
+    - The Jet Knight Stalker, the fallen hero: a new look (progs/jks.mdl:
+      Death Knight size, battered gold, a torn cape, odd eyes, a jetpack
+      on its back), a long wind-up and then three times as fast, a maxed
+      jetpack, a left-hand lightning that drags you in. Down after 400
+      damage in all. Any BFG hit puts it in pieces. Delta Team is its bane. Its golden backpack gives you
+      the Golden Left Hand for the rest of the map. Its swats can't be
+      swatted back. It joins the Cyber Delta fight at PlayerSkill 50+.
+    - The Golden Left Hand swats on its own from 300% adrenaline (was
+      250%), or with Quad.
+    - Body slams: speed x 0.05 (was 0.15), once per enemy per half second
+      (with a Quad, a Fiend went to bits).
+    - The play log names the Jet Knight Stalker when it kills you.
 
   v1.15
     - A new rare enemy: the Jet Knight Stalker. Pick up a Quad and it may
