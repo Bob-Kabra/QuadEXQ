@@ -1048,7 +1048,7 @@ void(float dash) QX_FireFist =
 	}
 };
 
-// Adrenaline 250%+ (or Quad, or the Stalker's backpack): enemy shots coming at you get swatted back --
+// Adrenaline 300%+ (or Quad, or the Stalker's backpack): enemy shots coming at you get swatted back --
 // rockets, grenades, nails, magic. Back at whoever fired them (homing ones
 // home in on them), and they are yours now. Left side: the Golden Left
 // Hand, right side: the axe.

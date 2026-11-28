@@ -429,7 +429,7 @@ fork), which adds the HUD, music switching, checkpoints and more.
     a glowing punch that throws you at the enemy, and it hits harder the
     higher your adrenaline and the faster you move. You can't shoot during
     the swing.
-    At 250% adrenaline or more (or with Quad), enemy shots that come
+    At 300% adrenaline or more (or with Quad), enemy shots that come
     close from IN FRONT of you -- rockets, grenades, nails, magic -- are
     swatted back at whoever fired them, and they count as yours. Shots
     from behind still hit you.
