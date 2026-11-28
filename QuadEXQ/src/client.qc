@@ -799,9 +799,11 @@ void()	Player_JumpTouch =
 	if (other.takedamage)
 	{
 		if ( vlen(self.velocity) > 300 )
+		if (time >= other.qx_slam_next)		// QuadEXQ: once per body per half second (no grinding)
 		{
+			other.qx_slam_next = time + 0.5;
 			sound (self, CHAN_WEAPON, "zombie/z_hit.wav", 1, ATTN_NORM);
-            		ldmg =  vlen(self.velocity)*0.15;
+			ldmg = vlen (self.velocity) * 0.05;	// QuadEXQ: was 0.15 (with a Quad, a Fiend went to bits)
 			T_Damage (other, self, self, ldmg);	
 		}
 	}

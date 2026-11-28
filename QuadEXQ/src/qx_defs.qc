@@ -179,6 +179,7 @@ string	qx_st_bossname;
 .float	qx_hunt;			// respawned: go straight for the player
 .float	qx_jet;			// jetpack knight
 .float	qx_jet_next;
+.float	qx_slam_next;			// your body slam hits this one again no sooner than this
 .float	qx_jet_end;
 .float	qx_charging;
 .void(entity attacker, float damage) qx_savepain;
