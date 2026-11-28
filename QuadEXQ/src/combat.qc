@@ -152,6 +152,17 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 // QuadEXQ: PlayerSkill makes monsters hit harder
 	damage = damage * QX_DamageMult (attacker, targ);
 
+// QuadEXQ: Delta team is the Jet Knight Stalker's bane -- one of their
+// rockets and it's in pieces; anything else of theirs hits it three times as hard
+	if (targ.qx_stalker)
+	if (attacker.qx_delta)
+	{
+		if (inflictor.classname == "missile")
+			damage = targ.max_health + 1;
+		else
+			damage = damage * 3;
+	}
+
 // QuadEXQ: the Jet Knight Stalker's sword (or its jet charge) takes your Quad
 	if (attacker.qx_stalker)
 	if (inflictor == attacker)

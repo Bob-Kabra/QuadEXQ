@@ -1075,6 +1075,7 @@ void() QX_VoreDeflect =
 		if (e.movetype == MOVETYPE_FLYMISSILE || e.movetype == MOVETYPE_BOUNCE || e.movetype == MOVETYPE_FLY || e.movetype == MOVETYPE_TOSS)
 		if (e.think != Plasma_Fly)		// not the plasma cannon's balls (too much)
 		if (!self.qx_stalker || e.classname == "missile" || e.classname == "grenade")	// (the Stalker: rockets and grenades)
+		if (!self.qx_stalker || !e.owner.qx_delta)	// (.. but not Delta team's: they're its bane)
 		if (e.touch)
 		if (vlen (e.velocity) > 50)
 		{
@@ -2796,8 +2797,11 @@ void(entity attacker, float take) QX_StalkerPain =
 	self.health = self.max_health;
 	if (self.qx_stalk_down)
 		return;				// down already: it gets up when it gets up
-	if (take >= self.max_health * QX_STALKER_DOWN)
-	{	// a big one: down it goes
+	self.qx_stalk_dmg = self.qx_stalk_dmg + take;
+	if (take >= self.max_health * QX_STALKER_DOWN
+	 || self.qx_stalk_dmg >= QX_STALKER_DOWN_SUM * (1 + QX_PLAYER_DMG_SCALE * QX_F ()))
+	{	// a big one -- or enough of them, like a Zombie: down it goes
+		self.qx_stalk_dmg = 0;
 		self.qx_stalk_beam = 0;		// (and lets go of you)
 		self.qx_stalk_beam_next = time + 4;
 		self.qx_stalk_down = time + 3 + random () * 2;

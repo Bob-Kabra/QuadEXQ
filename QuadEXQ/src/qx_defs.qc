@@ -348,6 +348,8 @@ float	QX_VORELORD_CHANCE	= 0.25;	// a Vore is a Vore Lord this often
 float	QX_STALKER_CHANCE	= 0.5;	// a Quad you pick up calls the Stalker this often (one at a time)
 float	QX_STALKER_HP		= 360;	// x your damage growth: a Quad rocket's worth, more or less
 float	QX_STALKER_DOWN		= 0.25;	// a hit this much of its health knocks it down
+float	QX_STALKER_DOWN_SUM	= 400;	// .. and so does this much in all, like a Zombie (x your damage growth)
+.float	qx_stalk_dmg;			// .. taken since it last got up
 .float	qx_stalker;				// the Jet Knight Stalker
 .float	qx_stalk_quad;			// .. with your Quad until then
 .float	qx_stalk_down;			// .. down on the floor until then
