@@ -305,6 +305,7 @@ void()	qx_stalk_up6	=[	$death4,	qx_stalk_up7	] {};
 void()	qx_stalk_up7	=[	$death3,	qx_stalk_up8	] {};
 void()	qx_stalk_up8	=[	$death2,	qx_stalk_up9	] {};
 void()	qx_stalk_up9	=[	$death1,	knight_run1	] {QX_StalkerRisen ();};
+void() qx_stalk_windpose = { self.frame = $attackb1; };	// the sword raised: here it comes
 
 void() knight_atk =
 {

@@ -264,6 +264,7 @@ void() QX_WorldSpawn =
 	precache_model ("maps/b_batt1.bsp");
 	precache_sound ("weapons/lock4.wav");
 	precache_model ("progs/knight.mdl");		// the Jet Knight Stalker can come out of any raging slipgate
+	precache_model ("progs/jks.mdl");		// (its look)
 	precache_model ("progs/h_knight.mdl");
 	precache_sound ("knight/kdeath.wav");
 	precache_sound ("knight/khurt.wav");
@@ -2295,6 +2296,12 @@ void() QX_JetStart =
 	self.ideal_yaw = vectoyaw (self.enemy.origin - self.origin);
 	self.angles_y = self.ideal_yaw;
 	spd = 650 + 300 * QX_F ();
+	if (self.qx_stalker)
+	{	// the jetpack maxed out: faster, further, again and again
+		spd = 1150 + 350 * QX_F ();
+		self.qx_jet_next = time + 1 + random ();
+		self.qx_jet_end = time + 1.6;
+	}
 	dir = normalize ((self.enemy.origin + '0 0 8') - self.origin);
 
 	self.movetype = MOVETYPE_FLY;
@@ -2348,6 +2355,21 @@ float() QX_AIRun =
 		}
 	}
 
+	// the Stalker, out of reach: its left hand's lightning drags you in
+	if (self.qx_stalker)
+	if (time > self.qx_stalk_beam_next)
+	if (vlen (en.origin - self.origin) > 300)
+	if (vlen (en.origin - self.origin) < 1100)
+	if (visible (en))
+	{
+		self.qx_stalk_beam_next = time + 0.5;
+		if (random () < 0.35)
+		{
+			QX_StalkerWind (4);
+			return TRUE;
+		}
+	}
+
 	// jetpack knight: rocket-propelled body slam
 	if (self.qx_jet)
 	if (time > self.qx_jet_next)
@@ -2355,10 +2377,18 @@ float() QX_AIRun =
 	{
 		d = vlen (en.origin - self.origin);
 		if (d > 160)
-		if (d < 900)
+		if (d < 900 || (self.qx_stalker && d < 1600))
 		if (visible (en))
 		{
-			if (random () < 0.25)
+			if (self.qx_stalker)
+			{
+				if (random () < 0.5)
+				{
+					QX_StalkerWind (3);	// (a wind-up first, then the maxed jet)
+					return TRUE;
+				}
+			}
+			else if (random () < 0.25)
 			{
 				QX_JetStart ();
 				return TRUE;
@@ -2474,6 +2504,34 @@ float() QX_StalkerAround =
 	return FALSE;
 };
 
+// room for its whole box at o? (no tracebox in QuakeC: lines along its edges)
+float(vector o) QX_StalkerBoxFree =
+{
+	local float h;
+	local vector a, b, c, d;
+
+	h = -22;
+	while (h <= 38)
+	{
+		a = o + '-16 -16 0' + '0 0 1' * h;
+		b = o + '16 -16 0' + '0 0 1' * h;
+		c = o + '16 16 0' + '0 0 1' * h;
+		d = o + '-16 16 0' + '0 0 1' * h;
+		traceline (a, b, TRUE, world);	if (trace_fraction < 1 || trace_startsolid) return FALSE;
+		traceline (b, c, TRUE, world);	if (trace_fraction < 1 || trace_startsolid) return FALSE;
+		traceline (c, d, TRUE, world);	if (trace_fraction < 1 || trace_startsolid) return FALSE;
+		traceline (d, a, TRUE, world);	if (trace_fraction < 1 || trace_startsolid) return FALSE;
+		traceline (a, c, TRUE, world);	if (trace_fraction < 1 || trace_startsolid) return FALSE;
+		traceline (b, d, TRUE, world);	if (trace_fraction < 1 || trace_startsolid) return FALSE;
+		h = h + 20;
+	}
+	traceline (o + '-16 -16 -22', o + '-16 -16 38', TRUE, world);	if (trace_fraction < 1) return FALSE;
+	traceline (o + '16 -16 -22', o + '16 -16 38', TRUE, world);	if (trace_fraction < 1) return FALSE;
+	traceline (o + '16 16 -22', o + '16 16 38', TRUE, world);	if (trace_fraction < 1) return FALSE;
+	traceline (o + '-16 16 -22', o + '-16 16 38', TRUE, world);	if (trace_fraction < 1) return FALSE;
+	return TRUE;
+};
+
 // a spot for its slipgate: dist away from p at yaw, on a floor, room to stand
 vector	qx_stalk_spot;
 float(entity p, float yaw, float dist) QX_StalkerSpotAt =
@@ -2493,16 +2551,15 @@ float(entity p, float yaw, float dist) QX_StalkerSpotAt =
 	spot = trace_endpos + '0 0 26';	// (a knight's feet are 24 below its origin)
 	if (pointcontents (spot) != CONTENT_EMPTY)
 		return FALSE;			// water, slime, lava
-	traceline (spot, spot + '0 0 40', TRUE, p);
-	if (trace_fraction < 1)
-		return FALSE;			// no headroom
-	traceline (spot - side * 20, spot + side * 20, TRUE, p);
-	if (trace_fraction < 1 || trace_startsolid)
+	// its whole box clear -- on stairs, a step up or two (it drops onto them)
+	if (QX_StalkerBoxFree (spot))
+		qx_stalk_spot = spot;
+	else if (QX_StalkerBoxFree (spot + '0 0 10'))
+		qx_stalk_spot = spot + '0 0 10';
+	else if (QX_StalkerBoxFree (spot + '0 0 20'))
+		qx_stalk_spot = spot + '0 0 20';
+	else
 		return FALSE;
-	traceline (spot - dir * 20, spot + dir * 20, TRUE, p);
-	if (trace_fraction < 1 || trace_startsolid)
-		return FALSE;
-	qx_stalk_spot = spot;
 	return TRUE;
 };
 
@@ -2568,7 +2625,7 @@ void() QX_MakeStalker =
 	self.skin = 0;
 	self.qx_init = 1;			// (QX_MonsterSync leaves it alone: no rolls, no rescaling)
 	self.qx_hpmul = 1;
-	self.qx_tempo = 1.25;		// reckless
+	self.qx_tempo = 3;			// fallen, and three times as fast (but a long wind-up)
 	self.qx_gen = 9;			// no revenant of it: it gets up by itself
 	self.qx_revenant = 0;
 	self.qx_jet = 1;			// the jetpack, of course
@@ -2576,14 +2633,127 @@ void() QX_MakeStalker =
 	self.health = QX_StalkerHP ();
 	self.max_health = self.health;
 	self.qx_basehp = self.health;
-	self.th_melee = knight_atk;
-	self.th_missile = knight_atka1;	// a running slash from further out
+	self.th_melee = QX_StalkerMelee;
+	self.th_missile = QX_StalkerMissile;	// a running slash from further out
 	self.th_pain = QX_StalkerPain;
 	self.th_die = QX_StalkerDie;
 	self.effects = self.effects | EF_DIMLIGHT;
-	if (cvar ("qx_colormap_ok") >= 3)
-		self.colormap = 253;		// QuadEXQ engine: drawn in gold
+	setmodel (self, "progs/jks.mdl");	// battered gold, a torn cape, dead skin, odd eyes -- and big
+	setsize (self, '-16 -16 -24', '16 16 40');
+	self.skin = 0;
 };
+
+// Its left hand's lightning: out of sword's reach, it grabs you with a
+// Thunderbolt beam and drags you in -- like the BFG's lightning, but hard --
+// and the sword is waiting. Break its line of sight (or get it in the face)
+// and the beam lets go.
+void() QX_StalkerBeamThink =
+{
+	local entity en;
+	local vector hand, dir;
+	local float d;
+
+	en = self.enemy;
+	if (self.health <= 0)
+		return;
+	makevectors (self.angles);
+	hand = self.origin + v_forward * 12 - v_right * 16 + '0 0 14';	// the left hand
+	d = 9999;
+	if (en)
+	if (en.health > 0)
+		d = vlen (en.origin - self.origin);
+	traceline (hand, en.origin + '0 0 8', TRUE, self);
+	if (time > self.qx_stalk_beam || d < 90 || trace_fraction < 1 || en.health <= 0)
+	{	// let go -- and if you're in reach, the sword (no wind-up this time)
+		self.qx_stalk_beam = 0;
+		self.qx_stalk_beam_next = time + 4 + random () * 3;
+		if (d < 110)
+			knight_atk ();
+		else
+			knight_run1 ();
+		return;
+	}
+	self.ideal_yaw = vectoyaw (en.origin - self.origin);
+	ChangeYaw ();
+
+	WriteByte (MSG_BROADCAST, SVC_TEMPENTITY);
+	WriteByte (MSG_BROADCAST, TE_LIGHTNING2);
+	WriteEntity (MSG_BROADCAST, self);
+	WriteCoord (MSG_BROADCAST, hand_x);
+	WriteCoord (MSG_BROADCAST, hand_y);
+	WriteCoord (MSG_BROADCAST, hand_z);
+	WriteCoord (MSG_BROADCAST, en.origin_x);
+	WriteCoord (MSG_BROADCAST, en.origin_y);
+	WriteCoord (MSG_BROADCAST, en.origin_z + 8);
+	if (random () < 0.3)
+		sound (self, CHAN_WEAPON, "weapons/lhit.wav", 1, ATTN_NORM);
+
+	// drag: toward its hand, off the floor, hard
+	dir = normalize (self.origin - en.origin);
+	en.velocity = en.velocity * 0.5 + dir * QX_STALKER_BEAM_PULL + '0 0 30';
+	if (en.flags & FL_ONGROUND)
+		en.flags = en.flags - FL_ONGROUND;
+	T_Damage (en, self, self, 1.5);	// (a sting: the sword is the point)
+
+	self.think = QX_StalkerBeamThink;
+	self.nextthink = time + 0.1;
+};
+
+void() QX_StalkerBeamStart =
+{
+	self.qx_stalk_beam = time + 1.4;
+	sound (self, CHAN_WEAPON, "weapons/lstart.wav", 1, ATTN_NORM);
+	if (self.enemy.flags & FL_CLIENT)
+		QX_Center (self.enemy, "THE STALKER HAS YOU", "", "", "");
+	QX_StalkerBeamThink ();
+};
+
+// Its wind-up: it stops, raises the sword, its eyes flare -- then it comes,
+// three times as fast. While it winds up it doesn't swat anything.
+void() QX_StalkerWindThink =
+{
+	if (self.health <= 0)
+		return;
+	if (self.enemy)
+	{
+		self.ideal_yaw = vectoyaw (self.enemy.origin - self.origin);
+		ChangeYaw ();
+	}
+	if (time < self.qx_stalk_wind)
+	{
+		if (random () < 0.5)
+			particle (self.origin + '0 0 26', '0 0 20', 73, 6);	// (blood red, from the eyes up)
+		self.think = QX_StalkerWindThink;
+		self.nextthink = time + 0.05;
+		return;
+	}
+	self.effects = self.effects - (self.effects & EF_BRIGHTLIGHT);
+	if (self.qx_stalk_quad)
+		self.effects = self.effects | EF_BRIGHTLIGHT;	// (your Quad still on it)
+	if (self.qx_stalk_mode == 4)
+		QX_StalkerBeamStart ();
+	else if (self.qx_stalk_mode == 3)
+		QX_JetStart ();
+	else if (self.qx_stalk_mode == 2)
+		knight_atka1 ();
+	else
+		knight_atk ();
+};
+
+void(float mode) QX_StalkerWind =
+{
+	self.qx_stalk_mode = mode;
+	self.qx_stalk_wind = time + QX_STALKER_WIND;
+	self.velocity = '0 0 0';
+	qx_stalk_windpose ();
+	self.effects = self.effects | EF_BRIGHTLIGHT;
+	sound (self, CHAN_VOICE, "knight/ksight.wav", 1, ATTN_NORM);
+	self.think = QX_StalkerWindThink;
+	self.nextthink = time + 0.05;
+};
+
+void() QX_StalkerMelee = { QX_StalkerWind (1); };
+void() QX_StalkerMissile = { QX_StalkerWind (2); };
 
 // any hit: back to full health (only one hit of all of it at once gets through)
 void(entity attacker, float take) QX_StalkerPain =
@@ -2594,11 +2764,15 @@ void(entity attacker, float take) QX_StalkerPain =
 		return;				// down already: it gets up when it gets up
 	if (take >= self.max_health * QX_STALKER_DOWN)
 	{	// a big one: down it goes
+		self.qx_stalk_beam = 0;		// (and lets go of you)
+		self.qx_stalk_beam_next = time + 4;
 		self.qx_stalk_down = time + 3 + random () * 2;
 		sound (self, CHAN_VOICE, "knight/kdeath.wav", 1, ATTN_NORM);
 		qx_stalk_down1 ();
 		return;
 	}
+	if (self.qx_stalk_beam)
+		return;				// it has you: only a big hit breaks the grip
 	if (attacker.flags & FL_CLIENT)
 	if (time > self.qx_stalk_msg)
 	{	// you're hitting it, and it doesn't care

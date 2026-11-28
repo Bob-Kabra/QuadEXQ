@@ -351,6 +351,16 @@ float	QX_STALKER_DOWN		= 0.25;	// a hit this much of its health knocks it down
 .float	qx_stalk_quad;			// .. with your Quad until then
 .float	qx_stalk_down;			// .. down on the floor until then
 .float	qx_stalk_msg;			// .. its next "UNYIELDING"
+.float	qx_stalk_wind;			// .. winding up until then (long -- then three times as fast)
+.float	qx_stalk_mode;			// .. for this: 1 sword, 2 a slash on the run, 3 the jet, 4 the beam
+.float	qx_stalk_beam;			// .. its left hand's lightning on you until then
+.float	qx_stalk_beam_next;		// .. and again no sooner than this
+float	QX_STALKER_BEAM_PULL	= 260;	// the beam drags you in this fast (you run at 320: you can fight it)
+float	QX_STALKER_WIND		= 0.8;	// its wind-up, in seconds: your window
+// its look: progs/jks.mdl -- the knight, a Death Knight's size, the fallen hero's skin
+void(float mode) QX_StalkerWind;
+void() QX_StalkerMelee;
+void() QX_StalkerMissile;
 .float	qx_stalk_qseen;			// (you) this Quad has rolled for the Stalker already
 void() QX_StalkerQuadCheck;
 void(entity attacker, float take) QX_StalkerPain;

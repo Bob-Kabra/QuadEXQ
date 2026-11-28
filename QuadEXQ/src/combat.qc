@@ -155,6 +155,7 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 // QuadEXQ: the Jet Knight Stalker's sword (or its jet charge) takes your Quad
 	if (attacker.qx_stalker)
 	if (inflictor == attacker)
+	if (!attacker.qx_stalk_beam)		// (the sword or the jet, not its beam)
 	if (targ.super_damage_finished > time)
 	if (targ.flags & FL_CLIENT)
 		QX_StalkerSteal (attacker, targ);
