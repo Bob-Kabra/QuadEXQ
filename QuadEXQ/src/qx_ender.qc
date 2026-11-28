@@ -541,6 +541,27 @@ void(entity p) QX_EnderDeltaIn =
 	QX_DeltaArrive ();
 	QX_Center (p, "!! DELTA TEAM !!\n\nSorry we're late!\nThis one's our job.", "", "", "");
 	QX_PlayTrack (QX_ENDER_TRACK);
+	QX_EnderStalker (p);
+};
+
+// PlayerSkill 50 or more: the Jet Knight Stalker crashes the party too, a few
+// seconds after Delta Team (no reason. it just does)
+void(entity p) QX_EnderStalker =
+{
+	local float i;
+
+	if (qx_pskill < 50 || QX_StalkerAround ())
+		return;
+	i = 0;
+	while (i < 16)
+	{
+		if (QX_StalkerSpotAt (p, random () * 360, 250 + random () * 400))
+		{
+			QX_StalkerCall (p, qx_stalk_spot, 4 + random () * 4);
+			return;
+		}
+		i = i + 1;
+	}
 };
 
 // ender.bsp: the BFG is your only weapon here, and it never runs dry

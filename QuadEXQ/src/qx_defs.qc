@@ -377,6 +377,11 @@ void() QX_StalkerLie;
 void() QX_StalkerRisen;
 void(entity st, entity p) QX_StalkerSteal;
 void() QX_StalkerTest;
+void(entity p) QX_EnderStalker;
+float() QX_StalkerAround;
+float(entity p, float yaw, float dist) QX_StalkerSpotAt;
+void(entity p, vector spot, float delay) QX_StalkerCall;
+vector	qx_stalk_spot;
 void() QX_RiftWarn;
 void() QX_VoreDeflect;
 float	QX_FIST_ADREN		= 10;	// Golden Left Hand, per hit (3 hits a swing): adrenaline % / this

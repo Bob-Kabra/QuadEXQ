@@ -2548,7 +2548,7 @@ float(vector o) QX_StalkerBoxFree =
 };
 
 // a spot for its slipgate: dist away from p at yaw, on a floor, room to stand
-vector	qx_stalk_spot;
+// (qx_stalk_spot: qx_defs.qc)
 float(entity p, float yaw, float dist) QX_StalkerSpotAt =
 {
 	local vector dir, side, end, spot;

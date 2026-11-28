@@ -284,6 +284,8 @@ void(entity targ, entity attacker, float take) QX_StatHurt =
 	qx_st_taken = qx_st_taken + take;
 	targ.qx_st_lastatk = attacker;
 	targ.qx_st_lastclass = attacker.classname;
+	if (attacker.qx_stalker)
+		targ.qx_st_lastclass = "Jet Knight Stalker";	// (not just a knight)
 	targ.qx_st_lastelite = attacker.qx_elite;
 	QX_AchRJump (targ, attacker);
 };
